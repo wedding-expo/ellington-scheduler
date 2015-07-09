@@ -84,6 +84,7 @@ class ReportDefinition implements IReportDefinition
 			ColumnNames::RESERVATION_MODIFIED => new ReportDateColumn('LastModified', $timezone, $dateFormat, ChartColumnDefinition::Null()),
 			ColumnNames::TOTAL => new ReportStringColumn('Total', ChartColumnDefinition::Total()),
 			ColumnNames::TOTAL_TIME => new ReportTimeColumn('Total', ChartColumnDefinition::Total()),
+			'test' => 'test'
 		);
 
 		$reportColumns = $report->GetColumns();

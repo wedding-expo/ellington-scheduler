@@ -75,7 +75,7 @@ class SlotLabelFactory
 		$label = str_replace('{phone}', $reservation->OwnerPhone, $label);
 		$label = str_replace('{position}', $reservation->OwnerPosition, $label);
 
-		return $label;
+		return $reservation->Title;
 	}
 
 	protected function GetFullName(ReservationItemView $reservation)

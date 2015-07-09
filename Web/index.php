@@ -1,4 +1,9 @@
 <?php
+/*
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+*/
+
 /**
 Copyright 2011-2013 Nick Korbel
 
