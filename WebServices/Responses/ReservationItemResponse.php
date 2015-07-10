@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/WebService/namespace.php');
@@ -35,12 +35,17 @@ class ReservationItemResponse extends RestResponse
 	public $scheduleId;
 	public $userId;
 	public $resourceId;
+	public $duration;
+	public $bufferTime;
+	public $bufferedStartDate;
+	public $bufferedEndDate;
 
 	public function __construct(ReservationItemView $reservationItemView, IRestServer $server, $showUser, $showDetails)
 	{
 		$this->referenceNumber = $reservationItemView->ReferenceNumber;
 		$this->startDate = $reservationItemView->StartDate->ToIso();
 		$this->endDate = $reservationItemView->EndDate->ToIso();
+		$this->duration = $reservationItemView->GetDuration()->__toString();
 		$this->resourceName = $reservationItemView->ResourceName;
 
 		if ($showUser)
@@ -55,12 +60,16 @@ class ReservationItemResponse extends RestResponse
 			$this->description = $reservationItemView->Description;
 		}
 
-		$this->requiresApproval = $reservationItemView->RequiresApproval;
-		$this->isRecurring = $reservationItemView->IsRecurring;
+		$this->requiresApproval = (bool)$reservationItemView->RequiresApproval;
+		$this->isRecurring = (bool)$reservationItemView->IsRecurring;
 
 		$this->scheduleId = $reservationItemView->ScheduleId;
 		$this->userId = $reservationItemView->UserId;
 		$this->resourceId = $reservationItemView->ResourceId;
+		$this->bufferTime = $reservationItemView->GetBufferTime()->__toString();
+		$bufferedDuration = $reservationItemView->BufferedTimes();
+		$this->bufferedStartDate = $bufferedDuration->GetBegin()->ToIso();
+		$this->bufferedEndDate = $bufferedDuration->GetEnd()->ToIso();
 
 		$this->AddService($server, WebServices::GetResource,
 						  array(WebServiceParams::ResourceId => $reservationItemView->ResourceId));

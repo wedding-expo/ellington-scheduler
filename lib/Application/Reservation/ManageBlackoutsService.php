@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/Access/namespace.php');
@@ -35,7 +31,6 @@ interface IManageBlackoutsService
 	public function LoadFiltered($pageNumber, $pageSize, $filter, $user);
 
 	/**
-	 * @abstract
 	 * @param DateRange $blackoutDate
 	 * @param array|int[] $resourceIds
 	 * @param string $title
@@ -46,9 +41,29 @@ interface IManageBlackoutsService
 	public function Add(DateRange $blackoutDate, $resourceIds, $title, IReservationConflictResolution $reservationConflictResolution, IRepeatOptions $repeatOptions);
 
 	/**
-	 * @param int $blackoutId
+	 * @param int $blackoutInstanceId
+	 * @param DateRange $blackoutDate
+	 * @param array|int[] $resourceIds
+	 * @param string $title
+	 * @param IReservationConflictResolution $reservationConflictResolution
+	 * @param IRepeatOptions $repeatOptions
+	 * @param SeriesUpdateScope|string $scope
+	 * @return IBlackoutValidationResult
 	 */
-	public function Delete($blackoutId);
+	public function Update($blackoutInstanceId, DateRange $blackoutDate, $resourceIds, $title, IReservationConflictResolution $reservationConflictResolution, IRepeatOptions $repeatOptions, $scope);
+
+	/**
+	 * @param int $blackoutId
+	 * @param string $updateScope
+	 */
+	public function Delete($blackoutId, $updateScope);
+
+	/**
+	 * @param int $blackoutId
+	 * @param int $userId
+	 * @return BlackoutSeries|null
+	 */
+	public function LoadBlackout($blackoutId, $userId);
 }
 
 class ManageBlackoutsService implements IManageBlackoutsService
@@ -93,7 +108,7 @@ class ManageBlackoutsService implements IManageBlackoutsService
 			{
 				$groupIds[] = $group->GroupId;
 			}
-			$adminFilter = new SqlFilterIn(new SqlFilterColumn(TableNames::RESOURCES, ColumnNames::RESOURCE_ADMIN_GROUP_ID), $groupIds);
+			$adminFilter = new SqlFilterIn(new SqlFilterColumn('r', ColumnNames::RESOURCE_ADMIN_GROUP_ID), $groupIds);
 			$adminFilter->_Or(new SqlFilterIn(new SqlFilterColumn(TableNames::SCHEDULES, ColumnNames::SCHEDULE_ADMIN_GROUP_ID), $groupIds));
 			$blackoutFilter->_And($adminFilter);
 		}
@@ -110,55 +125,49 @@ class ManageBlackoutsService implements IManageBlackoutsService
 
 		$userId = ServiceLocator::GetServer()->GetUserSession()->UserId;
 
-		$dates = array_merge(array($blackoutDate), $repeatOptions->GetDates($blackoutDate));
+		$blackoutSeries = BlackoutSeries::Create($userId, $title, $blackoutDate);
+		$blackoutSeries->Repeats($repeatOptions);
 
-		/** @var $blackouts array|Blackout[] */
-		$blackouts = array();
 		foreach ($resourceIds as $resourceId)
 		{
-			foreach ($dates as $date)
-			{
-				$blackouts[] = Blackout::Create($userId, $resourceId, $title, $date);
-			}
+			$blackoutSeries->AddResourceId($resourceId);
 		}
 
-		$conflictingBlackouts = $this->GetConflictingBlackouts($blackouts);
+		$conflictingBlackouts = $this->GetConflictingBlackouts($blackoutSeries);
 
 		$conflictingReservations = array();
 		if (empty($conflictingBlackouts))
 		{
-			$conflictingReservations = $this->GetConflictingReservations($blackouts, $reservationConflictResolution);
+			$conflictingReservations = $this->GetConflictingReservations($blackoutSeries, $reservationConflictResolution);
 		}
 
 		$blackoutValidationResult = new BlackoutValidationResult($conflictingBlackouts, $conflictingReservations);
 
 		if ($blackoutValidationResult->CanBeSaved())
 		{
-			foreach ($blackouts as $blackout)
-			{
-				$this->blackoutRepository->Add($blackout);
-			}
+			$this->blackoutRepository->Add($blackoutSeries);
 		}
 
 		return $blackoutValidationResult;
 	}
 
 	/**
-	 * @param array|Blackout[] $blackouts
+	 * @param BlackoutSeries $blackoutSeries
 	 * @param IReservationConflictResolution $reservationConflictResolution
 	 * @return array|ReservationItemView[]
 	 */
-	private function GetConflictingReservations($blackouts, $reservationConflictResolution)
+	private function GetConflictingReservations($blackoutSeries, $reservationConflictResolution)
 	{
 		$conflictingReservations = array();
 
+		$blackouts = $blackoutSeries->AllBlackouts();
 		foreach ($blackouts as $blackout)
 		{
-			$existingReservations = $this->reservationViewRepository->GetReservationList($blackout->StartDate(), $blackout->EndDate(), null, null, null, $blackout->ResourceId());
+			$existingReservations = $this->reservationViewRepository->GetReservationList($blackout->StartDate(), $blackout->EndDate());
 
 			foreach ($existingReservations as $existingReservation)
 			{
-				if ($existingReservation->ResourceId == $blackout->ResourceId() && $blackout->Date()->Overlaps($existingReservation->Date))
+				if ($blackoutSeries->ContainsResource($existingReservation->ResourceId) && $blackout->Date()->Overlaps($existingReservation->Date))
 				{
 					if (!$reservationConflictResolution->Handle($existingReservation))
 					{
@@ -172,20 +181,28 @@ class ManageBlackoutsService implements IManageBlackoutsService
 	}
 
 	/**
-	 * @param array|Blackout[] $blackouts
+	 * @param BlackoutSeries $blackoutSeries
 	 * @return array|BlackoutItemView[]
 	 */
-	private function GetConflictingBlackouts($blackouts)
+	private function GetConflictingBlackouts($blackoutSeries)
 	{
 		$conflictingBlackouts = array();
+
+		$blackouts = $blackoutSeries->AllBlackouts();
 		foreach ($blackouts as $blackout)
 		{
 			$existingBlackouts = $this->reservationViewRepository->GetBlackoutsWithin($blackout->Date());
 
 			foreach ($existingBlackouts as $existingBlackout)
 			{
-				if ($existingBlackout->ResourceId == $blackout->ResourceId() && $blackout->Date()->Overlaps($existingBlackout->Date))
+				if ($existingBlackout->SeriesId == $blackoutSeries->Id())
 				{
+					continue;
+				}
+
+				if ($blackoutSeries->ContainsResource($existingBlackout->ResourceId) && $blackout->Date()->Overlaps($existingBlackout->Date))
+				{
+
 					$conflictingBlackouts[] = $existingBlackout;
 				}
 			}
@@ -194,13 +211,67 @@ class ManageBlackoutsService implements IManageBlackoutsService
 		return $conflictingBlackouts;
 	}
 
-	/**
-	 * @param int $blackoutId
-	 */
-	public function Delete($blackoutId)
+	public function Delete($blackoutId, $updateScope)
 	{
-		$this->blackoutRepository->Delete($blackoutId);
+		if ($updateScope == SeriesUpdateScope::FullSeries)
+		{
+			$this->blackoutRepository->DeleteSeries($blackoutId);
+		}
+		else
+		{
+			$this->blackoutRepository->Delete($blackoutId);
+		}
+	}
+
+	public function LoadBlackout($blackoutId, $userId)
+	{
+		$series = $this->blackoutRepository->LoadByBlackoutId($blackoutId);
+		$user = $this->userRepository->LoadById($userId);
+
+		foreach ($series->Resources() as $resource)
+		{
+			if (!$user->IsResourceAdminFor($resource))
+			{
+				return null;
+			}
+		}
+
+		return $series;
+	}
+
+	public function Update($blackoutInstanceId, DateRange $blackoutDate, $resourceIds, $title, IReservationConflictResolution $reservationConflictResolution, IRepeatOptions $repeatOptions, $scope)
+	{
+		if (!$blackoutDate->GetEnd()->GreaterThan($blackoutDate->GetBegin()))
+		{
+			return new BlackoutDateTimeValidationResult();
+		}
+
+		$userId = ServiceLocator::GetServer()->GetUserSession()->UserId;
+
+		$blackoutSeries = $this->LoadBlackout($blackoutInstanceId, $userId);
+
+		if ($blackoutSeries == null)
+		{
+			return new BlackoutSecurityValidationResult();
+		}
+
+		$blackoutSeries->Update($userId, $scope, $title, $blackoutDate, $repeatOptions, $resourceIds);
+
+		$conflictingBlackouts = $this->GetConflictingBlackouts($blackoutSeries);
+
+		$conflictingReservations = array();
+		if (empty($conflictingBlackouts))
+		{
+			$conflictingReservations = $this->GetConflictingReservations($blackoutSeries, $reservationConflictResolution);
+		}
+
+		$blackoutValidationResult = new BlackoutValidationResult($conflictingBlackouts, $conflictingReservations);
+
+		if ($blackoutValidationResult->CanBeSaved())
+		{
+			$this->blackoutRepository->Update($blackoutSeries);
+		}
+
+		return $blackoutValidationResult;
 	}
 }
-
-?>

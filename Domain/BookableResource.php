@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 interface IResource extends IPermissibleResource
@@ -41,16 +41,19 @@ interface IResource extends IPermissibleResource
 	public function GetScheduleId();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetScheduleAdminGroupId();
+
+	/**
+	 * @return int
+	 */
+	public function GetStatusId();
 }
 
 interface IPermissibleResource
 {
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetResourceId();
@@ -73,6 +76,7 @@ class BookableResource implements IResource
 	 */
 	protected $_maxLength;
 	protected $_autoAssign;
+	protected $_autoAssignToggledOn = false;
 	protected $_requiresApproval;
 	protected $_allowMultiday;
 	protected $_maxParticipants;
@@ -84,14 +88,21 @@ class BookableResource implements IResource
 	 * @var string|int
 	 */
 	protected $_maxNotice;
+	/**
+	 * @var string|int
+	 */
+	protected $_bufferTime;
 	protected $_scheduleId;
 	protected $_imageName;
-	protected $_isActive;
+	protected $_statusId = ResourceStatus::AVAILABLE;
+	protected $_statusReasonId;
 	protected $_adminGroupId;
 	protected $_isCalendarSubscriptionAllowed = false;
 	protected $_publicId;
 	protected $_scheduleAdminGroupId;
 	protected $_sortOrder;
+	protected $_resourceTypeId;
+
 	/**
 	 * @var array|AttributeValue[]
 	 */
@@ -143,20 +154,20 @@ class BookableResource implements IResource
 	public static function CreateNew($resourceName, $scheduleId, $autoAssign = false, $order = 0)
 	{
 		return new BookableResource(null,
-			$resourceName,
-			null,
-			null,
-			null,
-			null,
-			null,
-			$autoAssign,
-			null,
-			null,
-			null,
-			null,
-			null,
-			null,
-			$scheduleId);
+									$resourceName,
+									null,
+									null,
+									null,
+									null,
+									null,
+									$autoAssign,
+									null,
+									null,
+									null,
+									null,
+									null,
+									null,
+									$scheduleId);
 	}
 
 	/**
@@ -166,34 +177,31 @@ class BookableResource implements IResource
 	public static function Create($row)
 	{
 		$resource = new BookableResource($row[ColumnNames::RESOURCE_ID],
-			$row[ColumnNames::RESOURCE_NAME],
-			$row[ColumnNames::RESOURCE_LOCATION],
-			$row[ColumnNames::RESOURCE_CONTACT],
-			$row[ColumnNames::RESOURCE_NOTES],
-			$row[ColumnNames::RESOURCE_MINDURATION],
-			$row[ColumnNames::RESOURCE_MAXDURATION],
-			$row[ColumnNames::RESOURCE_AUTOASSIGN],
-			$row[ColumnNames::RESOURCE_REQUIRES_APPROVAL],
-			$row[ColumnNames::RESOURCE_ALLOW_MULTIDAY],
-			$row[ColumnNames::RESOURCE_MAX_PARTICIPANTS],
-			$row[ColumnNames::RESOURCE_MINNOTICE],
-			$row[ColumnNames::RESOURCE_MAXNOTICE],
-			$row[ColumnNames::RESOURCE_DESCRIPTION],
-			$row[ColumnNames::SCHEDULE_ID]);
+										 $row[ColumnNames::RESOURCE_NAME],
+										 $row[ColumnNames::RESOURCE_LOCATION],
+										 $row[ColumnNames::RESOURCE_CONTACT],
+										 $row[ColumnNames::RESOURCE_NOTES],
+										 $row[ColumnNames::RESOURCE_MINDURATION],
+										 $row[ColumnNames::RESOURCE_MAXDURATION],
+										 $row[ColumnNames::RESOURCE_AUTOASSIGN],
+										 $row[ColumnNames::RESOURCE_REQUIRES_APPROVAL],
+										 $row[ColumnNames::RESOURCE_ALLOW_MULTIDAY],
+										 $row[ColumnNames::RESOURCE_MAX_PARTICIPANTS],
+										 $row[ColumnNames::RESOURCE_MINNOTICE],
+										 $row[ColumnNames::RESOURCE_MAXNOTICE],
+										 $row[ColumnNames::RESOURCE_DESCRIPTION],
+										 $row[ColumnNames::SCHEDULE_ID]);
 
 		$resource->SetImage($row[ColumnNames::RESOURCE_IMAGE_NAME]);
 		$resource->SetAdminGroupId($row[ColumnNames::RESOURCE_ADMIN_GROUP_ID]);
 		$resource->SetSortOrder($row[ColumnNames::RESOURCE_SORT_ORDER]);
-
-		$resource->_isActive = true;
-		if (isset($row[ColumnNames::RESOURCE_ISACTIVE]))
-		{
-			$resource->_isActive = (bool)$row[ColumnNames::RESOURCE_ISACTIVE];
-		}
+		$resource->ChangeStatus($row[ColumnNames::RESOURCE_STATUS_ID], $row[ColumnNames::RESOURCE_STATUS_REASON_ID]);
 
 		$resource->WithPublicId($row[ColumnNames::PUBLIC_ID]);
 		$resource->WithSubscription($row[ColumnNames::ALLOW_CALENDAR_SUBSCRIPTION]);
 		$resource->WithScheduleAdminGroupId($row[ColumnNames::SCHEDULE_ADMIN_GROUP_ID_ALIAS]);
+		$resource->SetResourceTypeId($row[ColumnNames::RESOURCE_TYPE_ID]);
+		$resource->SetBufferTime($row[ColumnNames::RESOURCE_BUFFER_TIME]);
 
 		return $resource;
 	}
@@ -345,6 +353,16 @@ class BookableResource implements IResource
 	 */
 	public function SetAutoAssign($value)
 	{
+		$value = intval($value);
+		if ($this->_autoAssign == false && $value == true)
+		{
+			$this->_autoAssignToggledOn = true;
+		}
+		else
+		{
+			$this->_autoAssignToggledOn = false;
+		}
+
 		$this->_autoAssign = $value;
 	}
 
@@ -362,7 +380,14 @@ class BookableResource implements IResource
 	 */
 	public function SetRequiresApproval($value)
 	{
-		$this->_requiresApproval = $value;
+		if (!empty($value))
+		{
+			$this->_requiresApproval = intval($value);
+		}
+		else
+		{
+			$this->_requiresApproval = 0;
+		}
 	}
 
 	/**
@@ -529,24 +554,58 @@ class BookableResource implements IResource
 	}
 
 	/**
-	 * @return bool
+	 * @param int|ResourceStatus $statusId
+	 * @param int|null $statusReasonId
+	 * @return void
 	 */
-	public function IsOnline()
+	public function ChangeStatus($statusId, $statusReasonId = null)
 	{
-		return $this->_isActive;
+		$this->_statusId = $statusId;
+		if (empty($statusReasonId))
+		{
+			$statusReasonId = null;
+		}
+		$this->_statusReasonId = $statusReasonId;
 	}
 
 	/**
-	 * @return void
+	 * @return bool
 	 */
-	public function TakeOffline()
+	public function IsAvailable()
 	{
-		$this->_isActive = false;
+		return $this->_statusId == ResourceStatus::AVAILABLE;
 	}
 
-	public function BringOnline()
+	/**
+	 * @return bool
+	 */
+	public function IsUnavailable()
 	{
-		$this->_isActive = true;
+		return $this->_statusId == ResourceStatus::UNAVAILABLE;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function IsHidden()
+	{
+		return $this->_statusId == ResourceStatus::HIDDEN;
+	}
+
+	/**
+	 * @return int|ResourceStatus
+	 */
+	public function GetStatusId()
+	{
+		return $this->_statusId;
+	}
+
+	/**
+	 * @return int|null
+	 */
+	public function GetStatusReasonId()
+	{
+		return $this->_statusReasonId;
 	}
 
 	/**
@@ -636,6 +695,16 @@ class BookableResource implements IResource
 		{
 			$this->AddAttributeValue($attribute);
 		}
+	}
+
+	/**
+	* @param $attribute AttributeValue
+	*/
+	public function ChangeAttribute($attribute)
+	{
+		$this->_removedAttributeValues[] = $attribute;
+		$this->_addedAttributeValues[] = $attribute;
+		$this->AddAttributeValue($attribute);
 	}
 
 	/**
@@ -734,6 +803,60 @@ class BookableResource implements IResource
 	{
 		return $this->_sortOrder;
 	}
-}
 
-?>
+	/**
+	 * @param int $resourceTypeId
+	 */
+	public function SetResourceTypeId($resourceTypeId)
+	{
+		$this->_resourceTypeId = $resourceTypeId;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceTypeId()
+	{
+		return $this->_resourceTypeId;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function HasResourceType()
+	{
+		return !empty($this->_resourceTypeId);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function HasBufferTime()
+	{
+		return !empty($this->_bufferTime);
+	}
+
+	/**
+	 * @param int|string|null $bufferTime
+	 */
+	public function SetBufferTime($bufferTime)
+	{
+		$this->_bufferTime = $bufferTime;
+	}
+
+	/**
+	 * @return TimeInterval
+	 */
+	public function GetBufferTime()
+	{
+		return TimeInterval::Parse($this->_bufferTime);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function WasAutoAssignToggledOn()
+	{
+		return $this->_autoAssignToggledOn;
+	}
+}

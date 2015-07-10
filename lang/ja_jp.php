@@ -1,26 +1,25 @@
-<?php
+﻿<?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once('Language.php');
 require_once('en_us.php');
-
 class ja_jp extends en_us
 {
     public function __construct()
@@ -75,7 +74,6 @@ class ja_jp extends en_us
         $strings['FirstNameRequired'] = '名(first name)が必要です。';
         $strings['LastNameRequired'] = '姓(last name)が必要です。';
         $strings['PwMustMatch'] = '新しいパスワード欄とパスワード確認欄は同じものを入力してください。';
-        $strings['PwComplexity'] = 'パスワードは文字(アルファベット)、数字、記号の組み合わせで6文字以上にしてください。';
         $strings['ValidEmailRequired'] = '有効なメールアドレスが必要です。';
         $strings['UniqueEmailRequired'] = 'そのメールアドレスはすでに登録されています。';
         $strings['UniqueUsernameRequired'] = 'そのユーザー名はすでに登録されています。';
@@ -98,6 +96,8 @@ class ja_jp extends en_us
         $strings['Announcements'] = 'お知らせ';
         $strings['NoUpcomingReservations'] = '近日中の予約はありません';
         $strings['UpcomingReservations'] = '近日中の予約';
+		$strings['AllNoUpcomingReservations'] = '近日中の予約はありません(全体)';
+		$strings['AllUpcomingReservations'] = '近日中の予約(全体)';
         $strings['ShowHide'] = '表示/非表示';
         $strings['Error'] = 'エラー';
         $strings['ReturnToPreviousPage'] = '直近のページへ戻る';
@@ -171,6 +171,8 @@ class ja_jp extends en_us
         $strings['ResourceMinNoticeNone'] = '現在時刻まで予約ができます';
         $strings['ResourceMaxNotice'] = '終了時刻が現在時刻より %s 先の予約はできません';
         $strings['ResourceMaxNoticeNone'] = '予約終了時刻は(未来の)いつでもかまいません';
+		$strings['ResourceBufferTime'] = 'There must be %s between reservations';
+		$strings['ResourceBufferTimeNone'] = 'There is no buffer between reservations';
         $strings['ResourceAllowMultiDay'] = '日をまたいで予約できます';
         $strings['ResourceNotAllowMultiDay'] = '日をまたいでの予約はできません';
         $strings['ResourceCapacity'] = 'このリソースは %s 人まで使えます';
@@ -185,7 +187,7 @@ class ja_jp extends en_us
         $strings['Duration'] = '期間';
         $strings['Active'] = 'アクティブ';
         $strings['Inactive'] = 'インアクティブ';
-         $strings['ResetPassword'] = 'パスワードをリセット';
+        $strings['ResetPassword'] = 'パスワードをリセット';
         $strings['LastLogin'] = '直近のログイン';
         $strings['Search'] = '検索';
         $strings['ResourcePermissions'] = 'リソース利用権限';
@@ -203,6 +205,7 @@ class ja_jp extends en_us
         $strings['Attending'] = '出席しますか';
         $strings['QuotaConfiguration'] = '%s の %s において %s のユーザーは %s %s を１ %s 内の上限とする。';
         $strings['reservations'] = '予約';
+		$strings['reservation'] = '予約';
         $strings['ChangeCalendar'] = 'カレンダーを変更';
         $strings['AddQuota'] = '量制限を追加';
         $strings['FindUser'] = 'ユーザーを見つける';
@@ -223,7 +226,6 @@ class ja_jp extends en_us
         $strings['ReservationDescription'] = '説明';
         $strings['ResourceList'] = 'リソース一覧';
         $strings['Accessories'] = '備品';
-        $strings['Add'] = '追加';
         $strings['ParticipantList'] = '出席者一覧';
         $strings['InvitationList'] = '招待者一覧';
         $strings['AccessoryName'] = '備品名称';
@@ -269,14 +271,15 @@ class ja_jp extends en_us
         $strings['Register'] = '登録';
         $strings['SecurityCode'] = 'セキュリティコード';
         $strings['ReservationCreatedPreference'] = '私または誰かが代わりに予約をしたとき';
-        $strings['ReservationDeletedPreference'] = '私または誰かが代わりに予約を取り消したとき';
         $strings['ReservationUpdatedPreference'] = '私または誰かが代わりに予約を変更したとき';
+        $strings['ReservationDeletedPreference'] = '私または誰かが代わりに予約を取り消したとき';
         $strings['ReservationApprovalPreference'] = '私の予約が承認されたとき';
         $strings['PreferenceSendEmail'] = '私にメールを送ってください';
         $strings['PreferenceNoEmail'] = '通知はいりません';
         $strings['ReservationCreated'] = '予約を作成しました!';
         $strings['ReservationUpdated'] = '予約を変更しました!';
         $strings['ReservationRemoved'] = '予約を取り消しました';
+		$strings['ReservationRequiresApproval'] = '予約されたリソースには承認が必要なものがあります。これらの予約は承認されるまで保留されます。';
         $strings['YourReferenceNumber'] = '照会番号は %s です';
         $strings['UpdatingReservation'] = '予約の変更中';
         $strings['ChangeUser'] = 'ユーザーを変更';
@@ -297,15 +300,17 @@ class ja_jp extends en_us
         $strings['AddBlackout'] = '利用不能時間を追加';
         $strings['AllResourcesOn'] = 'スケジュール中の全リソースを対象';
         $strings['Reason'] = '理由';
-        $strings['BlackoutShowMe'] = 'ぶつかっている予約を表示する';
-        $strings['BlackoutDeleteConflicts'] = 'ぶつかっている予約は削除する';
+        $strings['BlackoutShowMe'] = '利用不能時間の予約を表示する';
+        $strings['BlackoutDeleteConflicts'] = '利用不能時間の予約は削除する';
         $strings['Filter'] = 'フィルター(条件)';
         $strings['Between'] = '期間';
         $strings['CreatedBy'] = '作成者';
-        $strings['BlackoutCreated'] = '利用不能時間を設定しました!';
-        $strings['BlackoutNotCreated'] = '利用不能時間を設定できませんでした!';
-        $strings['BlackoutConflicts'] = '利用不能時間がぶつかっています';
-        $strings['ReservationConflicts'] = '予約がぶつかっています';
+        $strings['BlackoutCreated'] = '利用不能時間を設定しました';
+        $strings['BlackoutNotCreated'] = '利用不能時間を設定できませんでした';
+		$strings['BlackoutUpdated'] = '利用不能時間が更新されました';
+		$strings['BlackoutNotUpdated'] = 'Blackout could not be updated';
+        $strings['BlackoutConflicts'] = '利用不能時間が重なっています';
+        $strings['ReservationConflicts'] = '予約が重なっています';
         $strings['UsersInGroup'] = 'このグループのユーザー';
         $strings['Browse'] = '表示';
         $strings['DeleteGroupWarning'] = 'グループを削除するとグループによって与えられていた許可も削除されます。このグループのユーザーがリソースにアクセスできなくなることがあります。';
@@ -382,9 +387,9 @@ class ja_jp extends en_us
         $strings['CategoryGroup'] = 'グループ';
         $strings['SortOrder'] = '並び替え順';
         $strings['Title'] = '件名';
-        $strings['AdditionalAttributes'] = '追加属性';
-        $strings['True'] = '真(True)';
-        $strings['False'] = '偽(False)';
+		$strings['AdditionalAttributes'] = '追加属性';
+		$strings['True'] = '真(True)';
+		$strings['False'] = '偽(False)';
 		$strings['ForgotPasswordEmailSent'] = 'パスワードをリセットする方法を書いたeメールを送信しました。';
 		$strings['ActivationEmailSent'] = 'アクティベートのためのeメールが、すぐに届くはずです。';
 		$strings['AccountActivationError'] = '申し訳ありません。あなたのアカウントをアクティベート出来ませんでした。';
@@ -424,7 +429,113 @@ class ja_jp extends en_us
 		$strings['ResourceUsageReservationCount'] = 'リソース使用量 - 予約回数';
 		$strings['Top20UsersTimeBooked'] = '上位 20 人 - 予約時間';
 		$strings['Top20UsersReservationCount'] = '上位 20 人 - 予約回数';
+		$strings['ConfigurationUpdated'] = '設定ファイルが更新されました。';
+		$strings['ConfigurationUiNotEnabled'] = 'このページにはアクセスできません。 $conf[\'settings\'][\'pages\'][\'enable.configuration\'] が false になっているか、設定されていないかです。';
+		$strings['ConfigurationFileNotWritable'] = '設定ファイルが書き込み禁止になっています。ファイルのパーミッションを確認し、やり直してみてください。';
+		$strings['ConfigurationUpdateHelp'] = '設定の<a target=_blank href=%s>ヘルプファイル</a>を参照';
+		$strings['GeneralConfigSettings'] = '設定';
+		$strings['UseSameLayoutForAllDays'] = 'すべての曜日で同じレイアウトを使う';
+		$strings['LayoutVariesByDay'] = '曜日ごとにレイアウトを変える';
+		$strings['ManageReminders'] = 'リマインダー管理';
+		$strings['ReminderUser'] = 'ユーザーID';
+		$strings['ReminderMessage'] = 'メッセージ';
+		$strings['ReminderAddress'] = 'アドレス';
+		$strings['ReminderSendtime'] = '送信時刻';
+		$strings['ReminderRefNumber'] = '予約参照数(Reservation Reference Number)';
+		$strings['ReminderSendtimeDate'] = 'リマインダー日';
+		$strings['ReminderSendtimeTime'] = 'リマインダー時刻(HH:MM)';
+		$strings['ReminderSendtimeAMPM'] = 'AM / PM';
+		$strings['AddReminder'] = 'リマインダーを追加';
+		$strings['DeleteReminderWarning'] = '間違いありませんか？';
+		$strings['NoReminders'] = 'リマインダーはありません。';
+		$strings['Reminders'] = 'リマインダー';
+		$strings['SendReminder'] = 'リマインダー送信';
+		$strings['minutes'] = '分';
+		$strings['hours'] = '時';
+		$strings['days'] = '日';
+		$strings['ReminderBeforeStart'] = '開始時刻まで';
+		$strings['ReminderBeforeEnd'] = '終了時刻まで';
+		$strings['Logo'] = 'ロゴ';
+		$strings['CssFile'] = 'CSS ファイル';
+		$strings['ThemeUploadSuccess'] = '変更を保存しました。変更を反映するためにページをリフレッシュしてください。';
+		$strings['MakeDefaultSchedule'] = 'このスケジュールをデフォルトにする';
+		$strings['DefaultScheduleSet'] = 'このスケジュールがデフォルトになっています';
+		$strings['FlipSchedule'] = 'スケジュールのレイアウトを切り替える';
+		$strings['Next'] = '次へ';
+		$strings['Success'] = '成功';
+		$strings['Participant'] = '出席者';
+		$strings['ResourceFilter'] = 'リソースフィルター';
+		$strings['ResourceGroups'] = 'リソースグループ';
+		$strings['AddNewGroup'] = '新規グループ作成';
+		$strings['Quit'] = '終了';
+		$strings['AddGroup'] = 'グループ追加';
+		$strings['StandardScheduleDisplay'] = '標準表示を使用';
+		$strings['TallScheduleDisplay'] = '縦長表示を使用';
+		$strings['WideScheduleDisplay'] = '幅広表示を使用';
+		$strings['CondensedWeekScheduleDisplay'] = '圧縮した週表示を使用';
+		$strings['ResourceGroupHelp1'] = 'ドラッグ＆ドロップで配置を変更。';
+		$strings['ResourceGroupHelp2'] = '右クリックで更なる操作。';
+		$strings['ResourceGroupHelp3'] = 'ドラッグ＆ドロップでリソースをグループに追加。';
+		$strings['ResourceGroupWarning'] = 'リソースグループを使用する場合、それぞれのリソースは少なくとも一つのグループに割り当てられていなくてはなりません。割り当てられていないリソースは予約することが出来ません。';
+		$strings['ResourceType'] = 'リソースタイプ';
+		$strings['AppliesTo'] = '右記へ適用';
+		$strings['UniquePerInstance'] = 'Unique Per Instance';
+		$strings['AddResourceType'] = 'リソースタイプを追加';
+		$strings['NoResourceTypeLabel'] = '(リソースタイプ無し)';
+		$strings['ClearFilter'] = 'フィルタを消去';
+		$strings['MinimumCapacity'] = '最少の容量';
+		$strings['Color'] = '色';
+		$strings['Available'] = 'あり';
+		$strings['Unavailable'] = 'なし';
+		$strings['Hidden'] = '隠蔽';
+		$strings['ResourceStatus'] = 'リソースの状態';
+		$strings['CurrentStatus'] = '現在の状態';
+		$strings['AllReservationResources'] = '全て予約リソース';
+		$strings['File'] = 'ファイル';
+		$strings['BulkResourceUpdate'] = 'リソースの一括更新';
+		$strings['Unchanged'] = '無変更';
+		$strings['Common'] = '共通';
+		$strings['AdvancedFilter'] = 'アドバンスドフィルター';
         // End Strings
+
+		// Install
+		$strings['InstallApplication'] = 'Install Booked Scheduler (MySQL only)';
+		$strings['IncorrectInstallPassword'] = '申し訳ありませんが、パスワードが違っています。';
+		$strings['SetInstallPassword'] = 'インストールを実行する前に、インストールパスワードを設定しておかなくてはなりません。';
+		$strings['InstallPasswordInstructions'] = '%s 内の %s にランダムで推測できないようなパスワードを設定して、再度このページに戻って来てください。<br/> %s を使ってもいいでしょう。';
+		$strings['NoUpgradeNeeded'] = 'アップグレードの必要はありません。インストールプロセスを実行すると、すべてのデータが消えてしまいます。';
+		$strings['ProvideInstallPassword'] = 'インストールパスワードを入力してください。';
+		$strings['InstallPasswordLocation'] = '%s という項目が %s の中にあるのがパスワードです。';
+		$strings['VerifyInstallSettings'] = '続ける前に下記のデフォルト値を確認してください。もしくは %s 内を変更してください。';
+		$strings['DatabaseName'] = 'データベース名';
+		$strings['DatabaseUser'] = 'データベースのユーザー名';
+		$strings['DatabaseHost'] = 'データベースのあるホスト名';
+		$strings['DatabaseCredentials'] = 'MySQLにデータベースを作成できるユーザーの資格情報が必要です。もし分からない場合は、データベース管理者に問い合わせてください。通常、root なら大丈夫でしょう。';
+		$strings['MySQLUser'] = 'MySQL ユーザー';
+		$strings['InstallOptionsWarning'] = 'ここからのオプションはホスティング環境ではうまくいかないことが多いでしょう。もしホスティング環境へインストールする場合は、MySQL操作ツールを使って、以下の操作を完了してください。';
+		$strings['CreateDatabase'] = 'データベース作成';
+		$strings['CreateDatabaseUser'] = 'データベースユーザー作成';
+		$strings['PopulateExampleData'] = 'サンプルデータをインポートする。管理者アカウント: admin/password と一般ユーザーアカウント: user/password を作成する。';
+		$strings['DataWipeWarning'] = '警告: この操作は全てのデータを削除します。';
+		$strings['RunInstallation'] = 'インストールを実行';
+		$strings['UpgradeNotice'] = 'バージョン <b>%s</b> からバージョン <b>%s</b> へアップグレードします。';
+		$strings['RunUpgrade'] = 'アップグレードの実行';
+		$strings['Executing'] = '実行中';
+		$strings['StatementFailed'] = '失敗 詳細:';
+		$strings['SQLStatement'] = 'SQL 文:';
+		$strings['ErrorCode'] = 'エラーコード:';
+		$strings['ErrorText'] = 'エラーテキスト:';
+		$strings['InstallationSuccess'] = 'インストールは無事完了しました！';
+		$strings['RegisterAdminUser'] = '管理者アカウントを作成してください。サンプルデータをインポートしていない場合は必須です。 %s 内で $conf[\'settings\'][\'allow.self.registration\'] = \'true\' にしておいてください。';
+		$strings['LoginWithSampleAccounts'] = 'サンプルデータをインポートした場合は、admin/password で管理者、user/password で一般ユーザーとしてログインできます。';
+		$strings['InstalledVersion'] = '実行中のphpScheduleItのバージョンは %s です';
+		$strings['InstallUpgradeConfig'] = '設定ファイルをアップグレードしてください。';
+		$strings['InstallationFailure'] = 'インストール中に問題が発生しました。問題箇所を修正し再度インストールを実行してください。';
+		$strings['ConfigureApplication'] = 'phpScheduleItの設定';
+		$strings['ConfigUpdateSuccess'] = '設定ファイルは更新されました！';
+		$strings['ConfigUpdateFailure'] = '設定ファイルを自動で更新できませんでした。config.php を下記の内容で上書きしてください。';
+		$strings['SelectUser'] = 'ユーザーの選択';
+		// End Install
 
         // Errors
         $strings['LoginError'] = 'ユーザー名またはパスワードが一致しません';
@@ -445,6 +556,18 @@ class ja_jp extends en_us
         $strings['CustomAttributeInvalid'] = '%s の指定値が無効です';
         $strings['AttachmentLoadingError'] = '申し訳ないのですが、指定されたファイルを読み込むさいに問題が発生してしまいました。';
         $strings['InvalidAttachmentExtension'] = 'アップロード出来るファイルの種類は以下のものだけです: %s';
+		$strings['InvalidStartSlot'] = '予約の始まり日時が無効です。';
+		$strings['InvalidEndSlot'] = '予約の終わり日時が無効です。';
+		$strings['MaxParticipantsError'] = '%s の定員は %s までです。';
+		$strings['ReservationCriticalError'] = '予約データ保存時にエラーが発生しました。このエラーが何度も起きるときは管理者に連絡してください。';
+		$strings['InvalidStartReminderTime'] = '予約開始のリマインダー時間が無効です。';
+		$strings['InvalidEndReminderTime'] = '予約終了のリマインダー時間が無効です。';
+		$strings['QuotaExceeded'] = '予約量の制限を越えています。';
+		$strings['MultiDayRule'] = '%s 日をまたいだ予約は出来ません。';
+		$strings['InvalidReservationData'] = '予約リクエストに問題があります。';
+		$strings['PasswordError'] = 'パスワードには %s 個以上の文字で、%s 個以上の数字が必要です。';
+		$strings['PasswordErrorRequirements'] = 'パスワードには %s 個以上の大文字と小文字の組み合わせと、%s 個以上の数字が必要です。';
+		$strings['NoReservationAccess'] = 'この予約の変更は許可されていません。';
         // End Errors
 
         // Page Titles
@@ -498,6 +621,11 @@ class ja_jp extends en_us
 		$strings['CommonReports'] = '汎用のレポート';
 		$strings['ViewDay'] = '日表示';
 		$strings['Group'] = 'グループ';
+		$strings['ManageConfiguration'] = 'アプリケーション設定';
+		$strings['LookAndFeel'] = '外観デザイン';
+		$strings['ManageResourceGroups'] = 'リソースグループ';
+		$strings['ManageResourceTypes'] = 'リソースタイプ';
+		$strings['ManageResourceStatus'] = 'リソースの状態';
         // End Page Titles
 
         // Day representations
@@ -532,6 +660,9 @@ class ja_jp extends en_us
         $strings['ResetPassword'] = 'パスワードリセット要求';
         $strings['ActivateYourAccount'] = 'アカウントをアクティベイト(有効化)してください';
         $strings['ReportSubject'] = 'レポート送付 (%s)';
+		$strings['ReservationStartingSoonSubject'] = '予約 %s は間もなく始まります';
+		$strings['ReservationEndingSoonSubject'] = '予約 %s は間もなく終了します';
+		$strings['UserAdded'] = 'ユーザーが追加されました。';
         // End Email Subjects
 
         $this->Strings = $strings;

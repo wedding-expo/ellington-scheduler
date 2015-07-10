@@ -19,8 +19,16 @@
 	margin: 3em auto 1em;
 }
 
+#reservationbox ul {
+	list-style: none;
+}
+
+#reservationbox input[type="file"] {
+	font-size: 10pt;
+}
+
 #reservationbox .input {
-	font-size: 18px;
+	font-size: 16px;
 	width: 98%;
 	padding: 3px;
 	margin: 2px 0 5px 0;
@@ -30,13 +38,13 @@
 }
 
 #reservationbox.readonly label {
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: bold;
 	color: #000;
 }
 
 #reservationbox.readonly ul {
-	font-size: 18px;
+	font-size: 16px;
 	color: #333;
 }
 
@@ -56,11 +64,27 @@
 	padding-right: 25px;
 }
 
+.reservationButtons {
+	margin-top: 20px;
+}
+
+.reservationReminders, .reservationAttachments, .customAttributes {
+	margin: 5px 15px;
+	padding: 5px;
+	border-top: solid 1px #f0f0f0;
+}
+
+.reservationDeleteButtons {
+	float: left;
+}
+
+.reservationSubmitButtons {
+	float: right;
+}
+
 #reservationParticipation {
 	float: right;
 	width: 45%;
-
-
 	height: 100%;
 }
 
@@ -127,5 +151,46 @@
 }
 
 .reminderLabel {
-	font-size:10pt;
+	font-size: 10pt;
+}
+
+#reservationbox a.small-action {
+	font-size: 9pt;
+	color: #3d5b74;
+}
+
+.customAttributes {
+	margin-top: 10px;
+}
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element, ul.jqtree-tree .jqtree-toggler {
+	top: 10%;
+}
+
+ul.jqtree-tree .group-resource .jqtree-title {
+	color: #111111;
+}
+
+.buttonsTop {
+	margin-bottom: 10px;
+}
+
+label.reservationDate {
+	width: 50px;
+	display: inline-block;
+}
+
+#reservationCreated .approvalMessage, #reservationUpdated .approvalMessage
+{
+	margin: 15px 0;
+	font-size:smaller;
+}
+
+#allowParticipation {
+	margin-top:5px;
+}
+
+#invite-error {
+	font-weight: bold;
+	color: #CE0000;
 }

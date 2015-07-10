@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Common/namespace.php');
@@ -218,6 +218,14 @@ class ExistingReservationSeries extends ReservationSeries
 	 */
 	public function Update($userId, BookableResource $resource, $title, $description, UserSession $updatedBy)
 	{
+		$this->_bookedBy = $updatedBy;
+
+		if ($this->seriesUpdateStrategy->RequiresNewSeries())
+		{
+			$this->AddEvent(new SeriesBranchedEvent($this));
+			$this->Repeats($this->seriesUpdateStrategy->GetRepeatOptions($this));
+		}
+
 		if ($this->_resource->GetId() != $resource->GetId())
 		{
 			$this->AddEvent(new ResourceRemovedEvent($this->_resource, $this));
@@ -233,7 +241,6 @@ class ExistingReservationSeries extends ReservationSeries
 		$this->_resource = $resource;
 		$this->_title = $title;
 		$this->_description = $description;
-		$this->_bookedBy = $updatedBy;
 	}
 
 	/**
@@ -271,12 +278,6 @@ class ExistingReservationSeries extends ReservationSeries
 	public function ApplyChangesTo($seriesUpdateScope)
 	{
 		$this->seriesUpdateStrategy = SeriesUpdateScope::CreateStrategy($seriesUpdateScope);
-
-		if ($this->seriesUpdateStrategy->RequiresNewSeries())
-		{
-			$this->AddEvent(new SeriesBranchedEvent($this));
-			$this->Repeats($this->seriesUpdateStrategy->GetRepeatOptions($this));
-		}
 	}
 
 	/**
@@ -381,6 +382,11 @@ class ExistingReservationSeries extends ReservationSeries
 		return count($this->instances) == count($this->Instances());
 	}
 
+	public function UpdateBookedBy(UserSession $bookedBy)
+	{
+		$this->_bookedBy = $bookedBy;
+	}
+
 	protected function AddNewInstance(DateRange $reservationDate)
 	{
 		if (!$this->InstanceStartsOnDate($reservationDate))
@@ -439,7 +445,7 @@ class ExistingReservationSeries extends ReservationSeries
 		return $this->instances;
 	}
 
-	protected function AddEvent(SeriesEvent $event)
+	public function AddEvent(SeriesEvent $event)
 	{
 		$this->events[] = $event;
 	}
@@ -490,7 +496,6 @@ class ExistingReservationSeries extends ReservationSeries
 
 	/**
 	 * @param int $inviteeId
-	 * @return void
 	 */
 	public function AcceptInvitation($inviteeId)
 	{
@@ -507,7 +512,6 @@ class ExistingReservationSeries extends ReservationSeries
 
 	/**
 	 * @param int $inviteeId
-	 * @return void
 	 */
 	public function DeclineInvitation($inviteeId)
 	{
@@ -524,7 +528,6 @@ class ExistingReservationSeries extends ReservationSeries
 
 	/**
 	 * @param int $participantId
-	 * @return void
 	 */
 	public function CancelAllParticipation($participantId)
 	{
@@ -541,11 +544,48 @@ class ExistingReservationSeries extends ReservationSeries
 
 	/**
 	 * @param int $participantId
-	 * @return void
 	 */
 	public function CancelInstanceParticipation($participantId)
 	{
 		if ($this->CurrentInstance()->CancelParticipation($participantId))
+		{
+			$this->RaiseInstanceUpdatedEvent($this->CurrentInstance());
+		}
+	}
+
+	/**
+	 * @param int $participantId
+	 */
+	public function JoinReservationSeries($participantId)
+	{
+		if (!$this->GetAllowParticipation())
+		{
+			return;
+		}
+
+		/** @var Reservation $instance */
+		foreach ($this->Instances() as $instance)
+		{
+			$joined = $instance->JoinReservation($participantId);
+			if ($joined)
+			{
+				$this->RaiseInstanceUpdatedEvent($instance);
+			}
+		}
+	}
+
+	/**
+	 * @param int $participantId
+	 */
+	public function JoinReservation($participantId)
+	{
+		if (!$this->GetAllowParticipation())
+		{
+			return;
+		}
+
+		$joined = $this->CurrentInstance()->JoinReservation($participantId);
+		if ($joined)
 		{
 			$this->RaiseInstanceUpdatedEvent($this->CurrentInstance());
 		}
@@ -575,6 +615,16 @@ class ExistingReservationSeries extends ReservationSeries
 		}
 
 		$this->_accessories = $accessories;
+	}
+
+	/**
+	 * @param $attribute AttributeValue
+	 */
+	public function ChangeAttribute($attribute)
+	{
+		$this->AddEvent(new AttributeAddedEvent($attribute, $this));
+		$this->AddEvent(new AttributeRemovedEvent($attribute, $this));
+		$this->AddAttributeValue($attribute);
 	}
 
 	/**
@@ -669,5 +719,3 @@ class ExistingReservationSeries extends ReservationSeries
 		$this->endReminder = $reminder;
 	}
 }
-
-?>

@@ -1,23 +1,29 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles='css/participation.css,css/jquery.qtip.min.css'}
 <h1>{translate key=OpenInvitations} ({$Reservations|count})</h1>
+
+{if !empty($result)}
+	<div>{$result}</div>
+{/if}
+
+<div id="jsonResult" class="error hidden"></div>
 
 <ul class="no-style participation">
 {foreach from=$Reservations item=reservation name=invitations}
@@ -36,12 +42,14 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 </ul>
 
 <div class="dialog" style="display:none;">
-	
+
 </div>
 
-<script type="text/javascript" src="scripts/js/jquery.qtip.min.js"></script>
-<script type="text/javascript" src="scripts/reservationPopup.js"></script>
-<script type="text/javascript" src="scripts/participation.js"></script>
+{html_image src="admin-ajax-indicator.gif" id="indicator" style="display:none;"}
+
+{jsfile src="js/jquery.qtip.min.js"}
+{jsfile src="reservationPopup.js"}
+{jsfile src="participation.js"}
 
 <script type="text/javascript">
 

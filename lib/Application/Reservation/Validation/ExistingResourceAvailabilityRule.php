@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 class ExistingResourceAvailabilityRule extends ResourceAvailabilityRule implements IUpdateReservationValidationRule
@@ -31,11 +27,12 @@ class ExistingResourceAvailabilityRule extends ResourceAvailabilityRule implemen
 
 	/**
 	 * @param Reservation $instance
-	 * @param ReservationSeries|ExistingReservationSeries $series
+	 * @param ReservationSeries $series
 	 * @param IReservedItemView $existingItem
+	 * @param BookableResource[] $keyedResources
 	 * @return bool
 	 */
-	protected function IsInConflict(Reservation $instance, ReservationSeries $series, IReservedItemView $existingItem)
+	protected function IsInConflict(Reservation $instance, ReservationSeries $series, IReservedItemView $existingItem, $keyedResources)
 	{
 		if ($existingItem->GetId() == $instance->ReservationId() ||
 			$series->IsMarkedForDelete($existingItem->GetId()) ||
@@ -44,9 +41,7 @@ class ExistingResourceAvailabilityRule extends ResourceAvailabilityRule implemen
 		{
 			return false;
 		}
-		
-		return ($existingItem->GetResourceId() == $series->ResourceId()) ||
-			(false !== array_search($existingItem->GetResourceId(), $series->AllResourceIds()));
+
+		return parent::IsInConflict($instance, $series, $existingItem, $keyedResources);
 	}
 }
-?>

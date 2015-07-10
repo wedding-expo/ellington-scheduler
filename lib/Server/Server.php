@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Server/UserSession.php');
@@ -45,21 +45,27 @@ class Server
         return null;
     }
 
-	const sessionId = 'phpScheduleIt';
+	const sessionId = 'booked';
 
     public function SetSession($name, $value)
     {
-        if (!is_null($value))
-        {
-            @session_start();
-        }
+//        if (!is_null($value))
+//        {
+			if (!$this->IsSessionStarted())
+			{
+				@session_start();
+			}
+//        }
 
         $_SESSION[self::sessionId][$name] = $value;
     }
 
     public function GetSession($name)
     {
-        @session_start();
+        if (!$this->IsSessionStarted())
+		{
+			@session_start();
+		}
         if (isset($_SESSION[self::sessionId][$name]))
         {
             return $_SESSION[self::sessionId][$name];
@@ -75,6 +81,21 @@ class Server
 	}
 
 	/**
+	 * @return bool
+	 */
+	private function IsSessionStarted()
+	{
+	    if ( php_sapi_name() !== 'cli' ) {
+	        if ( version_compare(phpversion(), '5.4.0', '>=') ) {
+	            return session_status() === PHP_SESSION_ACTIVE ? TRUE : FALSE;
+	        } else {
+	            return session_id() === '' ? FALSE : TRUE;
+	        }
+	    }
+	    return FALSE;
+	}
+
+	/**
      * @param string $name
      * @return string|null
      */
@@ -82,10 +103,27 @@ class Server
     {
         if (isset($_GET[$name]))
         {
-            return htmlspecialchars($_GET[$name]);
+			$value = $_GET[$name];
+
+			if (!empty($value) && !is_array($value))
+			{
+            	return htmlspecialchars(trim($value));
+			}
+			else if(is_array($value))
+			{
+				array_walk($value, array($this, 'specialchars'));
+				return $value;
+			}
+
+			return '';
         }
         return null;
     }
+
+	private static function specialchars($val)
+	{
+		return htmlspecialchars(trim($val));
+	}
 
     /**
      * @param string $name
@@ -96,7 +134,7 @@ class Server
 		$value = $this->GetRawForm($name);
 		if (!empty($value) && !is_array($value))
 		{
-			return htmlspecialchars($value);
+			return htmlspecialchars(trim($value));
 		}
 
         return $value;
@@ -115,7 +153,7 @@ class Server
 				return $_POST[$name];
 			}
 
-			return $_POST[$name];
+			return trim($_POST[$name]);
 		}
 		return null;
 	}
@@ -131,6 +169,43 @@ class Server
             return new UploadedFile($_FILES[$name]);
         }
         return null;
+    }
+
+	/**
+	 * @param string$name
+	 * @return array|UploadedFile[]
+	 */
+	public function GetFiles($name)
+    {
+		$uploadedFiles = array();
+
+        if (isset($_FILES[$name]))
+        {
+			$files = $_FILES[$name];
+			if (is_array($files['name']))
+			{
+				// convert the files from the weird PHP multi-file array to a normal array of objects
+				// taken from PHP.net
+				$file_ary = array();
+			    $file_count = count($files['name']);
+			    $file_keys = array_keys($files);
+
+			    for ($i=0; $i< $file_count; $i++)
+				{
+			        foreach ($file_keys as $key)
+					{
+			            $file_ary[$i][$key] = $files[$key][$i];
+			        }
+
+					$uploadedFiles[] = new UploadedFile($file_ary[$i]);
+			    }
+			}
+            else
+			{
+				$uploadedFiles[] = new UploadedFile($_FILES[$name]);
+			}
+        }
+        return $uploadedFiles;
     }
 
     public function GetUrl()
@@ -206,6 +281,13 @@ class Server
     {
         return $this->GetHeader('REMOTE_ADDR');
     }
-}
 
-?>
+	/**
+	 * @return bool
+	 */
+	public function GetIsHttps()
+	{
+		$isHttps = $this->GetHeader('HTTPS');
+		return $isHttps == 'on';
+	}
+}

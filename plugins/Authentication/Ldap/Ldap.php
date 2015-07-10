@@ -1,28 +1,28 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
-
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright 2011-2015 Nick Korbel
+ *
+ * This file is part of Booked Scheduler.
+ *
+ * Booked Scheduler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Booked Scheduler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 require_once(ROOT_DIR . 'lib/Application/Authentication/namespace.php');
 require_once(ROOT_DIR . 'plugins/Authentication/Ldap/namespace.php');
 
 /**
- * Provides LDAP authentication/synchronization for phpScheduleIt
+ * Provides LDAP authentication/synchronization for Booked Scheduler
  * @see IAuthorization
  */
 class Ldap extends Authentication implements IAuthentication
@@ -127,32 +127,32 @@ class Ldap extends Authentication implements IAuthentication
 		$username = $this->CleanUsername($username);
 		$connected = $this->ldap->Connect();
 
-        if (!$connected)
-        {
-            throw new Exception("Could not connect to LDAP server. Please check your LDAP configuration settings");
-        }
+		if (!$connected)
+		{
+			throw new Exception("Could not connect to LDAP server. Please check your LDAP configuration settings");
+		}
+		$filter = $this->options->Filter();
+		$isValid = $this->ldap->Authenticate($username, $password, $filter);
+		Log::Debug("Result of LDAP Authenticate for user %s: %d", $username, $isValid);
 
-        $isValid = $this->ldap->Authenticate($username, $password);
-        Log::Debug("Result of LDAP Authenticate for user %s: %d", $username, $isValid);
+		if ($isValid)
+		{
+			$this->user = $this->ldap->GetLdapUser($username);
+			$userLoaded = $this->LdapUserExists();
 
-        if ($isValid)
-        {
-            $this->user = $this->ldap->GetLdapUser($username);
-            $userLoaded = $this->LdapUserExists();
-
-            if (!$userLoaded)
-            {
-                Log::Error("Could not load user details from LDAP. Check your ldap settings. User: %s", $username);
-            }
-            return $userLoaded;
-        }
-        else
-        {
-            if ($this->options->RetryAgainstDatabase())
-            {
-                return $this->authToDecorate->Validate($username, $password);
-            }
-        }
+			if (!$userLoaded)
+			{
+				Log::Error("Could not load user details from LDAP. Check your ldap settings. User: %s", $username);
+			}
+			return $userLoaded;
+		}
+		else
+		{
+			if ($this->options->RetryAgainstDatabase())
+			{
+				return $this->authToDecorate->Validate($username, $password);
+			}
+		}
 
 		return false;
 	}
@@ -165,6 +165,12 @@ class Ldap extends Authentication implements IAuthentication
 		{
 			$this->Synchronize($username);
 		}
+
+		$repo = new UserRepository();
+		$user = $repo->LoadByUsername($username);
+		$user->Deactivate();
+		$user->Activate();
+		$repo->Update($user);
 
 		return $this->authToDecorate->Login($username, $loginContext);
 	}
@@ -189,28 +195,28 @@ class Ldap extends Authentication implements IAuthentication
 		$registration = $this->GetRegistration();
 
 		$registration->Synchronize(
-			new AuthenticatedUser(
-                $username,
-                $this->user->GetEmail(),
-                $this->user->GetFirstName(),
-                $this->user->GetLastName(),
-                $this->password,
-                Configuration::Instance()->GetKey(ConfigKeys::LANGUAGE),
-				Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE),
-				$this->user->GetPhone(), $this->user->GetInstitution(),
-                $this->user->GetTitle())
+				new AuthenticatedUser(
+						$username,
+						$this->user->GetEmail(),
+						$this->user->GetFirstName(),
+						$this->user->GetLastName(),
+						$this->password,
+						Configuration::Instance()->GetKey(ConfigKeys::LANGUAGE),
+						Configuration::Instance()->GetDefaultTimezone(),
+						$this->user->GetPhone(), $this->user->GetInstitution(),
+						$this->user->GetTitle())
 		);
 	}
 
 	private function CleanUsername($username)
 	{
-		if (StringHelper::Contains($username, '@'))
+		if (BookedStringHelper::Contains($username, '@'))
 		{
 			Log::Debug('LDAP - Username %s appears to be an email address. Cleaning...', $username);
 			$parts = explode('@', $username);
 			$username = $parts[0];
 		}
-		if (StringHelper::Contains($username, '\\'))
+		if (BookedStringHelper::Contains($username, '\\'))
 		{
 			Log::Debug('LDAP - Username %s appears contain a domain. Cleaning...', $username);
 			$parts = explode('\\', $username);
@@ -219,6 +225,39 @@ class Ldap extends Authentication implements IAuthentication
 
 		return $username;
 	}
-}
 
-?>
+	public function AllowUsernameChange()
+	{
+		return false;
+	}
+
+	public function AllowEmailAddressChange()
+	{
+		return false;
+	}
+
+	public function AllowPasswordChange()
+	{
+		return false;
+	}
+
+	public function AllowNameChange()
+	{
+		return false;
+	}
+
+	public function AllowPhoneChange()
+	{
+		return true;
+	}
+
+	public function AllowOrganizationChange()
+	{
+		return true;
+	}
+
+	public function AllowPositionChange()
+	{
+		return true;
+	}
+}

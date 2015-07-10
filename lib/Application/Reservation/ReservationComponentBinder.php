@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 interface IReservationComponentBinder
@@ -47,6 +43,16 @@ class ReservationDateBinder implements IReservationComponentBinder
 
 		$startDate = ($requestedStartDate == null) ? $requestedDate : $requestedStartDate->ToTimezone($timezone);
 		$endDate = ($requestedEndDate == null) ? $requestedDate : $requestedEndDate->ToTimezone($timezone);
+
+		if ($initializer->IsNew())
+		{
+			$resource = $initializer->PrimaryResource();
+
+			if ($resource->GetMinimumLength() != null && !$resource->GetMinimumLength()->Interval()->IsNull())
+			{
+				$endDate = $startDate->ApplyDifference($resource->GetMinimumLength()->Interval());
+			}
+		}
 
 		$layout = $this->scheduleRepository->GetLayout($requestedScheduleId, new ReservationLayoutFactory($timezone));
 		$startPeriods = $layout->GetLayout($startDate);
@@ -91,7 +97,8 @@ class ReservationUserBinder implements IReservationComponentBinder
 	public function Bind(IReservationComponentInitializer $initializer)
 	{
 		$userId = $initializer->GetOwnerId();
-		$canChangeUser = $this->reservationAuthorization->CanChangeUsers($initializer->CurrentUser());
+		$currentUser = $initializer->CurrentUser();
+		$canChangeUser = $this->reservationAuthorization->CanChangeUsers($currentUser);
 
 		$initializer->SetCanChangeUser($canChangeUser);
 
@@ -102,7 +109,8 @@ class ReservationUserBinder implements IReservationComponentBinder
 															 ConfigKeys::PRIVACY_HIDE_USER_DETAILS,
 															 new BooleanConverter());
 
-		$initializer->ShowUserDetails(!$hideUser || $initializer->CurrentUser()->IsAdmin);
+		$initializer->ShowUserDetails(!$hideUser || $currentUser->IsAdmin);
+		$initializer->SetShowParticipation(!$hideUser || $currentUser->IsAdmin || $currentUser->IsGroupAdmin);
 	}
 }
 
@@ -122,12 +130,13 @@ class ReservationResourceBinder implements IReservationComponentBinder
 	{
 		$requestedScheduleId = $initializer->GetScheduleId();
 		$requestedResourceId = $initializer->GetResourceId();
-		$resources = $this->resourceService->GetScheduleResources($requestedScheduleId, true,
-																  $initializer->CurrentUser());
+		$groups = $this->resourceService->GetResourceGroups($requestedScheduleId, $initializer->CurrentUser());
 
+		$resources = $groups->GetAllResources();
 		if (empty($requestedResourceId) && count($resources) > 0)
 		{
-			$requestedResourceId = $resources[0]->GetResourceId();
+			$first = reset($resources);
+			$requestedResourceId = $first->Id;
 		}
 
 		$bindableResourceData = $this->GetBindableResourceData($resources, $requestedResourceId);
@@ -138,7 +147,8 @@ class ReservationResourceBinder implements IReservationComponentBinder
 			return;
 		}
 
-		$initializer->BindAvailableResources($bindableResourceData->AvailableResources);
+		$initializer->BindResourceGroups($groups);
+		$initializer->BindAvailableResources($resources);
 		$accessories = $this->resourceService->GetAccessories();
 		$initializer->BindAvailableAccessories($accessories);
 		$initializer->ShowAdditionalResources($bindableResourceData->NumberAccessible > 0);
@@ -270,12 +280,14 @@ class ReservationDetailsBinder implements IReservationComponentBinder
 		}
 		$this->page->SetRepeatWeekdays($this->reservationView->RepeatWeekdays);
 
-
 		$participants = $this->reservationView->Participants;
 		$invitees = $this->reservationView->Invitees;
 
 		$this->page->SetParticipants($participants);
 		$this->page->SetInvitees($invitees);
+
+		$this->page->SetAllowParticipantsToJoin($this->reservationView->AllowParticipation);
+
 		$this->page->SetAccessories($this->reservationView->Accessories);
 
 		$currentUser = $initializer->CurrentUser();
@@ -291,6 +303,7 @@ class ReservationDetailsBinder implements IReservationComponentBinder
 
 		$showUser = $this->privacyFilter->CanViewUser($initializer->CurrentUser(), $this->reservationView);
 		$showDetails = $this->privacyFilter->CanViewDetails($initializer->CurrentUser(), $this->reservationView);
+
 
 		$initializer->ShowUserDetails($showUser);
 		$initializer->ShowReservationDetails($showDetails);

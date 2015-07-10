@@ -9,6 +9,7 @@ table.reservations {
 table.reservations td {
 	border: solid #36648B 1px;
 	height: 30px;
+	display:table-cell;
 }
 
 td.resourcename {
@@ -33,7 +34,7 @@ td.resdate {
 	color: #F0F0F0;
 }
 
-tr.today td.resdate {
+tr.today td.resdate, td.today {
 	font-weight: bold;
 	color: #FFFFFF;
 	background-color: #5199d1
@@ -60,7 +61,7 @@ tr.today td.reslabel {
 	color: #000000;
 }
 
-td.unreservable, div.unreservable {
+.unreservable {
 	background-color: #CF9D9B;
 	color: #fff;
 }
@@ -70,46 +71,46 @@ td.reservable, div.reservable {
 	color: #333;
 }
 
-td.reserved, div.reserved {
+.reserved {
 	background-color: #408AD2;
-	color: #E0E0E0;
+	color: #fff;
 }
 
 td.reserved {
     padding-left: 1px;
 }
 
-td.reserved.hilite {
+.reserved.hilite {
 	background-color: #59A8EF;
 }
 
-td.reserved.mine, div.reserved.mine {
+.reserved.mine {
 	background-color: #6F9BAE;
 }
 
-td.reserved.mine.hilite {
+.reserved.mine.hilite {
 	background-color: #63AFD0;
 	color: #ffffff;
 }
 
-td.reserved.participating, div.reserved.participating {
+.reserved.participating {
 	background-color: #875cae;
 }
 
-td.reserved.participating.hilite {
+.reserved.participating.hilite {
 	background-color: #a979d1;
 }
 
-td.reserved.pending, div.reserved.pending {
+.reserved.pending {
 	background-color: #ffb540;
-	color: #ffffff;
+	color: black;
 }
 
-td.reserved.pending.hilite {
+.reserved.pending.hilite {
 	background-color: #ffc973;
 }
 
-td.reservable.hilite, #reservations .ui-selecting {
+.reservable.hilite, #reservations .ui-selecting {
 	background-color: #23BF35;
 }
 
@@ -117,19 +118,19 @@ td.hilite {
 	cursor: pointer;
 }
 
-td.reservable.clicked, #reservations .ui-selected {
+.reservable.clicked, #reservations .ui-selected {
 	background-color: #259433;
 }
 
-td.reserved.clicked {
+.reserved.clicked {
 	background-color: #1979CF;
 }
 
-td.pasttime, div.pasttime {
+.pasttime {
 	background-color: #BDBDBD;
 }
 
-td.restricted, div.restricted {
+.restricted {
 	background: url("../img/stripe.bg.red.png");
     color: black;
 }
@@ -213,6 +214,10 @@ select.schedule_list {
 .res_popup_details .dates {
 }
 
+.res_popup_details .customAttribute {
+	font-size:8pt;
+}
+
 td.resourcename.hilite {
 	background-color: #fbffc2;
 }
@@ -225,4 +230,84 @@ div.legend {
     display: inline-block;
     *display: inline;
     margin: 0px 2px;
+}
+
+#reservations {
+	width:auto;
+	margin-left:160px;
+}
+
+#reservations-left {
+	float:left;
+	width: 150px;
+	background-color:#F4F5ED;
+	border: solid 1px #C7C9BE;
+	min-height:400px;
+    -moz-border-radius: 8px;
+    -webkit-border-radius: 8px;
+    -khtml-border-radius: 8px;
+    border-radius: 8px;
+	margin-right: 2px;
+	-moz-box-shadow: 0px 0px 3px 0px #ccc;
+	-webkit-box-shadow: 0px 0px 3px 0px #ccc;
+	box-shadow: 0px 0px 3px 0px #ccc;
+}
+
+.reservations-left-header {
+	border-bottom: solid 1px #C7C9BE;
+	font-weight: bold;
+	font-size: 10pt;
+	text-align: center;
+	padding: 3px 0;
+}
+
+.reservations-left-content {
+	padding:10px;
+}
+
+ul.jqtree-tree .group-resource .jqtree-title {
+	color:#111111;
+}
+
+#reservations-left > h4 { text-align: center;}
+
+ul.jqtree-tree li.jqtree-selected > .jqtree-element,
+ul.jqtree-tree li.jqtree-selected > .jqtree-element:hover  { background:none; font-weight: bold;}
+ul.jqtree-tree .jqtree-toggler { top: 10%; }
+
+#make_default
+{
+	padding-right:10px;
+}
+
+.table-cell-wrapper {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+#reservations-left .textbox{
+	width:120px;
+}
+
+#reservations-left select.textbox, #reservations-left textarea, #reservations-left .button {
+	width:128px;
+}
+
+#reservations-left .customAttribute, #reservations-left{
+	font-size: 9pt;
+}
+
+.advancedFilterTitle {
+	margin-top: 10px;
+	text-align: center;
+}
+
+#reservations-left hr {
+	border: 0;
+	height: 1px;
+	background-image: -webkit-linear-gradient(left, rgba(0,0,0,0), rgba(76, 76, 76, 0.74), rgba(0,0,0,0));
+	background-image: -moz-linear-gradient(left, rgba(0,0,0,0), rgba(76, 76, 76, 0.74), rgba(0,0,0,0));
+	background-image: -ms-linear-gradient(left, rgba(0,0,0,0), rgba(76, 76, 76, 0.74), rgba(0,0,0,0));
+	background-image: -o-linear-gradient(left, rgba(0,0,0,0), rgba(76, 76, 76, 0.74), rgba(0,0,0,0));
 }

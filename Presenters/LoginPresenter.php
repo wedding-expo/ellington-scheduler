@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 require_once(ROOT_DIR . 'lib/Config/namespace.php');
 require_once(ROOT_DIR . 'lib/Common/namespace.php');
@@ -60,6 +60,11 @@ class LoginPresenter
 
 	public function PageLoad()
 	{
+		if ($this->authentication->IsLoggedIn())
+		{
+			$this->_Redirect();
+		}
+
 		$this->SetSelectedLanguage();
 
 		if ($this->authentication->AreCredentialsKnown())
@@ -114,6 +119,7 @@ class LoginPresenter
 		$resources = Resources::GetInstance();
 
 		$languageCode = $this->_page->GetRequestedLanguage();
+
 		if ($resources->SetLanguage($languageCode))
 		{
 			ServiceLocator::GetServer()->SetCookie(new Cookie(CookieKeys::LANGUAGE, $languageCode));
@@ -140,12 +146,13 @@ class LoginPresenter
 
 		if (!empty($redirect))
 		{
-			$this->_page->Redirect($redirect);
+			$this->_page->Redirect(html_entity_decode($redirect));
 		}
 		else
 		{
 			$defaultId = ServiceLocator::GetServer()->GetUserSession()->HomepageId;
-			$this->_page->Redirect(Pages::UrlFromId($defaultId));
+			$url = Pages::UrlFromId($defaultId);
+			$this->_page->Redirect(empty($url) ? Pages::UrlFromId(Pages::DEFAULT_HOMEPAGE_ID) : $url);
 		}
 	}
 
@@ -185,5 +192,3 @@ class LoginPresenter
 		$resources->SetLanguage($languageCode);
 	}
 }
-
-?>

@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/Values/DayOfWeek.php');
@@ -111,6 +111,11 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 	private $layoutTimezone;
 
 	/**
+	 * @var string[]
+	 */
+	private $startTimes = array();
+
+	/**
 	 * @param string $targetTimezone target timezone of layout
 	 */
 	public function __construct($targetTimezone = null)
@@ -118,7 +123,7 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 		$this->targetTimezone = $targetTimezone;
 		if ($targetTimezone == null)
 		{
-			$this->targetTimezone = Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE);
+			$this->targetTimezone = Configuration::Instance()->GetDefaultTimezone();
 		}
 	}
 
@@ -176,19 +181,21 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 		$this->AppendGenericPeriod($startTime, $endTime, PeriodTypes::NONRESERVABLE, $label, $dayOfWeek);
 	}
 
-	protected function AppendGenericPeriod(Time $startTime, Time $endTime, $periodType, $label = null,
-										   $dayOfWeek = null)
+	protected function AppendGenericPeriod(Time $startTime, Time $endTime, $periodType, $label = null, $dayOfWeek = null)
 	{
-		$this->layoutTimezone = $startTime->Timezone();
-		$layoutPeriod = new LayoutPeriod($startTime, $endTime, $periodType, $label);
-		if (!is_null($dayOfWeek))
+		if ($this->StartTimeCanBeAdded($startTime, $dayOfWeek))
 		{
-			$this->usingDailyLayouts = true;
-			$this->_periods[$dayOfWeek][] = $layoutPeriod;
-		}
-		else
-		{
-			$this->_periods[] = $layoutPeriod;
+			$this->layoutTimezone = $startTime->Timezone();
+			$layoutPeriod = new LayoutPeriod($startTime, $endTime, $periodType, $label);
+			if (!is_null($dayOfWeek))
+			{
+				$this->usingDailyLayouts = true;
+				$this->_periods[$dayOfWeek][] = $layoutPeriod;
+			}
+			else
+			{
+				$this->_periods[] = $layoutPeriod;
+			}
 		}
 	}
 
@@ -206,15 +213,17 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 	 * @param Date $layoutDate
 	 * @param bool $hideBlockedPeriods
 	 * @return array|SchedulePeriod[]
+	 * @throws Exception
 	 */
 	public function GetLayout(Date $layoutDate, $hideBlockedPeriods = false)
 	{
+		$targetTimezone = $this->targetTimezone;
+		$layoutDate = $layoutDate->ToTimezone($targetTimezone);
+
 		if ($this->usingDailyLayouts)
 		{
 			return $this->GetLayoutDaily($layoutDate, $hideBlockedPeriods);
 		}
-		$targetTimezone = $this->targetTimezone;
-		$layoutDate = $layoutDate->ToTimezone($targetTimezone);
 
 		$cachedValues = $this->GetCachedValuesForDate($layoutDate);
 		if (!empty($cachedValues))
@@ -225,6 +234,11 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 		$list = new PeriodList();
 
 		$periods = $this->getPeriods($layoutDate);
+
+		if (count($periods) <= 0)
+		{
+			throw new Exception(sprintf('No periods defined for date %s', $layoutDate));
+		}
 
 		$layoutTimezone = $periods[0]->Timezone();
 		$workingDate = Date::Create($layoutDate->Year(), $layoutDate->Month(), $layoutDate->Day(), 0, 0, 0,
@@ -492,7 +506,7 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 			$end = Date::Create($tempDate->Year(), $tempDate->Month(), $tempDate->Day(), $period->End->Hour(),
 								$period->End->Minute(), 0, $timezone);
 
-			if ($end->LessThan($start) || $end->IsMidnight())
+			if ($end->IsMidnight())
 			{
 				$end = $end->AddDays(1);
 			}
@@ -525,6 +539,28 @@ class ScheduleLayout implements IScheduleLayout, ILayoutCreation
 		{
 			return $this->_periods;
 		}
+	}
+
+	private function StartTimeCanBeAdded(Time $startTime, $dayOfWeek = null)
+	{
+		$day = $dayOfWeek;
+		if ($day == null)
+		{
+			$day = 0;
+		}
+
+		if (!array_key_exists($day, $this->startTimes))
+		{
+			$this->startTimes[$day] = array();
+		}
+
+		if (array_key_exists($startTime->ToString(), $this->startTimes[$day]))
+		{
+			return false;
+		}
+
+		$this->startTimes[$day][$startTime->ToString()] = $startTime->ToString();
+		return true;
 	}
 }
 
@@ -575,7 +611,7 @@ class LayoutParser
 
 	private function ParseSlots($allSlots, $dayOfWeek, $callback)
 	{
-		$lines = preg_split("/[\n]/", $allSlots, -1, PREG_SPLIT_NO_EMPTY);
+		$lines = preg_split("/[\n]/", trim($allSlots), -1, PREG_SPLIT_NO_EMPTY);
 
 		foreach ($lines as $slotLine)
 		{
@@ -681,18 +717,11 @@ class PeriodList
 
 	public function Add(SchedulePeriod $period)
 	{
-		if (!$period->IsReservable())
-		{
-			//TODO: Config option to hide non-reservable periods
-		}
-
 		if ($this->AlreadyAdded($period->BeginDate(), $period->EndDate()))
 		{
-			//echo "already added $period\n";
 			return;
 		}
 
-		//echo "\nadding {$period->BeginDate()} - {$period->EndDate()}";
 		$this->items[] = $period;
 	}
 

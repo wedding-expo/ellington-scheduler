@@ -1,31 +1,71 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class ReservationFilter
 {
+	/**
+	 * @var Date|null
+	 */
 	private $startDate = null;
+
+	/**
+	 * @var Date|null
+	 */
 	private $endDate = null;
+
+	/**
+	 * @var null|string
+	 */
 	private $referenceNumber = null;
+
+	/**
+	 * @var int|null
+	 */
 	private $scheduleId = null;
+
+	/**
+	 * @var int|null
+	 */
 	private $resourceId = null;
+
+	/**
+	 * @var int|null
+	 */
 	private $userId = null;
+
+	/**
+	 * @var int|null
+	 */
+	private $statusId = null;
+
+	/**
+	 * @var int|null
+	 */
+	private $resourceStatusId = null;
+
+	/**
+	 * @var int|null
+	 */
+	private $resourceStatusReasonId = null;
+
+	/**
+	 * @var Attribute[]|null
+	 */
+	private $attributes = null;
+
 	/**
 	 * @var array|ISqlFilter[]
 	 */
@@ -39,8 +79,20 @@ class ReservationFilter
 	 * @param int $resourceId
 	 * @param int $userId
 	 * @param int $statusId
+	 * @param int $resourceStatusId
+	 * @param int $resourceStatusReasonId
+	 * @param Attribute[] $attributes
 	 */
-	public function __construct($startDate = null, $endDate = null, $referenceNumber = null, $scheduleId = null, $resourceId = null, $userId = null, $statusId = null)
+	public function __construct($startDate = null,
+								$endDate = null,
+								$referenceNumber = null,
+								$scheduleId = null,
+								$resourceId = null,
+								$userId = null,
+								$statusId = null,
+								$resourceStatusId = null,
+								$resourceStatusReasonId = null,
+								$attributes = null)
 	{
 		$this->startDate = $startDate;
 		$this->endDate = $endDate;
@@ -49,6 +101,9 @@ class ReservationFilter
 		$this->resourceId = $resourceId;
 		$this->userId = $userId;
 		$this->statusId = $statusId;
+		$this->resourceStatusId = $resourceStatusId;
+		$this->resourceStatusReasonId = $resourceStatusReasonId;
+		$this->attributes = $attributes;
 	}
 
 	/**
@@ -86,6 +141,22 @@ class ReservationFilter
 		if (!empty($this->statusId)) {
 			$filter->_And(new SqlFilterEquals(new SqlFilterColumn(TableNames::RESERVATION_SERIES_ALIAS, ColumnNames::RESERVATION_STATUS), $this->statusId));
 		}
+		if (!empty($this->resourceStatusId)) {
+			$filter->_And(new SqlFilterEquals(new SqlFilterColumn(TableNames::RESOURCES, ColumnNames::RESOURCE_STATUS_ID), $this->resourceStatusId));
+		}
+		if (!empty($this->resourceStatusReasonId)) {
+			$filter->_And(new SqlFilterEquals(new SqlFilterColumn(TableNames::RESOURCES, ColumnNames::RESOURCE_STATUS_REASON_ID), $this->resourceStatusReasonId));
+		}
+		if (!empty($this->attributes))
+		{
+			$attributeFilter = AttributeFilter::Create(TableNames::RESERVATION_SERIES_ALIAS . '.' . ColumnNames::SERIES_ID, $this->attributes);
+
+			if ($attributeFilter != null)
+			{
+				$filter->_And($attributeFilter);
+			}
+		}
+
 		foreach ($this->_and as $and)
 		{
 			$filter->_And($and);
@@ -94,5 +165,3 @@ class ReservationFilter
 		return $filter;
 	}
 }
-
-?>

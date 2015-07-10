@@ -1,24 +1,24 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
- 
-require_once(ROOT_DIR . 'Presenters/Reservation/ReservationHandler.php');
+
+require_once(ROOT_DIR . 'lib/Application/Reservation/namespace.php');
 
 interface IReservationSavePresenter
 {
@@ -39,12 +39,12 @@ class ReservationSavePresenter implements IReservationSavePresenter
 	 * @var IReservationSavePage
 	 */
 	private $_page;
-	
+
 	/**
 	 * @var IReservationPersistenceService
 	 */
 	private $_persistenceService;
-	
+
 	/**
 	 * @var IReservationHandler
 	 */
@@ -54,9 +54,9 @@ class ReservationSavePresenter implements IReservationSavePresenter
 	 * @var IResourceRepository
 	 */
 	private $_resourceRepository;
-	
+
 	public function __construct(
-		IReservationSavePage $page, 
+		IReservationSavePage $page,
 		IReservationPersistenceService $persistenceService,
 		IReservationHandler $handler,
 		IResourceRepository $resourceRepository,
@@ -68,7 +68,7 @@ class ReservationSavePresenter implements IReservationSavePresenter
 		$this->_resourceRepository = $resourceRepository;
 		$this->userSession = $userSession;
 	}
-	
+
 	public function BuildReservation()
 	{
 		$userId = $this->_page->GetUserId();
@@ -79,9 +79,9 @@ class ReservationSavePresenter implements IReservationSavePresenter
 		$roFactory = new RepeatOptionsFactory();
 		$repeatOptions = $roFactory->CreateFromComposite($this->_page, $this->userSession->Timezone);
 		$duration = $this->GetReservationDuration();
-		
+
 		$reservationSeries = ReservationSeries::Create($userId, $resource, $title, $description, $duration, $repeatOptions, $this->userSession);
-		
+
 		$resourceIds = $this->_page->GetResources();
 		foreach ($resourceIds as $resourceId)
 		{
@@ -109,17 +109,23 @@ class ReservationSavePresenter implements IReservationSavePresenter
 		$inviteeIds = $this->_page->GetInvitees();
 		$reservationSeries->ChangeInvitees($inviteeIds);
 
-		$attachment = $this->_page->GetAttachment();
-		if ($attachment != null)
+		$reservationSeries->AllowParticipation($this->_page->GetAllowParticipation());
+
+		$attachments = $this->_page->GetAttachments();
+
+		foreach($attachments as $attachment)
 		{
-			if ($attachment->IsError())
+			if ($attachment != null)
 			{
-				Log::Error('Error attaching file %s. %s', $attachment->OriginalName(), $attachment->Error());
-			}
-			else
-			{
-				$att = ReservationAttachment::Create($attachment->OriginalName(), $attachment->MimeType(), $attachment->Size(), $attachment->Contents(), $attachment->Extension(), 0);
-				$reservationSeries->AddAttachment($att);
+				if ($attachment->IsError())
+				{
+					Log::Error('Error attaching file %s. %s', $attachment->OriginalName(), $attachment->Error());
+				}
+				else
+				{
+					$att = ReservationAttachment::Create($attachment->OriginalName(), $attachment->MimeType(), $attachment->Size(), $attachment->Contents(), $attachment->Extension(), 0);
+					$reservationSeries->AddAttachment($att);
+				}
 			}
 		}
 
@@ -135,22 +141,24 @@ class ReservationSavePresenter implements IReservationSavePresenter
 
 		return $reservationSeries;
 	}
-	
+
 	/**
 	 * @param ReservationSeries $reservationSeries
 	 */
 	public function HandleReservation($reservationSeries)
-	{		
+	{
 		$successfullySaved = $this->_handler->Handle(
 					$reservationSeries,
 					$this->_page);
-			
+
+
 		if ($successfullySaved)
 		{
+			$this->_page->SetRequiresApproval($reservationSeries->RequiresApproval());
 			$this->_page->SetReferenceNumber($reservationSeries->CurrentInstance()->ReferenceNumber());
 		}
 	}
-	
+
 	/**
 	 * @return DateRange
 	 */
@@ -160,9 +168,8 @@ class ReservationSavePresenter implements IReservationSavePresenter
 		$startTime = $this->_page->GetStartTime();
 		$endDate = $this->_page->GetEndDate();
 		$endTime = $this->_page->GetEndTime();
-		
+
 		$timezone = $this->userSession->Timezone;
 		return DateRange::Create($startDate . ' ' . $startTime, $endDate . ' ' . $endTime, $timezone);
 	}
 }
-?>

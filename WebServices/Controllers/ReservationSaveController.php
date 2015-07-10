@@ -1,28 +1,29 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
-
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2012-2015 Nick Korbel
+ *
+ * This file is part of Booked Scheduler.
+ *
+ * Booked Scheduler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Booked Scheduler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationSavePage.php');
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationUpdatePage.php');
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationDeletePage.php');
+require_once(ROOT_DIR . 'Pages/Ajax/ReservationApprovalPage.php');
 require_once(ROOT_DIR . 'Presenters/Reservation/ReservationPresenterFactory.php');
-require_once(ROOT_DIR . 'Presenters/Reservation/ReservationHandler.php');
+require_once(ROOT_DIR . 'lib/Application/Reservation/namespace.php');
 
 require_once(ROOT_DIR . 'WebServices/Requests/ReservationRequest.php');
 
@@ -44,6 +45,13 @@ interface IReservationSaveController
 	 * @return ReservationControllerResult
 	 */
 	public function Update($request, $session, $referenceNumber, $updateScope);
+
+	/**
+	 * @param WebServiceUserSession $session
+	 * @param string $referenceNumber
+	 * @return ReservationControllerResult
+	 */
+	public function Approve($session, $referenceNumber);
 
 	/**
 	 * @param WebServiceUserSession $session
@@ -81,7 +89,7 @@ class ReservationSaveController implements IReservationSaveController
 		$reservation = $presenter->BuildReservation();
 		$presenter->HandleReservation($reservation);
 
-		return new ReservationControllerResult($facade->ReferenceNumber(), $facade->Errors());
+		return new ReservationControllerResult($facade->ReferenceNumber(), $facade->Errors(), $facade->RequiresApproval());
 	}
 
 	public function Update($request, $session, $referenceNumber, $updateScope)
@@ -99,14 +107,28 @@ class ReservationSaveController implements IReservationSaveController
 		$reservation = $presenter->BuildReservation();
 		$presenter->HandleReservation($reservation);
 
-		return new ReservationControllerResult($facade->ReferenceNumber(), $facade->Errors());
+		return new ReservationControllerResult($facade->ReferenceNumber(), $facade->Errors(), $facade->RequiresApproval());
+	}
+
+	/**
+	 * @param WebServiceUserSession $session
+	 * @param string $referenceNumber
+	 * @return ReservationControllerResult
+	 */
+	public function Approve($session, $referenceNumber)
+	{
+		$facade = new ReservationApprovalRequestResponseFacade($referenceNumber, $session);
+		$presenter = $this->factory->Approve($facade, $session);
+		$presenter->PageLoad();
+		return new ReservationControllerResult($referenceNumber, $facade->Errors());
 	}
 
 	public function Delete($session, $referenceNumber, $updateScope)
 	{
 		$facade = new ReservationDeleteRequestResponseFacade($referenceNumber, $updateScope);
 
-		$validationErrors = $this->ValidateDeleteRequest($facade->GetReferenceNumber(), $facade->GetSeriesUpdateScope());
+		$validationErrors = $this->ValidateDeleteRequest($facade->GetReferenceNumber(),
+														 $facade->GetSeriesUpdateScope());
 
 		if (count($validationErrors) > 0)
 		{
@@ -237,6 +259,8 @@ class ReservationSaveController implements IReservationSaveController
 
 		return $errors;
 	}
+
+
 }
 
 class ReservationControllerResult
@@ -251,10 +275,11 @@ class ReservationControllerResult
 	 */
 	private $errors = array();
 
-	public function __construct($referenceNumber = null, $errors = array())
+	public function __construct($referenceNumber = null, $errors = array(), $requiresApproval = false)
 	{
 		$this->createdReferenceNumber = $referenceNumber;
 		$this->errors = $errors;
+		$this->requiresApproval = $requiresApproval;
 	}
 
 	/**
@@ -296,21 +321,40 @@ class ReservationControllerResult
 	{
 		$this->errors = $errors;
 	}
+
+	/**
+	 * @return bool
+	 */
+	public function RequiresApproval()
+	{
+		return $this->requiresApproval;
+	}
+
+	/**
+	 * @param bool $requiresApproval
+	 */
+	public function SetRequiresApproval($requiresApproval)
+	{
+		$this->requiresApproval = $requiresApproval;
+	}
 }
 
 class ReservationRequestResponseFacade implements IReservationSavePage
 {
 	private $_createdReferenceNumber;
+	private $_createdRequiresApproval;
 	private $_createdErrors = array();
 
 	/**
 	 * @var ReservationRequest
 	 */
 	private $request;
+
 	/**
 	 * @var WebServiceUserSession
 	 */
 	private $session;
+
 	/**
 	 * @var RecurrenceRequestResponse
 	 */
@@ -337,17 +381,22 @@ class ReservationRequestResponseFacade implements IReservationSavePage
 		return $this->_createdErrors;
 	}
 
+	public function RequiresApproval()
+	{
+		return $this->_createdRequiresApproval;
+	}
+
 	public function SetSaveSuccessfulMessage($succeeded)
 	{
 		// no-op
 	}
 
-	public function ShowErrors($errors)
+	public function SetErrors($errors)
 	{
 		$this->_createdErrors = $errors;
 	}
 
-	public function ShowWarnings($warnings)
+	public function SetWarnings($warnings)
 	{
 		// no-op
 	}
@@ -491,6 +540,12 @@ class ReservationRequestResponseFacade implements IReservationSavePage
 		$this->_createdReferenceNumber = $referenceNumber;
 	}
 
+	public function SetRequiresApproval($requiresApproval)
+	{
+		$this->_createdRequiresApproval = $requiresApproval;
+	}
+
+
 	public function GetAccessories()
 	{
 		$accessories = array();
@@ -509,7 +564,6 @@ class ReservationRequestResponseFacade implements IReservationSavePage
 		$attributes = array();
 		if (!empty($this->request->customAttributes) && is_array($this->request->customAttributes))
 		{
-
 			foreach ($this->request->customAttributes as $attribute)
 			{
 				$attributes[] = new AttributeFormElement($attribute->attributeId, $attribute->attributeValue);
@@ -518,9 +572,9 @@ class ReservationRequestResponseFacade implements IReservationSavePage
 		return $attributes;
 	}
 
-	public function GetAttachment()
+	public function GetAttachments()
 	{
-		return null;
+		return array();
 	}
 
 	private function getIntArray($values)
@@ -657,7 +711,7 @@ class ReservationDeleteRequestResponseFacade implements IReservationDeletePage
 	/**
 	 * @param array|string[] $errors
 	 */
-	public function ShowErrors($errors)
+	public function SetErrors($errors)
 	{
 		$this->errors = $errors;
 	}
@@ -665,7 +719,7 @@ class ReservationDeleteRequestResponseFacade implements IReservationDeletePage
 	/**
 	 * @param array|string[] $warnings
 	 */
-	public function ShowWarnings($warnings)
+	public function SetWarnings($warnings)
 	{
 		// no-op
 	}
@@ -707,4 +761,53 @@ class ReservationDeleteRequestResponseFacade implements IReservationDeletePage
 	}
 }
 
-?>
+class ReservationApprovalRequestResponseFacade implements IReservationApprovalPage
+{
+	private $referenceNumber;
+	private $errors = array();
+
+	public function __construct($referenceNumber)
+	{
+		$this->referenceNumber = $referenceNumber;
+	}
+
+	/**
+	 * @param bool $succeeded
+	 */
+	public function SetSaveSuccessfulMessage($succeeded)
+	{
+		// no-op
+	}
+
+	/**
+	 * @param array|string[] $errors
+	 */
+	public function SetErrors($errors)
+	{
+		$this->errors = $errors;
+	}
+
+	/**
+	 * @return array|string[]
+	 */
+	public function Errors()
+	{
+		return $this->errors;
+	}
+
+	/**
+	 * @param array|string[] $warnings
+	 */
+	public function SetWarnings($warnings)
+	{
+		// no-op
+	}
+
+	/**
+	 * @return string
+	 */
+	public function GetReferenceNumber()
+	{
+		return $this->referenceNumber;
+	}
+}

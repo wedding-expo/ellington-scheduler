@@ -1,20 +1,20 @@
 {*
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles="css/reports.css,scripts/js/jqplot/jquery.jqplot.min.css"}
 
@@ -95,15 +95,15 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 
 <div id="indicator" style="display:none; text-align: center;">
-	<h3>{translate key=Working}...</h3>
+	<h3>{translate key=Working}</h3>
 {html_image src="admin-ajax-indicator.gif"}
 </div>
 
 {include file="Reports/chart.tpl"}
 
-<script type="text/javascript" src="{$Path}scripts/ajax-helpers.js"></script>
-<script type="text/javascript" src="{$Path}scripts/reports/canned-reports.js"></script>
-<script type="text/javascript" src="{$Path}scripts/reports/chart.js"></script>
+{jsfile src="ajax-helpers.js"}
+{jsfile src="reports/canned-reports.js"}
+{jsfile src="reports/chart.js"}
 
 <script type="text/javascript">
 	$(document).ready(function () {

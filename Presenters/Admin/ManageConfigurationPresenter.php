@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2014-2013 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/Admin/ManageConfigurationPage.php');
@@ -43,12 +43,16 @@ class ManageConfigurationPresenter extends ActionPresenter
 	 */
 	private $configFilePath;
 
+	private $deletedSettings = array('password.pattern');
+
+
 	public function __construct(IManageConfigurationPage $page, IConfigurationSettings $settings)
 	{
 		parent::__construct($page);
 		$this->page = $page;
 		$this->configSettings = $settings;
 		$this->configFilePath = ROOT_DIR . 'config/config.php';
+		$this->configFilePathDist = ROOT_DIR . 'config/config.dist.php';
 
 		$this->AddAction(ConfigActions::Update, 'Update');
 	}
@@ -66,6 +70,11 @@ class ManageConfigurationPresenter extends ActionPresenter
 			return;
 		}
 
+		$configFiles = $this->GetConfigFiles();
+		$this->page->SetConfigFileOptions($configFiles);
+
+		$this->HandleSelectedConfigFile($configFiles);
+
 		$isFileWritable = $this->configSettings->CanOverwriteFile($this->configFilePath);
 		$this->page->SetIsConfigFileWritable($isFileWritable);
 
@@ -77,6 +86,8 @@ class ManageConfigurationPresenter extends ActionPresenter
 
 		Log::Debug('Loading and displaying config file for editing by %s',
 				   ServiceLocator::GetServer()->GetUserSession()->Email);
+
+		$this->BringConfigFileUpToDate();
 
 		$settings = $this->configSettings->GetSettings($this->configFilePath);
 
@@ -102,6 +113,22 @@ class ManageConfigurationPresenter extends ActionPresenter
 			}
 		}
 
+		$this->PopulateHomepages();
+	}
+
+	private function PopulateHomepages()
+	{
+		$homepageValues = array();
+		$homepageOutput = array();
+
+		$pages = Pages::GetAvailablePages();
+		foreach ($pages as $pageid => $page)
+		{
+			$homepageValues[] = $pageid;
+			$homepageOutput[] = Resources::GetInstance()->GetString($page['name']);
+		}
+
+		$this->page->SetHomepages($homepageValues, $homepageOutput);
 	}
 
 	public function Update()
@@ -117,6 +144,9 @@ class ManageConfigurationPresenter extends ActionPresenter
 		}
 
 		$configSettings = $this->page->GetSubmittedSettings();
+
+		$configFiles = $this->GetConfigFiles();
+		$this->HandleSelectedConfigFile($configFiles);
 
 		$newSettings = array();
 
@@ -135,15 +165,28 @@ class ManageConfigurationPresenter extends ActionPresenter
 		$existingSettings = $this->configSettings->GetSettings($this->configFilePath);
 		$mergedSettings = array_merge($existingSettings, $newSettings);
 
+		foreach ($this->deletedSettings as $deletedSetting)
+		{
+			if (array_key_exists($deletedSetting, $mergedSettings))
+			{
+				unset($mergedSettings[$deletedSetting]);
+			}
+		}
+
 		Log::Debug("Saving %s settings", count($configSettings));
-//		Log::Debug(var_export($mergedSettings, true));
+
 		$this->configSettings->WriteSettings($this->configFilePath, $mergedSettings);
+
 		Log::Debug('Config file saved by %s', ServiceLocator::GetServer()->GetUserSession()->Email);
 	}
 
 	private function ShouldBeSkipped($key, $section = null)
 	{
 		if ($section == ConfigSection::DATABASE || $section == ConfigSection::API)
+		{
+			return true;
+		}
+		if (in_array($key, $this->deletedSettings))
 		{
 			return true;
 		}
@@ -155,6 +198,87 @@ class ManageConfigurationPresenter extends ActionPresenter
 			default:
 				return false;
 		}
+	}
+
+	private function GetConfigFiles()
+	{
+		$files = array(new ConfigFileOption('config.php', ''));
+
+		$pluginBaseDir = ROOT_DIR . 'plugins/';
+		if ($h = opendir($pluginBaseDir))
+		{
+			while (false !== ($entry = readdir($h)))
+			{
+				$pluginDir = $pluginBaseDir . $entry;
+				if (is_dir($pluginDir) && $entry != "." && $entry != "..")
+				{
+					$plugins = scandir($pluginDir);
+					foreach ($plugins as $plugin)
+					{
+						if (is_dir("$pluginDir/$plugin") && $plugin != "." && $plugin != ".." && strpos($plugin,'Example') === false)
+						{
+							$configFiles = array_merge(glob("$pluginDir/$plugin/*.config.php"), glob("$pluginDir/$plugin/*.config.dist.php"));
+							if (count($configFiles) > 0)
+							{
+								$files[] = new ConfigFileOption("$entry-$plugin", "$entry/$plugin");
+							}
+						}
+					}
+				}
+			}
+
+			closedir($h);
+		}
+
+		return $files;
+	}
+
+	private function HandleSelectedConfigFile($configFiles)
+	{
+		$requestedConfigFile = $this->page->GetConfigFileToEdit();
+		if (!empty($requestedConfigFile))
+		{
+			/** @var $file ConfigFileOption */
+			foreach ($configFiles as $file)
+			{
+				if ($file->Location == $requestedConfigFile)
+				{
+					$this->page->SetSelectedConfigFile($requestedConfigFile);
+
+					$rootDir = ROOT_DIR . 'plugins/' . $requestedConfigFile;
+
+					$distFile = glob("$rootDir/*config.dist.php");
+					$configFile = glob("$rootDir/*config.php");
+					if (count($distFile) == 1 && count($configFile) == 0)
+					{
+						copy($distFile[0], str_replace('.dist', '', $distFile[0]));
+					}
+					$configFile = glob("$rootDir/*config.php");
+					$this->configFilePath = $configFile[0];
+					$this->configFilePathDist = str_replace('.php', '.dist.php', $configFile[0]);
+				}
+			}
+		}
+	}
+
+	private function BringConfigFileUpToDate()
+	{
+		if (!file_exists($this->configFilePathDist))
+		{
+			return;
+		}
+
+		$configurator = new Configurator();
+		$configurator->Merge($this->configFilePath, $this->configFilePathDist);
+	}
+}
+
+class ConfigFileOption
+{
+	public function __construct($name, $location)
+	{
+		$this->Name = $name;
+		$this->Location = $location;
 	}
 }
 
@@ -210,5 +334,3 @@ class ConfigSettingType
 	const String = 'string';
 	const Boolean = 'boolean';
 }
-
-?>

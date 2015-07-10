@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 class PageableDataStore
@@ -34,36 +34,39 @@ class PageableDataStore
 	 */
 	public static function GetList($command, $listBuilder, $pageNumber = null, $pageSize = null, $sortField = null, $sortDirection = null)
 	{
-		$total = 0;
+		$total = null;
+		$totalCounter = 0;
 		$results = array();
 		$db = ServiceLocator::GetDatabase();
+		$pageNumber = intval($pageNumber);
+		$pageSize = intval($pageSize);
 
-		// TODO this can be moved into else clause, dont need to run 2 queries
-		$totalReader = $db->Query(new CountCommand($command));
-		if ($row = $totalReader->GetRow())
-		{
-			$total = $row[ColumnNames::TOTAL];
-		}
-
-		if ((is_null($pageNumber) && is_null($pageSize)) || $pageSize == PageInfo::All)
+		if ((empty($pageNumber) && empty($pageSize)) || $pageSize == PageInfo::All)
 		{
 			$resultReader = $db->Query($command);
 		}
 		else
 		{
-			$pageNumber = is_null($pageNumber) ? 1 : $pageNumber;
-			$pageSize = is_null($pageSize) ? 1 : $pageSize;
-			
+			$totalReader = $db->Query(new CountCommand($command));
+			if ($row = $totalReader->GetRow())
+			{
+				$total = $row[ColumnNames::TOTAL];
+			}
+
+			$pageNumber = empty($pageNumber) ? 1 : $pageNumber;
+			$pageSize = empty($pageSize) ? 1 : $pageSize;
+
 			$resultReader = $db->LimitQuery($command, $pageSize, ($pageNumber - 1) * $pageSize);
 		}
 
 		while ($row = $resultReader->GetRow())
 		{
 			$results[] = call_user_func($listBuilder, $row);
+			$totalCounter++;
 		}
 		$resultReader->Free();
 
-		return new PageableData($results, $total, $pageNumber, $pageSize);
+		return new PageableData($results, is_null($total) ? $totalCounter : $total, $pageNumber, $pageSize);
 	}
 }
 
@@ -75,8 +78,8 @@ class PageableData
 	{
 		$this->results = $results;
 
-		$pageNumber = is_null($pageNumber) ? 1 : $pageNumber;
-		$pageSize = is_null($pageSize) ? 1 : $pageSize;
+		$pageNumber = empty($pageNumber) ? 1 : intval($pageNumber);
+		$pageSize = empty($pageSize) ? 1 : intval($pageSize);
 
 		$this->pageInfo = PageInfo::Create($total, $pageNumber, $pageSize);
 	}

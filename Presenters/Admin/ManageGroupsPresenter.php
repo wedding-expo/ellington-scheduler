@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Domain/Access/namespace.php');
@@ -93,7 +93,6 @@ class ManageGroupsPresenter extends ActionPresenter
 
 		$this->page->BindResources($this->resourceRepository->GetResourceList());
 
-		//TODO: get roles
 		$this->page->BindRoles(array(
                                    new RoleDto(1,'Group Admin', RoleLevel::GROUP_ADMIN),
                                    new RoleDto(2, 'Application Admin', RoleLevel::APPLICATION_ADMIN),
@@ -147,7 +146,7 @@ class ManageGroupsPresenter extends ActionPresenter
 				$response = $this->GetGroupRoles();
 				break;
 		}
-	
+
 		$this->page->SetJsonResponse($response);
 	}
 
@@ -201,10 +200,10 @@ class ManageGroupsPresenter extends ActionPresenter
 
 		$group = $this->groupRepository->LoadById($groupId);
 		$group->Rename($groupName);
-		
+
 		$this->groupRepository->Update($group);
 	}
-	
+
 	protected function DeleteGroup()
 	{
 		$groupId = $this->page->GetGroupId();
@@ -225,7 +224,7 @@ class ManageGroupsPresenter extends ActionPresenter
 		$group = $this->groupRepository->LoadById($groupId);
 
 		$group->ChangeAdmin($adminGroupId);
-		
+
 		$this->groupRepository->Update($group);
 	}
 	/**

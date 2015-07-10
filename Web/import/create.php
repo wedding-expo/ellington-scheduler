@@ -1,22 +1,23 @@
 <?php
 /**
-Copyright 2012 Alois Schloegl, IST Austria
-Copyright 2012 Moritz Schepp, IST Austria
+Copyright 2012-2014 Alois Schloegl, IST Austria
+Copyright 2012-2014 Moritz Schepp, IST Austria
+Copyright 2013-2014 Patrick Meidl, IST Austria
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
@@ -24,7 +25,6 @@ header("Content-Type: application/json", true);
 
 define('ROOT_DIR', '../../');
 require_once(ROOT_DIR . 'config/config.php');
-require_once(ROOT_DIR . 'Presenters/Reservation/ReservationHandler.php');
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationSavePage.php');
 #require_once(ROOT_DIR . 'lib/Application/Reservation/Validation/namespace.php');
 require_once(ROOT_DIR . 'lib/Config/namespace.php');
@@ -45,11 +45,11 @@ $enabled  = $conf['settings']['ics']['import'];
 
 /*
 CREATE
-1 Organizer (username or email address)  
+1 Organizer (username or email address)
 2 email address of resource (matches with resource.contact_info)
 3 start_time
 4 end_time
-5 [optional] recurrence rule 
+5 [optional] recurrence rule
 6 [optional] Attendees
 7 Summary/Title
 8 [optional] Description
@@ -58,7 +58,7 @@ CREATE
 
 if (!$enabled) {
 	header('HTTP/1.1 406 Not Acceptable', true, 406);
-	print json_encode(array('message' => "iCal import is not enabled.<br />"));
+	print json_encode(array('message' => "iCal import is not enabled"));
 	return;
 }
 
@@ -67,39 +67,44 @@ $params = array(
 	'starts_at' => null,
 	'ends_at' => null,
 	'summary' => null,
-	'contact_info' => null,
 );
-$params = array_merge($params, $_REQUEST);
 
 foreach ($params AS $key => $val) {
-	if (!$val) {
+	if (!$_REQUEST[$key]) {
 		header('HTTP/1.1 406 Not Acceptable', true, 406);
-		print json_encode(array('message' => "$key has to be set<br />"));
+		print json_encode(array('message' => "$key has to be set"));
 		return;
 	}
 }
 
-if ( $ikey != NULL 
-  && $ikey != $params['ikey'] )
+if ( $ikey != NULL
+  && $ikey != $_REQUEST['ikey'] )
 {
         header('HTTP/1.1 401 Unauthorized', true, 401);
         print json_encode(array('message' => "your iKey is invalid"));
         return;
 }
 
-$username     = $params['username'];
-$starts_at    = $params['starts_at'];
-$ends_at      = $params['ends_at'];
-#$recurrence   = $params['recurrence'];
-$title        = $params['summary'];
-$description  = $params['description'];
-$contact_info = $params['contact_info'];
+$username     = $_REQUEST['username'];
+$starts_at    = $_REQUEST['starts_at'];
+$ends_at      = $_REQUEST['ends_at'];
+#$recurrence   = $_REQUEST['recurrence'];
+$title        = $_REQUEST['summary'];
+$description  = $_REQUEST['description'];
+$contact_info = trim($_REQUEST['contact_info']);
+$rid          = trim($_REQUEST['rid']);
+
+##$regexp_email = firstname.lastname@aaa.bbb.com;
+$regexp_email = "/^[^0-9][A-z0-9_]+([.][A-z0-9_]+)*[@][A-z0-9_]+([.][A-z0-9_]+)*[.][A-z]{2,4}$/";
+if (preg_match($regexp_email, $contact_info)) {
+	$contact_info = strtolower($contact_info);
+}
 
 /*************************************************
- 	user information 
+ 	user information
  *************************************************/
 $userRepository = new UserRepository();
-$user = $userRepository->LoadByUsername($username); 
+$user = $userRepository->LoadByUsername($username);
 if ($user instanceof NullUser) {
 	header('HTTP/1.1 403 Forbidden', true, 403);
 	print json_encode(array('message' => "invalid userId"));
@@ -113,7 +118,20 @@ $user_session->Timezone = 'UTC';
  	resources
  *************************************************/
 $resourceRepository = new ResourceRepository();
-$resource = $resourceRepository->LoadByContactInfo($contact_info);
+if ($contact_info && $rid) {
+        header('HTTP/1.1 406 Not Acceptable', true, 406);
+        print json_encode(array('message' => "You must not set both contact_info and rid"));
+        return;
+}
+if ($contact_info) {
+	$resource = $resourceRepository->LoadByContactInfo($contact_info);
+} elseif ($rid) {
+	$resource = $resourceRepository->LoadByPublicId($rid);
+} else {
+        header('HTTP/1.1 406 Not Acceptable', true, 406);
+        print json_encode(array('message' => "contact_info or rid has to be set"));
+        return;
+}
 
 
 /*************************************************
@@ -126,12 +144,12 @@ $timing = DateRange::Create($starts_at, $ends_at, $tz);
  	Action
  *************************************************/
 $series = ReservationSeries::Create(
-	$user->Id(), 
+	$user->Id(),
 	$resource,
-	$title, 
-	$description, 
-	$timing, 
-	new RepeatNone(), 
+	$title,
+	$description,
+	$timing,
+	new RepeatNone(),
 	$user_session
 );
 

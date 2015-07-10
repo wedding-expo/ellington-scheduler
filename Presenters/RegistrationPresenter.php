@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Config/namespace.php');
@@ -127,14 +127,8 @@ class RegistrationPresenter extends ActionPresenter
 	{
 		$this->BounceIfNotAllowingRegistration();
 
-		$attributes = $this->attributeService->GetByCategory(CustomAttributeCategory::USER);
-		$attributeValues = array();
-		foreach ($attributes as $attribute)
-		{
-			$attributeValues[] = new Attribute($attribute, null);
-		}
-
-		$this->page->SetAttributes($attributeValues);
+		$attributes = $this->attributeService->GetAttributes(CustomAttributeCategory::USER);
+		$this->page->SetAttributes($attributes->GetAttributes());
 
 		$this->page->SetCaptchaImageUrl($this->captchaService->GetImageUrl());
 		$this->PopulateTimezones();
@@ -182,7 +176,7 @@ class RegistrationPresenter extends ActionPresenter
 	{
 		if (!Configuration::Instance()->GetKey(ConfigKeys::ALLOW_REGISTRATION, new BooleanConverter()))
 		{
-			$this->page->Redirect(Pages::LOGIN);
+			$this->page->RedirectPage(Pages::LOGIN);
 		}
 	}
 
@@ -199,7 +193,7 @@ class RegistrationPresenter extends ActionPresenter
 
 		$this->page->SetTimezones($timezoneValues, $timezoneOutput);
 
-		$timezone = Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE);
+		$timezone = Configuration::Instance()->GetDefaultTimezone();
 		if ($this->page->IsPostBack())
 		{
 			$timezone = $this->page->GetTimezone();
@@ -237,7 +231,7 @@ class RegistrationPresenter extends ActionPresenter
 		$this->page->RegisterValidator('lname', new RequiredValidator($this->page->GetLastName()));
 		$this->page->RegisterValidator('username', new RequiredValidator($this->page->GetLoginName()));
 		$this->page->RegisterValidator('passwordmatch', new EqualValidator($this->page->GetPassword(), $this->page->GetPasswordConfirm()));
-		$this->page->RegisterValidator('passwordcomplexity', new RegexValidator($this->page->GetPassword(), Configuration::Instance()->GetKey(ConfigKeys::PASSWORD_PATTERN)));
+		$this->page->RegisterValidator('passwordcomplexity', new PasswordComplexityValidator($this->page->GetPassword()));
 		$this->page->RegisterValidator('emailformat', new EmailValidator($this->page->GetEmail()));
 		$this->page->RegisterValidator('uniqueemail', new UniqueEmailValidator(new UserRepository(), $this->page->GetEmail()));
 		$this->page->RegisterValidator('uniqueusername', new UniqueUserNameValidator(new UserRepository(), $this->page->GetLoginName()));

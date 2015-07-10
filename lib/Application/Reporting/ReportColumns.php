@@ -1,26 +1,27 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class ReportColumns implements IReportColumns
 {
 	private $knownColumns = array();
+	private $attributeColumns = array();
 
 	/**
 	 * @param $columnName string
@@ -30,18 +31,33 @@ class ReportColumns implements IReportColumns
 		$this->knownColumns[] = $columnName;
 	}
 
+	/**
+	 * @param $attributeId int
+	 * @param $label string
+	 */
+	public function AddAttribute($attributeId, $label)
+	{
+		$this->attributeColumns[] = new AttributeReportColumn("attribute$attributeId", $label);
+	}
+
 	public function Exists($columnName)
 	{
 		return in_array($columnName, $this->knownColumns);
 	}
 
 	/**
-	 * @return array|string
+	 * @return string[]
 	 */
 	public function GetAll()
 	{
 		return $this->knownColumns;
 	}
-}
 
-?>
+	/**
+	 * @return string[]
+	 */
+	public function GetCustomAttributes()
+	{
+		return $this->attributeColumns;
+	}
+}

@@ -1,20 +1,20 @@
 {*
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles="css/reports.css,scripts/js/jqplot/jquery.jqplot.min.css"}
 
@@ -114,8 +114,16 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 					<a href="#" class="all">{translate key=AllUsers}</a>
 					<a href="#" class="selected filter-off"></a>
 					<input id="user-filter" type="text" class="textbox filter-input filter-off"/>
-				{html_image src="minus-gray.png" class="clear filter-off"}
+				{html_image src="minus-gray.png" class="clear-filter filter-off"}
 					<input id="user_id" class="filter-id" type="hidden" {formname key=USER_ID}/>
+				</div>
+
+				<div id="participant-filter-div" class="link-filter">
+					<a href="#" class="all">{translate key=AllParticipants}</a>
+					<a href="#" class="selected filter-off"></a>
+					<input id="participant-filter" type="text" class="textbox filter-input filter-off"/>
+				{html_image src="minus-gray.png" class="clear-filter filter-off"}
+					<input id="participant_id" class="filter-id" type="hidden" {formname key=PARTICIPANT_ID}/>
 				</div>
 			</div>
 		</div>
@@ -131,7 +139,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 
 <div id="indicator" style="display:none; text-align: center;"><h3>{translate key=Working}
-	...</h3>{html_image src="admin-ajax-indicator.gif"}</div>
+	</h3>{html_image src="admin-ajax-indicator.gif"}</div>
 
 {include file="Reports/chart.tpl"}
 
@@ -157,10 +165,10 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 	</form>
 </div>
 
-<script type="text/javascript" src="{$Path}scripts/autocomplete.js"></script>
-<script type="text/javascript" src="{$Path}scripts/ajax-helpers.js"></script>
-<script type="text/javascript" src="{$Path}scripts/reports/generate-reports.js"></script>
-<script type="text/javascript" src="{$Path}scripts/reports/chart.js"></script>
+{jsfile src="autocomplete.js"}
+{jsfile src="ajax-helpers.js"}
+{jsfile src="reports/generate-reports.js"}
+{jsfile src="reports/chart.js"}
 
 <script type="text/javascript">
 	$(document).ready(function () {

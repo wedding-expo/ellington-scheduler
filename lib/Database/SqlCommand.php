@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Database/ISqlCommand.php');
@@ -106,7 +106,8 @@ class CountCommand extends SqlCommand
 
 	public function GetQuery()
 	{
-		return preg_replace('/SELECT.+FROM/imsU', 'SELECT COUNT(*) as total FROM', $this->baseCommand->GetQuery(), 1);
+		return 'SELECT COUNT(*) as total FROM (' . $this->baseCommand->GetQuery() . ') results';
+//		return preg_replace('/SELECT.+FROM/imsU', 'SELECT COUNT(*) as total FROM', $this->baseCommand->GetQuery(), 1);
 	}
 }
 
@@ -118,7 +119,7 @@ class FilterCommand extends SqlCommand
 	private $baseCommand;
 
 	/**
-	 * @var \ISqlFilter
+	 * @var ISqlFilter
 	 */
 	private $filter;
 
@@ -139,15 +140,21 @@ class FilterCommand extends SqlCommand
 	public function GetQuery()
 	{
 		$baseQuery = $this->baseCommand->GetQuery();
-		$hasWhere = (stripos($baseQuery, 'WHERE') !== false);
+		$baseQueryUpper = strtoupper($baseQuery);
+		$numberOfWheres = substr_count($baseQueryUpper, 'WHERE');
+		$numberOfSelects = substr_count($baseQueryUpper, 'SELECT');
+		$hasWhere = $numberOfWheres !== false && $numberOfWheres > 0 && $numberOfWheres == $numberOfSelects;
+
 		$hasOrderBy = (stripos($baseQuery, 'ORDER BY') !== false);
 		$hasGroupBy = (stripos($baseQuery, 'GROUP BY') !== false);
+
 		$newWhere = $this->filter->Where();
 
 		if ($hasWhere)
 		{
 			// get between where and order by, replace with match plus new stuff
-			$baseQuery = preg_replace('/WHERE/ims', 'WHERE (', $baseQuery, 1);
+			$pos = strripos($baseQuery, 'WHERE');
+			$baseQuery = substr_replace($baseQuery, 'WHERE (', $pos, strlen('WHERE'));
 
 			$groupBySplit = preg_split("/GROUP BY/ims", $baseQuery);
 			$orderBySplit = preg_split("/ORDER BY/ims", $baseQuery);
@@ -188,5 +195,3 @@ class FilterCommand extends SqlCommand
 		return $query;
 	}
 }
-
-?>

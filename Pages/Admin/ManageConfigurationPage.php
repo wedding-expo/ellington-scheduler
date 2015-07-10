@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'config/timezones.php');
@@ -49,6 +49,27 @@ interface IManageConfigurationPage extends IActionPage
 	 * @return array|ConfigSetting[]
 	 */
 	public function GetSubmittedSettings();
+
+	/**
+	 * @param ConfigFileOption[] $configFiles
+	 */
+	public function SetConfigFileOptions($configFiles);
+
+	/**
+	 * @return string
+	 */
+	public function GetConfigFileToEdit();
+
+	/**
+	 * @param string $configFileName
+	 */
+	public function SetSelectedConfigFile($configFileName);
+
+	/**
+	 * @param string[] $homepageValues
+	 * @param string[] $homepageOutput
+	 */
+	public function SetHomepages($homepageValues, $homepageOutput);
 }
 
 class ManageConfigurationPage extends ActionPage implements IManageConfigurationPage
@@ -110,6 +131,7 @@ class ManageConfigurationPage extends ActionPage implements IManageConfiguration
 		$this->PopulateTimezones();
 		$this->Set('Languages', Resources::GetInstance()->AvailableLanguages);
 		$this->Set('SettingNames', $this->settingNames->ToString());
+
 		$this->Display('Admin/Configuration/manage_configuration.tpl');
 	}
 
@@ -173,12 +195,40 @@ class ManageConfigurationPage extends ActionPage implements IManageConfiguration
 			if (!empty($setting))
 			{
 //				Log::Debug("%s=%s", $setting, $this->GetForm($setting));
-				$submittedSettings[] = ConfigSetting::ParseForm($setting, $this->GetForm($setting));
+				$submittedSettings[] = ConfigSetting::ParseForm($setting, stripslashes($this->GetRawForm($setting)));
 			}
 		}
 
 		return $submittedSettings;
 	}
-}
 
-?>
+	public function SetHomepages($homepageValues, $homepageOutput)
+	{
+		$this->Set('HomepageValues', $homepageValues);
+		$this->Set('HomepageOutput', $homepageOutput);
+	}
+
+	/**
+	 * @param ConfigFileOption[] $configFiles
+	 */
+	public function SetConfigFileOptions($configFiles)
+	{
+		$this->Set('ConfigFiles', $configFiles);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function GetConfigFileToEdit()
+	{
+		return $this->GetQuerystring(QueryStringKeys::CONFIG_FILE);
+	}
+
+	/**
+	 * @param string $configFileName
+	 */
+	public function SetSelectedConfigFile($configFileName)
+	{
+		$this->Set('SelectedFile', $configFileName);
+	}
+}

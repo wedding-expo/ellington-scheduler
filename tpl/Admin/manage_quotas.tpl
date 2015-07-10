@@ -1,24 +1,24 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles='css/admin.css'}
 
-<h1>{translate key=ManageQuotas}</h1>
+<h1>{translate key=ManageQuotas} {html_image src="question-button.png" id="help-prompt" ref="help-quotas"}</h1>
 
 <div class="admin">
 	<div class="title">
@@ -61,7 +61,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 				<h4>{translate key=$quota->Duration}</h4>
 			{/capture}
 			{cycle values='row0,row1' assign=rowCss}
-			
+
 			<div class="{$rowCss}">
 				<a href="#" quotaId="{$quota->Id}" class="delete">{html_image src="cross-button.png"}</a>
 				{translate key=QuotaConfiguration args="$scheduleName,$resourceName,$groupName,$amount,$unit,$duration"}
@@ -86,7 +86,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 			{/foreach}
 			</select>
 		{/capture}
-				
+
 		{capture name="resources" assign="resources"}
 			<select class='textbox' {formname key=RESOURCE_ID}>
 				<option selected='selected' value=''>{translate key=AllResources}</option>
@@ -95,7 +95,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 			{/foreach}
 			</select>
 		{/capture}
-			
+
 		{capture name="groups" assign="groups"}
 			<select class='textbox' {formname key=GROUP}>
 				<option selected='selected' value=''>{translate key=AllGroups}</option>
@@ -104,7 +104,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 			{/foreach}
 			</select>
 		{/capture}
-			
+
 		{capture name="amount" assign="amount"}
 			<input type='text' class='textbox' value='0' size='5' {formname key=LIMIT} />
 		{/capture}
@@ -125,7 +125,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 		{/capture}
 
 		{translate key=QuotaConfiguration args="$schedules,$resources,$groups,$amount,$unit,$duration"}
-		
+
 		<button type="button" class="button save">{html_image src="plus-circle.png"} {translate key="Add"}</button>
 		{html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 		</form>
@@ -143,9 +143,10 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 	</form>
 </div>
 
-<script type="text/javascript" src="{$Path}scripts/admin/edit.js"></script>
-<script type="text/javascript" src="{$Path}scripts/admin/quota.js"></script>
-<script type="text/javascript" src="{$Path}scripts/js/jquery.form-3.09.min.js"></script>
+{jsfile src="admin/edit.js"}
+{jsfile src="admin/quota.js"}
+{jsfile src="js/jquery.form-3.09.min.js"}
+{jsfile src="admin/help.js"}
 
 <script type="text/javascript">
 	$(document).ready(function() {

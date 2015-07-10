@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 class ApiHelpPage
 {
@@ -26,7 +26,7 @@ class ApiHelpPage
 	    <html>
 	        <head>
 	            <meta charset="utf-8"/>
-	            <title>phpScheduleIt API Documentation</title>
+	            <title>Booked Scheduler API Documentation</title>
 	            <style type="text/css">
 					body
 					{
@@ -66,10 +66,14 @@ class ApiHelpPage
 						font-weight:bold;
 					}
 
+					a, a:visited {
+						color:blue;
+					}
+
 	            </style>
 	        </head>
 	        <body>
-	            <h1>phpScheduleIt API Documentation</h1>
+	            <h1>Booked Scheduler API Documentation</h1>
 EOT;
 
 		$security = sprintf("<div id='security'>Pass the following headers for all secure service calls: <span>%s</span> and <span>%s</span></div>",
@@ -78,9 +82,18 @@ EOT;
 
 		echo $security;
 
+		echo '<ul>';
+
 		foreach ($registry->Categories() as $category)
 		{
-			echo '<h2>' . $category->Name() . '</h2>';
+			echo "<li><a href='#{$category->Name()}'>{$category->Name()}</a></li>";
+		}
+
+		echo '</ul>';
+		foreach ($registry->Categories() as $category)
+		{
+			echo "<a name='{$category->Name()}'></a><h2>{$category->Name()}</h2>";
+			echo "<a href=''>Return To Top</a>";
 			echo '<h3>POST Services</h3>';
 
 			foreach ($category->Posts() as $service)

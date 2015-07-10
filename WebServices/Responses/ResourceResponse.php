@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/WebService/namespace.php');
@@ -37,6 +37,8 @@ class ResourceResponse extends RestResponse
 	public $description;
 	public $scheduleId;
 	public $icsUrl;
+	public $statusId;
+	public $statusReasonId;
 	public $customAttributes = array();
 
 	/**
@@ -61,14 +63,16 @@ class ResourceResponse extends RestResponse
 		$this->maxParticipants = $resource->GetMaxParticipants();
 		$this->description = $resource->GetDescription();
 		$this->scheduleId = $resource->GetScheduleId();
+		$this->statusId = $resource->GetStatusId();
+		$this->statusReasonId = $resource->GetStatusReasonId();
+		$this->bufferTime = $resource->GetBufferTime()->__toString();
 
-		$definitions = $attributes->GetDefinitions();
-		$values = $attributes->GetValues($resourceId);
+		$attributeValues = $attributes->GetAttributes($resourceId);
 
 		$i=0;
-		foreach($definitions as $definition)
+		foreach($attributeValues as $av)
 		{
-			$this->customAttributes[] = new CustomAttributeResponse($server, $definition->Id(), $definition->Label(), $values[$i]);
+			$this->customAttributes[] = new CustomAttributeResponse($server, $av->Id(), $av->Label(), $av->Value());
 			$i++;
 		}
 
@@ -107,10 +111,9 @@ class ExampleResourceResponse extends ResourceResponse
 		$this->maxParticipants = 10;
 		$this->description = 'resource description';
 		$this->scheduleId = 123;
+		$this->statusId = ResourceStatus::AVAILABLE;
+		$this->statusReasonId = 3;
 
 		$this->customAttributes = array(CustomAttributeResponse::Example());
-
 	}
 }
-
-?>

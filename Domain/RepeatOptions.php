@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Common/namespace.php');
@@ -393,7 +393,8 @@ class RepeatDayOfMonth extends RepeatOptionsAbstract
 	}
 
 	/**
-	 * @var Date $date
+	 * @param Date $date
+	 * @param int $monthsFromStart
 	 * @return Date
 	 */
 	private function GetNextMonth($date, $monthsFromStart)
@@ -449,9 +450,7 @@ class RepeatWeekDayOfMonth extends RepeatOptionsAbstract
 			$month = ($computedMonth - 1) % 12 + 1;
 			$year = $startYear + (int)(($computedMonth - 1) / 12);
 
-			$correctedWeekNumber = $this->GetWeekNumberOfMonth($weekNumber, $month, $year, $dayOfWeek);
-
-			$dayOfMonth = strtotime("{$this->_typeList[$correctedWeekNumber ]} {$this->_dayList[$dayOfWeek]} $year-$month-01");
+			$dayOfMonth = strtotime("{$this->_typeList[$weekNumber]} {$this->_dayList[$dayOfWeek]} $year-$month-00");
 			$calculatedDate = date('Y-m-d', $dayOfMonth);
 			$calculatedMonth = explode('-', $calculatedDate);
 
@@ -489,25 +488,7 @@ class RepeatWeekDayOfMonth extends RepeatOptionsAbstract
 	private function GetWeekNumber(Date $firstDate, $firstWeekdayOfMonth)
 	{
 		$week = ceil($firstDate->Day() / 7);
-//		if ($firstWeekdayOfMonth > $firstDate->Weekday())
-//		{
-//			$week++;
-//		}
-
 		return $week;
-	}
-
-	private function GetWeekNumberOfMonth($week, $month, $year, $desiredDayOfWeek)
-	{
-		$firstWeekdayOfMonth = date('w', mktime(0, 0, 0, $month, 1, $year));
-
-		$weekNumber = $week;
-		if ($firstWeekdayOfMonth == $desiredDayOfWeek)
-		{
-			$weekNumber--;
-		}
-
-		return $weekNumber;
 	}
 }
 
@@ -657,7 +638,7 @@ class RepeatConfiguration
 		}
 
 		$config = new RepeatConfiguration();
-		$config->Type = $repeatType;
+		$config->Type = empty($repeatType) ? RepeatType::None : $repeatType;
 
 		$config->Interval = self::Get($configParts, 'interval');
 		$config->SetTerminationDate(self::Get($configParts, 'termination'));
@@ -691,7 +672,7 @@ class RepeatConfiguration
 
 	private function SetWeekdays($weekdays)
 	{
-		if (!empty($weekdays))
+		if ($weekdays != null && $weekdays != '')
 		{
 			$this->Weekdays = explode(',', $weekdays);
 		}

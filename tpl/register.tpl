@@ -1,20 +1,20 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles='scripts/css/colorbox.css'}
 
@@ -150,12 +150,12 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 {setfocus key='LOGIN'}
 
-<script src="scripts/js/jstz.min.js"></script>
-<script type="text/javascript" src="{$Path}scripts/admin/edit.js"></script>
-<script type="text/javascript" src="{$Path}scripts/js/jquery.form-3.09.min.js"></script>
-<script type="text/javascript" src="{$Path}scripts/js/jquery.colorbox-min.js"></script>
-<script type="text/javascript" src="{$Path}scripts/profile.js"></script>
-<script type="text/javascript" src="{$Path}scripts/registration.js"></script>
+{jsfile src="js/jstz.min.js"}
+{jsfile src="admin/edit.js"}
+{jsfile src="js/jquery.form-3.09.min.js"}
+{jsfile src="js/jquery.colorbox-min.js"}
+{jsfile src="profile.js"}
+{jsfile src="registration.js"}
 
 
 <script type="text/javascript">
@@ -169,7 +169,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 </script>
 
 <div id="modalDiv" style="display:none;text-align:center; top:15%;position:relative;">
-	<h3>{translate key=Working}...</h3>
+	<h3>{translate key=Working}</h3>
 {html_image src="reservation_submitting.gif"}
 </div>
 

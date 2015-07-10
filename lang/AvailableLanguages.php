@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lang/AvailableLanguage.php');
@@ -39,9 +39,13 @@ class AvailableLanguages
         			'es' => new AvailableLanguage('es', 'es.php', 'Espa&ntilde;ol'),
         			'fi_fi' => new AvailableLanguage('fi_fi', 'fi_fi.php', 'Suomi'),
         			'fr_fr' => new AvailableLanguage('fr_fr', 'fr_fr.php', 'Fran&ccedil;ais'),
+        			'hr_hr' => new AvailableLanguage('hr_hr', 'hr_hr.php', 'Hrvatski'),
         			'he' => new AvailableLanguage('he', 'he.php', 'עברית'),
+        			'id_id' => new AvailableLanguage('id_id', 'id_id.php', 'Bahasa Indonesia'),
         			'it_it' => new AvailableLanguage('it_it', 'it_it.php', 'Italiano'),
         			'ja_jp' => new AvailableLanguage('ja_jp', 'ja_jp.php', 'Japanese'),
+					'lt' => new AvailableLanguage('lt', 'lt.php', 'Lietuvių'),
+					'no_no' => new AvailableLanguage('no_no', 'no_no.php', 'Norsk bokmål'),
 					'pl' => new AvailableLanguage('pl', 'pl.php', 'Polski'),
 					'pt_br' => new AvailableLanguage('pt_br', 'pt_br.php', 'Portugu&ecirc;s Brasileiro'),
 					'sv_sv' => new AvailableLanguage('sv_sv', 'sv_sv.php', 'Swedish'),
@@ -50,5 +54,3 @@ class AvailableLanguages
         		);
     }
 }
-
-?>

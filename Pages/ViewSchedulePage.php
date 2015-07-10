@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Pages/SchedulePage.php');
@@ -28,27 +28,29 @@ class ViewSchedulePage extends SchedulePage
 	{
 		parent::__construct();
 		$scheduleRepository = new ScheduleRepository();
-		$resourceService = new ResourceService(new ResourceRepository(), new ViewSchedulePermissionService());
+		$userRepository = new UserRepository();
+		$resourceService = new ResourceService(new ResourceRepository(), new ViewSchedulePermissionService(), new AttributeService(new AttributeRepository()), $userRepository);
 		$pageBuilder = new SchedulePageBuilder();
 		$reservationService = new ReservationService(new ReservationViewRepository(), new ReservationListingFactory());
 		$dailyLayoutFactory = new DailyLayoutFactory();
-		
+
 		$this->_presenter = new SchedulePresenter(
 			$this,
-			$scheduleRepository,
+			new ScheduleService($scheduleRepository, $resourceService),
 			$resourceService,
 			$pageBuilder,
 			$reservationService,
 			$dailyLayoutFactory);
 	}
-	
+
 	public function ProcessPageLoad()
 	{
-		$this->_presenter->PageLoad(new NullUserSession());
+		$user = new NullUserSession();
+		$this->_presenter->PageLoad($user);
 		$viewReservations = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_VIEW_RESERVATIONS, new BooleanConverter());
 		$this->Set('DisplaySlotFactory', new DisplaySlotFactory());
-		$this->Set('SlotLabelFactory', $viewReservations ? new SlotLabelFactory() : new NullSlotLabelFactory());
-		$this->Display('view-schedule.tpl');
+		$this->Set('SlotLabelFactory', $viewReservations ? new SlotLabelFactory($user) : new NullSlotLabelFactory());
+		$this->Display('Schedule/view-schedule.tpl');
 	}
 
     public function ShowInaccessibleResources()
@@ -60,5 +62,9 @@ class ViewSchedulePage extends SchedulePage
 	{
 		return false;
 	}
+
+	public function GetDisplayTimezone(UserSession $user, Schedule $schedule)
+	{
+		return $schedule->GetTimezone();
+	}
 }
-?>

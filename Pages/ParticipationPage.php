@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
@@ -55,33 +55,38 @@ interface IParticipationPage
 	function GetResponseType();
 
 	/**
-	 * @abstract
-	 * @param array|ReservationViewItem[] $reservations
+	 * @param array|ReservationItemView[] $reservations
 	 * @return void
 	 */
 	function BindReservations($reservations);
 
 	/**
-	 * @abstract
 	 * @param $timezone
 	 * @return void
 	 */
 	public function SetTimezone($timezone);
+
+	/**
+	 * @param $result string
+	 */
+	public function SetResult($result);
 }
 
 class ParticipationPage extends SecurePage implements IParticipationPage
 {
 	/**
-	 * @var \ParticipationPresenter
+	 * @var ParticipationPresenter
 	 */
 	private $presenter;
-	
+
 	public function __construct()
 	{
 	    parent::__construct('OpenInvitations');
-		$this->presenter = new ParticipationPresenter($this, new ReservationRepository(), new ReservationViewRepository());
+		$rules = array(new ReservationStartTimeRule( new ScheduleRepository()), new ResourceMinimumNoticeRule(), new ResourceMaximumNoticeRule());
+
+		$this->presenter = new ParticipationPresenter($this, new ReservationRepository(), new ReservationViewRepository(), $rules);
 	}
-	
+
 	public function PageLoad()
 	{
 		$this->presenter->PageLoad();
@@ -126,5 +131,12 @@ class ParticipationPage extends SecurePage implements IParticipationPage
 	{
 		$this->Set('Timezone', $timezone);
 	}
+
+	/**
+	 * @param $result string
+	 */
+	public function SetResult($result)
+	{
+		$this->Set('ActionResult', $result);
+	}
 }
-?>

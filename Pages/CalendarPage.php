@@ -1,25 +1,25 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
-require_once(ROOT_DIR . 'Presenters/CalendarPresenter.php');
+require_once(ROOT_DIR . 'Presenters/Calendar/CalendarPresenter.php');
 
 
 interface ICalendarPage extends IPage
@@ -35,50 +35,58 @@ interface ICalendarPage extends IPage
 	public function BindCalendar(ICalendarSegment $calendar);
 
 	/**
-	 * @abstract
 	 * @param CalendarFilters $filters
 	 * @return void
 	 */
 	public function BindFilters($filters);
 
 	/**
-	 * @abstract
 	 * @param Date $displayDate
 	 * @return void
 	 */
 	public function SetDisplayDate($displayDate);
 
 	/**
-	 * @abstract
 	 * @return null|int
 	 */
 	public function GetScheduleId();
 
 	/**
-	 * @abstract
 	 * @return null|int
 	 */
 	public function GetResourceId();
 
 	/**
-	 * @abstract
+	 * @return null|int
+	 */
+	public function GetGroupId();
+
+	/**
 	 * @param $scheduleId null|int
 	 * @return void
 	 */
 	public function SetScheduleId($scheduleId);
 
 	/**
-	 * @abstract
 	 * @param $resourceId null|int
 	 * @return void
 	 */
 	public function SetResourceId($resourceId);
 
 	/**
-	 * @abstract
 	 * @param CalendarSubscriptionDetails $subscriptionDetails
 	 */
 	public function BindSubscription($subscriptionDetails);
+
+	/**
+	 * @param int $firstDay
+	 */
+	public function SetFirstDay($firstDay);
+
+	/**
+	 * @param ResourceGroup $selectedGroup
+	 */
+	public function BindSelectedGroup($selectedGroup);
 }
 
 class CalendarPage extends SecurePage implements ICalendarPage
@@ -92,9 +100,10 @@ class CalendarPage extends SecurePage implements ICalendarPage
 	{
 		parent::__construct('ResourceCalendar');
 		$resourceRepository = new ResourceRepository();
-		$resourceService = new ResourceService($resourceRepository, PluginManager::Instance()->LoadPermission());
 		$scheduleRepository = new ScheduleRepository();
-		$subscriptionService = new CalendarSubscriptionService(new UserRepository(), $resourceRepository, $scheduleRepository);
+		$userRepository = new UserRepository();
+		$resourceService = new ResourceService($resourceRepository, PluginManager::Instance()->LoadPermission(), new AttributeService(new AttributeRepository()), $userRepository);
+		$subscriptionService = new CalendarSubscriptionService($userRepository, $resourceRepository, $scheduleRepository);
 		$privacyFilter = new PrivacyFilter(new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization()));
 		$this->_presenter = new CalendarPresenter($this,
 												  new CalendarFactory(),
@@ -179,6 +188,8 @@ class CalendarPage extends SecurePage implements ICalendarPage
 	public function BindFilters($filters)
 	{
 		$this->Set('filters', $filters);
+		$this->Set('IsAccessible', !$filters->IsEmpty());
+		$this->Set('ResourceGroupsAsJson', json_encode($filters->GetResourceGroupTree()->GetGroups(false)));;
 	}
 
 	public function GetScheduleId()
@@ -189,6 +200,11 @@ class CalendarPage extends SecurePage implements ICalendarPage
 	public function GetResourceId()
 	{
 		return $this->GetQuerystring(QueryStringKeys::RESOURCE_ID);
+	}
+
+	public function GetGroupId()
+	{
+		return $this->GetQuerystring(QueryStringKeys::GROUP_ID);
 	}
 
 	/**
@@ -217,6 +233,23 @@ class CalendarPage extends SecurePage implements ICalendarPage
 		$this->Set('IsSubscriptionAllowed', $details->IsAllowed());
 		$this->Set('IsSubscriptionEnabled', $details->IsEnabled());
 		$this->Set('SubscriptionUrl', $details->Url());
+	}
+
+	/**
+	 * @param int $firstDay
+	 */
+	public function SetFirstDay($firstDay)
+	{
+		$this->Set('FirstDay', $firstDay == Schedule::Today ? 0 : $firstDay);
+	}
+
+	/**
+	 * @param ResourceGroup $selectedGroup
+	 */
+	public function BindSelectedGroup($selectedGroup)
+	{
+		$this->Set('GroupName', $selectedGroup->name);
+		$this->Set('SelectedGroupNode', $selectedGroup->id);
 	}
 }
 
@@ -257,5 +290,3 @@ class CalendarUrl
 		return $this->url;
 	}
 }
-
-?>

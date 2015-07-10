@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Pages/IPageable.php');
@@ -26,183 +26,235 @@ require_once(ROOT_DIR . 'Presenters/Admin/ManageReservationsPresenter.php');
 interface IManageReservationsPage extends IPageable, IActionPage
 {
 	/**
-	 * @abstract
 	 * @param array|ReservationItemView[] $reservations
-	 * @return void
 	 */
 	public function BindReservations($reservations);
 
 	/**
-	 * @abstract
+	 * @return bool
+	 */
+	public function FilterButtonPressed();
+
+	/**
 	 * @return string
 	 */
 	public function GetStartDate();
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetEndDate();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetUserId();
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetUserName();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetScheduleId();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetResourceId();
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetReferenceNumber();
 
 	/**
-	 * @abstract
 	 * @param Date $date|null
-	 * @return void
 	 */
 	public function SetStartDate($date);
 
 	/**
-	 * @abstract
 	 * @param Date $date|null
 	 * @return void
 	 */
 	public function SetEndDate($date);
 
 	/**
-	 * @abstract
 	 * @param int $userId
-	 * @return void
 	 */
 	public function SetUserId($userId);
 
 	/**
-	 * @abstract
 	 * @param string $userName
-	 * @return void
 	 */
 	public function SetUserName($userName);
 
 	/**
-	 * @abstract
 	 * @param int $scheduleId
-	 * @return void
 	 */
 	public function SetScheduleId($scheduleId);
 
 	/**
-	 * @abstract
 	 * @param int $resourceId
-	 * @return void
 	 */
 	public function SetResourceId($resourceId);
 
-
 	/**
-	 * @abstract
 	 * @param string $referenceNumber
-	 * @return void
 	 */
 	public function SetReferenceNumber($referenceNumber);
 
 	/**
-	 * @abstract
+	 * @param int $statusId
+	 */
+	public function SetResourceStatusFilterId($statusId);
+
+	/**
+	 * @param int $reasonId
+	 */
+	public function SetResourceStatusReasonFilterId($reasonId);
+
+	/**
 	 * @param array|Schedule[] $schedules
-	 * @return void
 	 */
 	public function BindSchedules($schedules);
 
 	/**
-	 * @abstract
 	 * @param array|BookableResource[] $resources
-	 * @return void
 	 */
 	public function BindResources($resources);
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetDeleteReferenceNumber();
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetDeleteScope();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetReservationStatusId();
 
 	/**
-	 * @abstract
+	 * @return int
+	 */
+	public function GetResourceStatusFilterId();
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatusReasonFilterId();
+
+	/**
 	 * @param $reservationStatusId int
-	 * @return void
 	 */
 	public function SetReservationStatusId($reservationStatusId);
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetApproveReferenceNumber();
 
-	/**
-	 * @abstract
-	 * @return void
-	 */
 	public function ShowPage();
 
-	/**
-	 * @abstract
-	 * @return void
-	 */
 	public function ShowCsv();
 
 	/**
-	 * @abstract
 	 * @return string
 	 */
 	public function GetFormat();
 
 	/**
-	 * @abstract
-	 * @param $attributeList AttributeList
+	 * @param $attributeList IEntityAttributeList
 	 */
 	public function SetAttributes($attributeList);
+
+	/**
+	 * @param $statusReasons ResourceStatusReason[]
+	 */
+	public function BindResourceStatuses($statusReasons);
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatus();
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatusReason();
+
+	/**
+	 * @return string
+	 */
+	public function GetResourceStatusReferenceNumber();
+
+	/**
+	 * @return string
+	 */
+	public function GetUpdateScope();
+
+	/**
+	 * @return int
+	 */
+	public function GetUpdateResourceId();
+
+	/**
+	 * @return bool
+	 */
+	public function CanUpdateResourceStatuses();
+
+	/**
+	 * @return AttributeFormElement[]
+	 */
+	public function GetAttributeFilters();
+
+	/**
+	 * @param Attribute[] $filters
+	 */
+	public function SetAttributeFilters($filters);
+
+	/**
+	 * @param CustomAttribute[] $reservationAttributes
+	 */
+	public function SetReservationAttributes($reservationAttributes);
+
+	/**
+	 * @param ReservationView $reservation
+	 */
+	public function SetReservationJson($reservation);
+
+	/**
+	 * @return int
+	 */
+	public function GetAttributeId();
+
+	/**
+	 * @return string
+	 */
+	public function GetAttributeValue();
+
+	/**
+	 * @param string[] $errors
+	 */
+	public function BindAttributeUpdateErrors($errors);
 }
 
 class ManageReservationsPage extends ActionPage implements IManageReservationsPage
 {
 	/**
-	 * @var \ManageReservationsPresenter
+	 * @var ManageReservationsPresenter
 	 */
 	protected $presenter;
 
 	/**
-	 * @var \PageablePage
+	 * @var PageablePage
 	 */
 	protected $pageablePage;
 
@@ -214,11 +266,15 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 			new ManageReservationsService(new ReservationViewRepository()),
 			new ScheduleRepository(),
 			new ResourceRepository(),
-			new AttributeService(new AttributeRepository()));
+			new AttributeService(new AttributeRepository()),
+			new UserPreferenceRepository());
 
 		$this->pageablePage = new PageablePage($this);
+
+		$this->SetCanUpdateResourceStatus(true);
+		$this->SetPageId('manage-reservations');
 	}
-	
+
 	public function ProcessAction()
 	{
 		$this->presenter->ProcessAction();
@@ -231,6 +287,11 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 		$this->Set('Timezone', $userTimezone);
 		$this->Set('CsvExportUrl', ServiceLocator::GetServer()->GetUrl() . '&' . QueryStringKeys::FORMAT . '=csv');
 		$this->presenter->PageLoad($userTimezone);
+	}
+
+	public function ProcessDataRequest($dataRequest)
+	{
+		$this->presenter->ProcessDataRequest($dataRequest);
 	}
 
 	public function ShowPage()
@@ -246,6 +307,12 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 	public function BindReservations($reservations)
 	{
 		$this->Set('reservations', $reservations);
+	}
+
+
+	public function FilterButtonPressed()
+	{
+		return count($_GET)>0;
 	}
 
 	/**
@@ -452,19 +519,144 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 	}
 
 	/**
-	 * @return void
-	 */
-	public function ProcessDataRequest($dataRequest)
-	{
-		// no-op
-	}
-
-	/**
-	 * @param $attributeList AttributeList
+	 * @param $attributeList IEntityAttributeList
 	 */
 	public function SetAttributes($attributeList)
 	{
 		$this->Set('AttributeList', $attributeList);
 	}
+
+	/**
+	 * @param $statusReasons ResourceStatusReason[]
+	 */
+	public function BindResourceStatuses($statusReasons)
+	{
+		$this->Set('StatusReasons', $statusReasons);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatus()
+	{
+		return $this->GetForm(FormKeys::RESOURCE_STATUS_ID);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatusReason()
+	{
+		return $this->GetForm(FormKeys::RESOURCE_STATUS_REASON_ID);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function GetResourceStatusReferenceNumber()
+	{
+		return $this->GetForm(FormKeys::REFERENCE_NUMBER);
+	}
+
+	/**
+	 * @return string
+	 */
+	public function GetUpdateScope()
+	{
+		return $this->GetForm(FormKeys::RESOURCE_STATUS_UPDATE_SCOPE);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetUpdateResourceId()
+	{
+		return $this->GetForm(FormKeys::RESOURCE_ID);
+	}
+
+	/**
+	 * @param int $statusId
+	 */
+	public function SetResourceStatusFilterId($statusId)
+	{
+		$this->Set('ResourceStatusFilterId', $statusId);
+	}
+
+	/**
+	 * @param int $reasonId
+	 */
+	public function SetResourceStatusReasonFilterId($reasonId)
+	{
+		$this->Set('ResourceStatusReasonFilterId', $reasonId);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatusFilterId()
+	{
+		return $this->GetQuerystring(QueryStringKeys::RESERVATION_RESOURCE_STATUS_ID);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceStatusReasonFilterId()
+	{
+		return $this->GetQuerystring(QueryStringKeys::RESERVATION_RESOURCE_REASON_ID);
+	}
+
+	public function SetCanUpdateResourceStatus($canUpdate)
+	{
+		$this->Set('CanUpdateResourceStatus', $canUpdate);
+
+	}
+
+	public function CanUpdateResourceStatuses()
+	{
+		return $this->GetVar('CanUpdateResourceStatus');
+	}
+
+	public function GetAttributeFilters()
+	{
+		return AttributeFormParser::GetAttributes($this->GetQuerystring(FormKeys::ATTRIBUTE_PREFIX));
+	}
+
+	public function SetAttributeFilters($filters)
+	{
+		$this->Set('AttributeFilters', $filters);
+	}
+
+	public function SetReservationAttributes($reservationAttributes)
+	{
+		$this->Set('ReservationAttributes', $reservationAttributes);
+	}
+
+	public function SetReservationJson($reservation)
+	{
+		$this->SetJson($reservation);
+	}
+
+	public function GetAttributeId()
+	{
+		return $this->GetForm(FormKeys::ATTRIBUTE_ID);
+	}
+
+	public function GetAttributeValue()
+	{
+		return $this->GetForm(FormKeys::ATTRIBUTE_VALUE);
+	}
+
+	/**
+	 * @param string[] $errors
+	 */
+	public function BindAttributeUpdateErrors($errors)
+	{
+		$this->SetJson(null, $errors);
+	}
+
+	protected function SetPageId($pageId)
+	{
+		$this->Set('PageId', $pageId);
+	}
 }
-?>

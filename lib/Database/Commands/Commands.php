@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Database/SqlCommand.php');
@@ -37,7 +37,8 @@ class AddAccountActivationCommand extends SqlCommand
 		parent::__construct(Queries::ADD_ACCOUNT_ACTIVATION);
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
 		$this->AddParameter(new Parameter(ParameterNames::ACTIVATION_CODE, $activationCode));
-		$this->AddParameter(new Parameter(ParameterNames::DATE_CREATED, Date::Now()->ToDatabase()));
+		$this->AddParameter(new Parameter(ParameterNames::DATE_CREATED, Date::Now()
+																		->ToDatabase()));
 	}
 }
 
@@ -55,7 +56,7 @@ class AddAnnouncementCommand extends SqlCommand
 
 class AddAttributeCommand extends SqlCommand
 {
-	public function __construct($label, $type, $category, $regex, $required, $possibleValues, $sortOrder)
+	public function __construct($label, $type, $category, $regex, $required, $possibleValues, $sortOrder, $entityId)
 	{
 		parent::__construct(Queries::ADD_ATTRIBUTE);
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_LABEL, $label));
@@ -65,6 +66,7 @@ class AddAttributeCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_REQUIRED, (int)$required));
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_POSSIBLE_VALUES, $possibleValues));
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_SORT_ORDER, $sortOrder));
+		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ENTITY_ID, $entityId));
 	}
 }
 
@@ -82,13 +84,14 @@ class AddAttributeValueCommand extends SqlCommand
 
 class AddBlackoutCommand extends SqlCommand
 {
-	public function __construct($userId, $resourceId, $title)
+	public function __construct($userId, $title, $repeatTypeId, $repeatTypeConfiguration)
 	{
 		parent::__construct(Queries::ADD_BLACKOUT_SERIES);
 		$this->AddParameter(new Parameter(ParameterNames::DATE_CREATED, Date::Now()->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
-		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
 		$this->AddParameter(new Parameter(ParameterNames::TITLE, $title));
+		$this->AddParameter(new Parameter(ParameterNames::REPEAT_TYPE, $repeatTypeId));
+		$this->AddParameter(new Parameter(ParameterNames::REPEAT_OPTIONS, $repeatTypeConfiguration));
 	}
 }
 
@@ -100,6 +103,16 @@ class AddBlackoutInstanceCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::SERIES_ID, $blackoutSeriesId));
 		$this->AddParameter(new Parameter(ParameterNames::START_DATE, $startDate->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::END_DATE, $endDate->ToDatabase()));
+	}
+}
+
+class AddBlackoutResourceCommand extends SqlCommand
+{
+	public function __construct($blackoutSeriesId, $resourceId)
+	{
+		parent::__construct(Queries::ADD_BLACKOUT_RESOURCE);
+		$this->AddParameter(new Parameter(ParameterNames::SERIES_ID, $blackoutSeriesId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
 	}
 }
 
@@ -189,7 +202,8 @@ class AddReservationSeriesCommand extends SqlCommand
 								$repeatOptions,
 								$reservationTypeId,
 								$statusId,
-								$ownerId
+								$ownerId,
+								$allowParticipation
 	)
 	{
 		parent::__construct(Queries::ADD_RESERVATION_SERIES);
@@ -202,6 +216,7 @@ class AddReservationSeriesCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::TYPE_ID, $reservationTypeId));
 		$this->AddParameter(new Parameter(ParameterNames::STATUS_ID, $statusId));
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $ownerId));
+		$this->AddParameter(new Parameter(ParameterNames::ALLOW_PARTICIPATION, (int)$allowParticipation));
 	}
 }
 
@@ -286,7 +301,7 @@ class AddResourceCommand extends SqlCommand
 {
 	public function __construct($name, $schedule_id, $autoassign = 1, $admin_group_id = null,
 								$location = null, $contact_info = null, $description = null, $notes = null,
-								$isactive = 1, $min_duration = null, $min_increment = null, $max_duration = null,
+								$status_id = 1, $min_duration = null, $min_increment = null, $max_duration = null,
 								$unit_cost = null, $requires_approval = 0, $allow_multiday = 1,
 								$max_participants = null, $min_notice_time = null, $max_notice_time = null)
 	{
@@ -298,7 +313,7 @@ class AddResourceCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_CONTACT, $contact_info));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_DESCRIPTION, $description));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_NOTES, $notes));
-		$this->AddParameter(new Parameter(ParameterNames::IS_ACTIVE, $isactive));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS, $status_id));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MINDURATION, $min_duration));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MININCREMENT, $min_increment));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MAXDURATION, $max_duration));
@@ -310,6 +325,50 @@ class AddResourceCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MINNOTICE, $min_notice_time));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MAXNOTICE, $max_notice_time));
 		$this->AddParameter(new Parameter(ParameterNames::GROUP_ADMIN_ID, $admin_group_id));
+	}
+}
+
+class AddResourceGroupCommand extends SqlCommand
+{
+	public function __construct($groupName, $parentId = null)
+	{
+		parent::__construct(Queries::ADD_RESOURCE_GROUP);
+
+		$this->AddParameter(new Parameter(ParameterNames::GROUP_NAME, $groupName));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, empty($parentId) ? null : $parentId));
+	}
+}
+
+class AddResourceStatusReasonCommand extends SqlCommand
+{
+	public function __construct($statusId, $reasonDescription)
+		{
+			parent::__construct(Queries::ADD_RESOURCE_STATUS_REASON);
+
+			$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS, $statusId));
+			$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS_REASON_DESCRIPTION, $reasonDescription));
+		}
+}
+
+class AddResourceToGroupCommand extends SqlCommand
+{
+	public function __construct($resourceId, $groupId)
+	{
+		parent::__construct(Queries::ADD_RESOURCE_TO_GROUP);
+
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, $groupId));
+	}
+}
+
+class AddResourceTypeCommand extends SqlCommand
+{
+	public function __construct($name, $description)
+	{
+		parent::__construct(Queries::ADD_RESOURCE_TYPE);
+
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_NAME, $name));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_DESCRIPTION, $description));
 	}
 }
 
@@ -407,11 +466,11 @@ class CheckEmailCommand extends SqlCommand
 	}
 }
 
-class CheckUserExistanceCommand extends SqlCommand
+class CheckUserExistenceCommand extends SqlCommand
 {
 	public function __construct($username, $emailAddress)
 	{
-		parent::__construct(Queries::CHECK_USER_EXISTANCE);
+		parent::__construct(Queries::CHECK_USER_EXISTENCE);
 		$this->AddParameter(new Parameter(ParameterNames::USERNAME, $username));
 		$this->AddParameter(new Parameter(ParameterNames::EMAIL_ADDRESS, $emailAddress));
 	}
@@ -480,12 +539,21 @@ class DeleteAnnouncementCommand extends SqlCommand
 	}
 }
 
-class DeleteBlackoutCommand extends SqlCommand
+class DeleteBlackoutInstanceCommand extends SqlCommand
 {
-	public function __construct($blackoutId)
+	public function __construct($instanceId)
+	{
+		parent::__construct(Queries::DELETE_BLACKOUT_INSTANCE);
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_INSTANCE_ID, $instanceId));
+	}
+}
+
+class DeleteBlackoutSeriesCommand extends SqlCommand
+{
+	public function __construct($instanceId)
 	{
 		parent::__construct(Queries::DELETE_BLACKOUT_SERIES);
-		$this->AddParameter(new Parameter(ParameterNames::SERIES_ID, $blackoutId));
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_INSTANCE_ID, $instanceId));
 	}
 }
 
@@ -582,6 +650,15 @@ class DeleteResourceCommand extends SqlCommand
 	}
 }
 
+class DeleteResourceGroupCommand extends SqlCommand
+{
+	public function __construct($groupId)
+	{
+		parent::__construct(Queries::DELETE_RESOURCE_GROUP_COMMAND);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, $groupId));
+	}
+}
+
 class DeleteResourceReservationsCommand extends SqlCommand
 {
 	public function __construct($resourceId)
@@ -589,6 +666,24 @@ class DeleteResourceReservationsCommand extends SqlCommand
 		parent::__construct(Queries::DELETE_RESOURCE_RESERVATIONS_COMMAND);
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
 	}
+}
+
+class DeleteResourceStatusReasonCommand extends SqlCommand
+{
+	public function __construct($reasonId)
+		{
+			parent::__construct(Queries::DELETE_RESOURCE_STATUS_REASON_COMMAND);
+			$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS_REASON_ID, $reasonId));
+		}
+}
+
+class DeleteResourceTypeCommand extends SqlCommand
+{
+	public function __construct($resourceTypeId)
+		{
+			parent::__construct(Queries::DELETE_RESOURCE_TYPE_COMMAND);
+			$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_ID, $resourceTypeId));
+		}
 }
 
 class DeleteSavedReportCommand extends SqlCommand
@@ -692,6 +787,15 @@ class GetAttributeByIdCommand extends SqlCommand
 	{
 		parent::__construct(Queries::GET_ATTRIBUTE_BY_ID);
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ID, $attributeId));
+	}
+}
+
+class GetAttributeAllValuesCommand extends SqlCommand
+{
+	public function __construct($attributeCategoryId)
+	{
+		parent::__construct(Queries::GET_ATTRIBUTE_ALL_VALUES);
+		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_CATEGORY, $attributeCategoryId));
 	}
 }
 
@@ -834,6 +938,23 @@ class GetAllResourcesCommand extends SqlCommand
 	}
 }
 
+class GetAllResourceGroupsCommand extends SqlCommand
+{
+	public function __construct()
+	{
+		parent::__construct(Queries::GET_ALL_RESOURCE_GROUPS);
+	}
+}
+
+class GetAllResourceGroupAssignmentsCommand extends SqlCommand
+{
+	public function __construct($scheduleId)
+	{
+		parent::__construct(Queries::GET_ALL_RESOURCE_GROUP_ASSIGNMENTS);
+		$this->AddParameter(new Parameter(ParameterNames::SCHEDULE_ID, $scheduleId));
+	}
+}
+
 class GetAllResourceAdminsCommand extends SqlCommand
 {
 	public function __construct($resourceId)
@@ -842,6 +963,22 @@ class GetAllResourceAdminsCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::USER_STATUS_ID, AccountStatus::ACTIVE));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
 		$this->AddParameter(new Parameter(ParameterNames::ROLE_LEVEL, RoleLevel::RESOURCE_ADMIN));
+	}
+}
+
+class GetAllResourceStatusReasonsCommand extends SqlCommand
+{
+	public function __construct()
+	{
+		parent::__construct(Queries::GET_ALL_RESOURCE_STATUS_REASONS);
+	}
+}
+
+class GetAllResourceTypesCommand extends SqlCommand
+{
+	public function __construct()
+	{
+		parent::__construct(Queries::GET_ALL_RESOURCE_TYPES);
 	}
 }
 
@@ -893,6 +1030,33 @@ class GetBlackoutListFullCommand extends SqlCommand
 	}
 }
 
+class GetBlackoutInstancesCommand extends SqlCommand
+{
+	public function __construct($seriesId)
+	{
+		parent::__construct(Queries::GET_BLACKOUT_INSTANCES);
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_SERIES_ID, $seriesId));
+	}
+}
+
+class GetBlackoutSeriesByBlackoutIdCommand extends SqlCommand
+{
+	public function __construct($blackoutId)
+	{
+		parent::__construct(Queries::GET_BLACKOUT_SERIES_BY_BLACKOUT_ID);
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_INSTANCE_ID, $blackoutId));
+	}
+}
+
+class GetBlackoutResourcesCommand extends SqlCommand
+{
+	public function __construct($seriesId)
+	{
+		parent::__construct(Queries::GET_BLACKOUT_RESOURCES);
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_SERIES_ID, $seriesId));
+	}
+}
+
 class GetDashboardAnnouncementsCommand extends SqlCommand
 {
 	public function __construct(Date $currentDate)
@@ -926,6 +1090,16 @@ class GetLayoutCommand extends SqlCommand
 	{
 		parent::__construct(Queries::GET_SCHEDULE_TIME_BLOCK_GROUPS);
 		$this->AddParameter(new Parameter(ParameterNames::SCHEDULE_ID, $scheduleId));
+	}
+}
+
+class GetNextReservationsCommand extends SqlCommand
+{
+	public function __construct(Date $earliestDate, Date $lastDate)
+	{
+		parent::__construct(Queries::GET_NEXT_RESERVATIONS);
+		$this->AddParameter(new Parameter(ParameterNames::START_DATE, $earliestDate->ToDatabase()));
+		$this->AddParameter(new Parameter(ParameterNames::END_DATE, $lastDate->ToDatabase()));
 	}
 }
 
@@ -990,9 +1164,12 @@ class GetFullGroupReservationListCommand extends GetFullReservationListCommand
 	{
 		$query = parent::GetQuery();
 
-		$newQuery = preg_replace('/WHERE/',
-								 'WHERE owner_id IN (SELECT user_id FROM user_groups WHERE group_id IN (@groupid)) AND ',
-								 $query, 1);
+		$pos = strripos($query, 'WHERE');
+		$newQuery = substr_replace($query, 'INNER JOIN (SELECT user_id FROM user_groups WHERE group_id IN (@groupid)) ss on ss.user_id = owner_id WHERE', $pos, strlen('WHERE'));
+
+//		$newQuery = preg_replace('/WHERE/',
+//								 'WHERE owner_id IN (SELECT user_id FROM user_groups WHERE group_id IN (@groupid)) AND ',
+//								 $query, 1);
 
 		return $newQuery;
 	}
@@ -1141,6 +1318,24 @@ class GetResourceByPublicIdCommand extends SqlCommand
 	}
 }
 
+class GetResourceGroupCommand extends SqlCommand
+{
+	public function __construct($groupId)
+	{
+		parent::__construct(Queries::GET_RESOURCE_GROUP_BY_ID);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, $groupId));
+	}
+}
+
+class GetResourceTypeCommand extends SqlCommand
+{
+	public function __construct($resourceTypeId)
+		{
+			parent::__construct(Queries::GET_RESOURCE_TYPE_BY_ID);
+			$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_ID, $resourceTypeId));
+		}
+}
+
 class GetSavedReportForUserCommand extends SqlCommand
 {
 	public function __construct($reportId, $userId)
@@ -1254,6 +1449,25 @@ class GetUserSessionByUserIdCommand extends SqlCommand
 	}
 }
 
+class GetResourceGroupPermissionCommand extends SqlCommand
+{
+	public function __construct($resourceId)
+	{
+		parent::__construct(Queries::GET_RESOURCE_GROUP_PERMISSION);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+	}
+}
+
+class GetResourceUserPermissionCommand extends SqlCommand
+{
+	public function __construct($resourceId, $accountStatusId = AccountStatus::ACTIVE)
+	{
+		parent::__construct(Queries::GET_RESOURCE_USER_PERMISSION);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+		$this->AddParameter(new Parameter(ParameterNames::USER_STATUS_ID, $accountStatusId));
+	}
+}
+
 class LoginCommand extends SqlCommand
 {
 	public function __construct($username)
@@ -1336,7 +1550,8 @@ class RegisterUserCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::ORGANIZATION, $organization));
 		$this->AddParameter(new Parameter(ParameterNames::POSITION, $position));
 		$this->AddParameter(new Parameter(ParameterNames::USER_STATUS_ID, $userStatusId));
-		$this->AddParameter(new Parameter(ParameterNames::DATE_CREATED, Date::Now()->ToDatabase()));
+		$this->AddParameter(new Parameter(ParameterNames::DATE_CREATED, Date::Now()
+																		->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::PUBLIC_ID, $publicId));
 		$this->AddParameter(new Parameter(ParameterNames::SCHEDULE_ID, $scheduleId));
 	}
@@ -1350,6 +1565,15 @@ class RemoveAttributeValueCommand extends SqlCommand
 
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ID, $attributeId));
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ENTITY_ID, $entityId));
+	}
+}
+class RemoveLegacyPasswordCommand extends SqlCommand
+{
+	public function __construct($userId)
+	{
+		parent::__construct(Queries::REMOVE_LEGACY_PASSWORD);
+
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
 	}
 }
 
@@ -1418,6 +1642,17 @@ class RemoveReservationUserCommand extends SqlCommand
 	}
 }
 
+class RemoveResourceFromGroupCommand extends SqlCommand
+{
+	public function __construct($resourceId, $groupId)
+	{
+		parent::__construct(Queries::REMOVE_RESOURCE_FROM_GROUP);
+
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, $groupId));
+	}
+}
+
 class ReportingCommand extends SqlCommand
 {
 	public function __construct($fname, $lname, $username, $organization, $group)
@@ -1437,7 +1672,41 @@ class GetUserPermissionsCommand extends SqlCommand
 	public function __construct($userId)
 	{
 		parent::__construct(Queries::GET_USER_RESOURCE_PERMISSIONS);
+
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+	}
+}
+
+class GetUserPreferenceCommand extends SqlCommand
+{
+	public function __construct($userId, $name)
+	{
+		parent::__construct(Queries::GET_USER_PREFERENCE);
+
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+		$this->AddParameter(new Parameter(ParameterNames::NAME, $name));
+	}
+}
+
+class GetUserPreferencesCommand extends SqlCommand
+{
+	public function __construct($userId)
+	{
+		parent::__construct(Queries::GET_USER_PREFERENCES);
+
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+	}
+}
+
+class AddUserPreferenceCommand extends SqlCommand
+{
+	public function __construct($userId, $name, $value)
+	{
+		parent::__construct(Queries::ADD_USER_PREFERENCE);
+
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+		$this->AddParameter(new Parameter(ParameterNames::NAME, $name));
+		$this->AddParameter(new Parameter(ParameterNames::VALUE, $value));
 	}
 }
 
@@ -1446,6 +1715,15 @@ class SelectUserGroupPermissions extends SqlCommand
 	public function __construct($userId)
 	{
 		parent::__construct(Queries::GET_USER_GROUP_RESOURCE_PERMISSIONS);
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+	}
+}
+
+class SelectUserGroupResourceAdminPermissions extends SqlCommand
+{
+	public function __construct($userId)
+	{
+		parent::__construct(Queries::GET_USER_ADMIN_GROUP_RESOURCE_PERMISSIONS);
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
 	}
 }
@@ -1485,7 +1763,7 @@ class UpdateAnnouncementCommand extends SqlCommand
 
 class UpdateAttributeCommand extends SqlCommand
 {
-	public function __construct($attributeId, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder)
+	public function __construct($attributeId, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder, $entityId)
 	{
 		parent::__construct(Queries::UPDATE_ATTRIBUTE);
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ID, $attributeId));
@@ -1496,6 +1774,19 @@ class UpdateAttributeCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_REQUIRED, (int)$required));
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_POSSIBLE_VALUES, $possibleValues));
 		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_SORT_ORDER, $sortOrder));
+		$this->AddParameter(new Parameter(ParameterNames::ATTRIBUTE_ENTITY_ID, $entityId));
+	}
+}
+
+class UpdateBlackoutInstanceCommand extends SqlCommand
+{
+	public function __construct($instanceId, $seriesId, Date $start, Date $end)
+	{
+		parent::__construct(Queries::UPDATE_BLACKOUT_INSTANCE);
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_INSTANCE_ID, $instanceId));
+		$this->AddParameter(new Parameter(ParameterNames::BLACKOUT_SERIES_ID, $seriesId));
+		$this->AddParameter(new Parameter(ParameterNames::START_DATE, $start->ToDatabase()));
+		$this->AddParameter(new Parameter(ParameterNames::END_DATE, $end->ToDatabase()));
 	}
 }
 
@@ -1558,7 +1849,8 @@ class UpdateReservationSeriesCommand extends SqlCommand
 								$repeatOptions,
 								Date $dateModified,
 								$statusId,
-								$ownerId
+								$ownerId,
+								$allowParticipation
 	)
 	{
 		parent::__construct(Queries::UPDATE_RESERVATION_SERIES);
@@ -1571,6 +1863,7 @@ class UpdateReservationSeriesCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::DATE_MODIFIED, $dateModified->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::STATUS_ID, $statusId));
 		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $ownerId));
+		$this->AddParameter(new Parameter(ParameterNames::ALLOW_PARTICIPATION, (int)$allowParticipation));
 	}
 }
 
@@ -1591,12 +1884,15 @@ class UpdateResourceCommand extends SqlCommand
 								TimeInterval $maxNoticeTime,
 								$description,
 								$imageName,
-								$isActive,
 								$scheduleId,
 								$adminGroupId,
 								$allowCalendarSubscription,
 								$publicId,
-								$sortOrder)
+								$sortOrder,
+								$resourceTypeId,
+								$statusId,
+								$reasonId,
+								TimeInterval $bufferTime)
 	{
 		parent::__construct(Queries::UPDATE_RESOURCE);
 
@@ -1615,12 +1911,48 @@ class UpdateResourceCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MINNOTICE, $minNoticeTime->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_MAXNOTICE, $maxNoticeTime->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_IMAGE_NAME, $imageName));
-		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ISACTIVE, (int)$isActive));
 		$this->AddParameter(new Parameter(ParameterNames::SCHEDULE_ID, $scheduleId));
 		$this->AddParameter(new Parameter(ParameterNames::GROUP_ADMIN_ID, $adminGroupId));
 		$this->AddParameter(new Parameter(ParameterNames::ALLOW_CALENDAR_SUBSCRIPTION, (int)$allowCalendarSubscription));
 		$this->AddParameter(new Parameter(ParameterNames::PUBLIC_ID, $publicId));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_SORT_ORDER, $sortOrder));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_ID, empty($resourceTypeId) ? null : $resourceTypeId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS, $statusId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS_REASON_ID, $reasonId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_BUFFER_TIME, $bufferTime->ToDatabase()));
+
+	}
+}
+
+class UpdateResourceGroupCommand extends SqlCommand
+{
+	public function __construct($groupId, $name, $parentId)
+	{
+		parent::__construct(Queries::UPDATE_RESOURCE_GROUP);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_ID, $groupId));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_NAME, $name));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_GROUP_PARENT_ID, empty($parentId) ? null : $parentId));
+	}
+}
+
+class UpdateResourceStatusReasonCommand extends SqlCommand
+{
+	public function __construct($id, $description)
+	{
+		parent::__construct(Queries::UPDATE_RESOURCE_STATUS_REASON);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS_REASON_ID, $id));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_STATUS_REASON_DESCRIPTION, $description));
+	}
+}
+
+class UpdateResourceTypeCommand extends SqlCommand
+{
+	public function __construct($id, $name, $description)
+	{
+		parent::__construct(Queries::UPDATE_RESOURCE_TYPE);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_ID, $id));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_NAME, $name));
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_TYPE_DESCRIPTION, $description));
 	}
 }
 
@@ -1689,7 +2021,8 @@ class UpdateUserCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::USERNAME, $username));
 		$this->AddParameter(new Parameter(ParameterNames::HOMEPAGE_ID, $homepageId));
 		$this->AddParameter(new Parameter(ParameterNames::TIMEZONE_NAME, $timezoneName));
-		$this->AddParameter(new Parameter(ParameterNames::DATE_MODIFIED, Date::Now()->ToDatabase()));
+		$this->AddParameter(new Parameter(ParameterNames::DATE_MODIFIED, Date::Now()
+																		 ->ToDatabase()));
 		$this->AddParameter(new Parameter(ParameterNames::LAST_LOGIN, $lastLogin));
 		$this->AddParameter(new Parameter(ParameterNames::ALLOW_CALENDAR_SUBSCRIPTION, (int)$allowCalendarSubscription));
 		$this->AddParameter(new Parameter(ParameterNames::PUBLIC_ID, $publicId));
@@ -1733,6 +2066,18 @@ class UpdateUserFromLdapCommand extends SqlCommand
 	}
 }
 
+class UpdateUserPreferenceCommand extends SqlCommand
+{
+	public function __construct($userId, $name, $value)
+	{
+		parent::__construct(Queries::UPDATE_USER_PREFERENCE);
+
+		$this->AddParameter(new Parameter(ParameterNames::USER_ID, $userId));
+		$this->AddParameter(new Parameter(ParameterNames::NAME, $name));
+		$this->AddParameter(new Parameter(ParameterNames::VALUE, $value));
+	}
+}
+
 class UpdateUserSessionCommand extends SqlCommand
 {
 	public function __construct($userId, $token, Date $insertTime, $serializedSession)
@@ -1744,5 +2089,3 @@ class UpdateUserSessionCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::USER_SESSION, $serializedSession));
 	}
 }
-
-?>

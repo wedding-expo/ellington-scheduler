@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Application/Authentication/namespace.php');
@@ -45,7 +41,7 @@ interface IWebAuthentication extends IAuthenticationPromptOptions
 	public function Logout(UserSession $user);
 
 	/**
-	 * @param string $cookieValue phpScheduleIt authentication cookie value
+	 * @param string $cookieValue authentication cookie value
 	 * @param ILoginContext $loginContext
 	 * @return bool If the login was successful
 	 */
@@ -61,6 +57,11 @@ interface IWebAuthentication extends IAuthenticationPromptOptions
 	 * @return bool
 	 */
 	public function AreCredentialsKnown();
+
+	/**
+	 * @return mixed
+	 */
+	public function IsLoggedIn();
 }
 
 class WebAuthentication implements IWebAuthentication
@@ -86,10 +87,6 @@ class WebAuthentication implements IWebAuthentication
 	 */
 	public function Validate($username, $password)
 	{
-		if (empty($username) || empty($password))
-		{
-			return false;
-		}
 		return $this->authentication->Validate($username, $password);
 	}
 
@@ -115,11 +112,11 @@ class WebAuthentication implements IWebAuthentication
 	 */
 	public function Logout(UserSession $userSession)
 	{
-		$this->authentication->Logout($userSession);
-		Log::Debug('Logout userId: %s', $userSession->UserId);
-
 		$this->DeleteLoginCookie($userSession->UserId);
 		ServiceLocator::GetServer()->EndSession(SessionKeys::USER_SESSION);
+
+		$this->authentication->Logout($userSession);
+		Log::Debug('Logout userId: %s', $userSession->UserId);
 	}
 
 	public function CookieLogin($cookieValue, $loginContext)
@@ -200,6 +197,14 @@ class WebAuthentication implements IWebAuthentication
 	public function ShowForgotPasswordPrompt()
 	{
 		return $this->authentication->ShowForgotPasswordPrompt();
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function IsLoggedIn()
+	{
+		return $this->server->GetUserSession()->IsLoggedIn();
 	}
 }
 

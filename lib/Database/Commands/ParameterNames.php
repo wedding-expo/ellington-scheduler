@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class ParameterNames
@@ -31,6 +31,7 @@ class ParameterNames
 	const ACTIVATION_CODE = '@activation_code';
 
 	const ALLOW_CALENDAR_SUBSCRIPTION = '@allow_calendar_subscription';
+	const ALLOW_PARTICIPATION = '@allow_participation';
 
 	const ANNOUNCEMENT_ID = '@announcementid';
 	const ANNOUNCEMENT_TEXT = '@text';
@@ -47,6 +48,10 @@ class ParameterNames
 	const ATTRIBUTE_VALUE = '@attribute_value';
 	const ATTRIBUTE_ENTITY_ID = '@entity_id';
 	const ATTRIBUTE_ENTITY_IDS = '@entity_ids';
+	const ATTRIBUTE_UNIQUE_PER_ENTITY = '@unique_per_entity';
+
+	const BLACKOUT_SERIES_ID = '@blackout_series_id';
+	const BLACKOUT_INSTANCE_ID = '@blackout_instance_id';
 
 	const CURRENT_DATE = '@current_date';
 	const CURRENT_SERIES_ID = '@currentSeriesId';
@@ -74,15 +79,16 @@ class ParameterNames
 
 	const HOMEPAGE_ID = '@homepageid';
 
-	const IS_ACTIVE = '@isactive';
-
 	const LAST_LOGIN = '@lastlogin';
 	const LAST_NAME = '@lname';
 	const LAYOUT_ID = '@layoutid';
 
+	const NAME = '@name';
+
 	const ORGANIZATION = '@organization';
 
 	const PASSWORD = '@password';
+	const PARTICIPANT_ID = '@participant_id';
 	const PERIOD_AVAILABILITY_TYPE = '@periodType';
 	const PERIOD_DAY_OF_WEEK = '@day_of_week';
 	const PERIOD_LABEL = '@label';
@@ -134,8 +140,19 @@ class ParameterNames
 	const RESOURCE_REQUIRES_APPROVAL = '@requires_approval';
 	const RESOURCE_LEVEL_ID = '@resourceLevelId';
 	const RESOURCE_IMAGE_NAME = '@imageName';
-	const RESOURCE_ISACTIVE = '@isActive';
 	const RESOURCE_SORT_ORDER = '@sort_order';
+	const RESOURCE_STATUS = '@status_id';
+	const RESOURCE_STATUS_REASON_ID = '@resource_status_reason_id';
+	const RESOURCE_STATUS_REASON_DESCRIPTION = '@description';
+	const RESOURCE_BUFFER_TIME = '@buffer_time';
+
+	const RESOURCE_GROUP_ID = '@resourcegroupid';
+	const RESOURCE_GROUP_NAME = '@resourcegroupname';
+	const RESOURCE_GROUP_PARENT_ID = '@parentid';
+
+	const RESOURCE_TYPE_ID = '@resource_type_id';
+	const RESOURCE_TYPE_NAME = '@resource_type_name';
+	const RESOURCE_TYPE_DESCRIPTION = '@resource_type_description';
 
 	const ROLE_ID = '@roleid';
 	const ROLE_LEVEL = '@role_level';
@@ -160,6 +177,8 @@ class ParameterNames
 	const USER_STATUS_ID = '@user_statusid';
 	const USER_SESSION = '@user_session_value';
 	const USERNAME = '@username';
+
+	const VALUE = '@value';
 
 
 	// used?

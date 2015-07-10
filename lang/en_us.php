@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once('Language.php');
@@ -74,7 +74,6 @@ class en_us extends Language
 		$strings['FirstNameRequired'] = 'First name is required.';
 		$strings['LastNameRequired'] = 'Last name is required.';
 		$strings['PwMustMatch'] = 'Password confirmation must match password.';
-		$strings['PwComplexity'] = 'Password must be at least 6 characters with a combination of letters, numbers and symbols.';
 		$strings['ValidEmailRequired'] = 'A valid email address is required.';
 		$strings['UniqueEmailRequired'] = 'That email address is already registered.';
 		$strings['UniqueUsernameRequired'] = 'That user name is already registered.';
@@ -97,6 +96,8 @@ class en_us extends Language
 		$strings['Announcements'] = 'Announcements';
 		$strings['NoUpcomingReservations'] = 'You have no upcoming reservations';
 		$strings['UpcomingReservations'] = 'Upcoming Reservations';
+		$strings['AllNoUpcomingReservations'] = 'There are no upcoming reservations in next %s days';
+		$strings['AllUpcomingReservations'] = 'All Upcoming Reservations';
 		$strings['ShowHide'] = 'Show/Hide';
 		$strings['Error'] = 'Error';
 		$strings['ReturnToPreviousPage'] = 'Return to the last page that you were on';
@@ -125,8 +126,8 @@ class en_us extends Language
 		$strings['RepeatEveryPrompt'] = 'Every';
 		$strings['RepeatDaysPrompt'] = 'On';
 		$strings['CreateReservationHeading'] = 'Create a new reservation';
-		$strings['EditReservationHeading'] = 'Editing reservation %s';
-		$strings['ViewReservationHeading'] = 'Viewing reservation %s';
+		$strings['EditReservationHeading'] = 'Editing Reservation %s';
+		$strings['ViewReservationHeading'] = 'Viewing Reservation %s';
 		$strings['ReservationErrors'] = 'Change Reservation';
 		$strings['Create'] = 'Create';
 		$strings['ThisInstance'] = 'Only This Instance';
@@ -170,6 +171,8 @@ class en_us extends Language
 		$strings['ResourceMinNoticeNone'] = 'Reservations can be made up until the current time';
 		$strings['ResourceMaxNotice'] = 'Reservations must not end more than %s from the current time';
 		$strings['ResourceMaxNoticeNone'] = 'Reservations can end at any point in the future';
+		$strings['ResourceBufferTime'] = 'There must be %s between reservations';
+		$strings['ResourceBufferTimeNone'] = 'There is no buffer between reservations';
 		$strings['ResourceAllowMultiDay'] = 'Reservations can be made across days';
 		$strings['ResourceNotAllowMultiDay'] = 'Reservations cannot be made across days';
 		$strings['ResourceCapacity'] = 'This resource has a capacity of %s people';
@@ -190,6 +193,7 @@ class en_us extends Language
 		$strings['ResourcePermissions'] = 'Resource Permissions';
 		$strings['Reservations'] = 'Reservations';
 		$strings['Groups'] = 'Groups';
+		$strings['Users'] = 'Users';
 		$strings['ResetPassword'] = 'Reset Password';
 		$strings['AllUsers'] = 'All Users';
 		$strings['AllGroups'] = 'All Groups';
@@ -202,6 +206,7 @@ class en_us extends Language
 		$strings['Attending'] = 'Attending';
 		$strings['QuotaConfiguration'] = 'On %s for %s users in %s are limited to %s %s per %s';
 		$strings['reservations'] = 'reservations';
+		$strings['reservation'] = 'reservation';
 		$strings['ChangeCalendar'] = 'Change Calendar';
 		$strings['AddQuota'] = 'Add Quota';
 		$strings['FindUser'] = 'Find User';
@@ -257,7 +262,7 @@ class en_us extends Language
 		$strings['Close'] = 'Close';
 		$strings['ExportToCSV'] = 'Export to CSV';
 		$strings['OK'] = 'OK';
-		$strings['Working'] = 'Working';
+		$strings['Working'] = 'Working...';
 		$strings['Login'] = 'Login';
 		$strings['AdditionalInformation'] = 'Additional Information';
 		$strings['AllFieldsAreRequired'] = 'all fields are required';
@@ -275,6 +280,7 @@ class en_us extends Language
 		$strings['ReservationCreated'] = 'Your reservation was successfully created!';
 		$strings['ReservationUpdated'] = 'Your reservation was successfully updated!';
 		$strings['ReservationRemoved'] = 'Your reservation was removed';
+		$strings['ReservationRequiresApproval'] = 'One or more of the resources reserved require approval before usage.  This reservation will be pending until it is approved.';
 		$strings['YourReferenceNumber'] = 'Your reference number is %s';
 		$strings['UpdatingReservation'] = 'Updating reservation';
 		$strings['ChangeUser'] = 'Change User';
@@ -300,8 +306,10 @@ class en_us extends Language
 		$strings['Filter'] = 'Filter';
 		$strings['Between'] = 'Between';
 		$strings['CreatedBy'] = 'Created By';
-		$strings['BlackoutCreated'] = 'Blackout Created!';
-		$strings['BlackoutNotCreated'] = 'Blackout could not be created!';
+		$strings['BlackoutCreated'] = 'Blackout Created';
+		$strings['BlackoutNotCreated'] = 'Blackout could not be created';
+		$strings['BlackoutUpdated'] = 'Blackout Updated';
+		$strings['BlackoutNotUpdated'] = 'Blackout could not be updated';
 		$strings['BlackoutConflicts'] = 'There are conflicting blackout times';
 		$strings['ReservationConflicts'] = 'There are conflicting reservations times';
 		$strings['UsersInGroup'] = 'Users in this group';
@@ -457,14 +465,53 @@ class en_us extends Language
 		$strings['Next'] = 'Next';
 		$strings['Success'] = 'Success';
 		$strings['Participant'] = 'Participant';
+		$strings['ResourceFilter'] = 'Resource Filter';
+		$strings['ResourceGroups'] = 'Resource Groups';
+		$strings['AddNewGroup'] = 'Add a new group';
+		$strings['Quit'] = 'Quit';
+		$strings['AddGroup'] = 'Add Group';
+		$strings['StandardScheduleDisplay'] = 'Use the standard schedule display';
+		$strings['TallScheduleDisplay'] = 'Use the tall schedule display';
+		$strings['WideScheduleDisplay'] = 'Use the wide schedule display';
+		$strings['CondensedWeekScheduleDisplay'] = 'Use condensed week schedule display';
+		$strings['ResourceGroupHelp1'] = 'Drag and drop resource groups to reorganize.';
+		$strings['ResourceGroupHelp2'] = 'Right click a resource group name for additional actions.';
+		$strings['ResourceGroupHelp3'] = 'Drag and drop resources to add them to groups.';
+		$strings['ResourceGroupWarning'] = 'If using resource groups, each resource must be assigned to at least one group. Unassigned resources will not be able to be reserved.';
+		$strings['ResourceType'] = 'Resource Type';
+		$strings['AppliesTo'] = 'Applies To';
+		$strings['UniquePerInstance'] = 'Unique Per Instance';
+		$strings['AddResourceType'] = 'Add Resource Type';
+		$strings['NoResourceTypeLabel'] = '(no resource type set)';
+		$strings['ClearFilter'] = 'Clear Filter';
+		$strings['MinimumCapacity'] = 'Minimum Capacity';
+		$strings['Color'] = 'Color';
+		$strings['Available'] = 'Available';
+		$strings['Unavailable'] = 'Unavailable';
+		$strings['Hidden'] = 'Hidden';
+		$strings['ResourceStatus'] = 'Resource Status';
+		$strings['CurrentStatus'] = 'Current Status';
+		$strings['AllReservationResources'] = 'All Reservation Resources';
+		$strings['File'] = 'File';
+		$strings['BulkResourceUpdate'] = 'Bulk Resource Update';
+		$strings['Unchanged'] = 'Unchanged';
+		$strings['Common'] = 'Common';
+		$strings['AdvancedFilter'] = 'Advanced Filter';
+		$strings['AllParticipants'] = 'All Participants';
+		$strings['ResourceAvailability'] = 'Resource Availability';
+		$strings['UnavailableAllDay'] = 'Unavailable All Day';
+		$strings['AvailableUntil'] = 'Available Until';
+		$strings['AvailableBeginningAt'] = 'Available Beginning At';
+		$strings['AllowParticipantsToJoin'] = 'Allow Participants To Join';
+		$strings['JoinThisReservation'] = 'Join This Reservation';
 		// End Strings
 
 		// Install
-		$strings['InstallApplication'] = 'Install phpScheduleIt (MySQL only)';
+		$strings['InstallApplication'] = 'Install Booked Scheduler (MySQL only)';
 		$strings['IncorrectInstallPassword'] = 'Sorry, that password was incorrect.';
 		$strings['SetInstallPassword'] = 'You must set an install password before the installation can be run.';
 		$strings['InstallPasswordInstructions'] = 'In %s please set %s to a password which is random and difficult to guess, then return to this page.<br/>You can use %s';
-		$strings['NoUpgradeNeeded'] = 'There is no upgrade needed. Running the installation process will delete all existing data and install a new copy of phpScheduleIt!';
+		$strings['NoUpgradeNeeded'] = 'There is no upgrade needed. Running the installation process will delete all existing data and install a new copy of Booked Scheduler!';
 		$strings['ProvideInstallPassword'] = 'Please provide your installation password.';
 		$strings['InstallPasswordLocation'] = 'This can be found at %s in %s.';
 		$strings['VerifyInstallSettings'] = 'Verify the following default settings before continuing. Or you can change them in %s.';
@@ -489,12 +536,13 @@ class en_us extends Language
 		$strings['InstallationSuccess'] = 'Installation completed successfully!';
 		$strings['RegisterAdminUser'] = 'Register your admin user. This is required if you did not import the sample data. Ensure that $conf[\'settings\'][\'allow.self.registration\'] = \'true\' in your %s file.';
 		$strings['LoginWithSampleAccounts'] = 'If you imported the sample data, you can log in with admin/password for admin user or user/password for basic user.';
-		$strings['InstalledVersion'] = 'You are now running version %s of phpScheduleIt';
+		$strings['InstalledVersion'] = 'You are now running version %s of Booked Scheduler';
 		$strings['InstallUpgradeConfig'] = 'It is recommended to upgrade your config file';
 		$strings['InstallationFailure'] = 'There were problems with the installation.  Please correct them and retry the installation.';
-		$strings['ConfigureApplication'] = 'Configure phpScheduleIt';
+		$strings['ConfigureApplication'] = 'Configure Booked Scheduler';
 		$strings['ConfigUpdateSuccess'] = 'Your config file is now up to date!';
 		$strings['ConfigUpdateFailure'] = 'We could not automatically update your config file. Please overwrite the contents of config.php with the following:';
+		$strings['SelectUser'] = 'Select User';
 		// End Install
 
 		// Errors
@@ -505,15 +553,15 @@ class en_us extends Language
 		$strings['MinDurationError'] = 'This reservation must last at least %s.';
 		$strings['MaxDurationError'] = 'This reservation cannot last longer than %s.';
 		$strings['ConflictingAccessoryDates'] = 'There are not enough of the following accessories:';
-		$strings['NoResourcePermission'] = 'You do not have permission to access one or more of the requested resources';
+		$strings['NoResourcePermission'] = 'You do not have permission to access one or more of the requested resources.';
 		$strings['ConflictingReservationDates'] = 'There are conflicting reservations on the following dates:';
-		$strings['StartDateBeforeEndDateRule'] = 'The start date and time must be before the end date and time';
-		$strings['StartIsInPast'] = 'The start date and time cannot be in the past';
-		$strings['EmailDisabled'] = 'The administrator has disabled email notifications';
+		$strings['StartDateBeforeEndDateRule'] = 'The start date and time must be before the end date and time.';
+		$strings['StartIsInPast'] = 'The start date and time cannot be in the past.';
+		$strings['EmailDisabled'] = 'The administrator has disabled email notifications.';
 		$strings['ValidLayoutRequired'] = 'Slots must be provided for all 24 hours of the day beginning and ending at 12:00 AM.';
 		$strings['CustomAttributeErrors'] = 'There are problems with the additional attributes you provided:';
-		$strings['CustomAttributeRequired'] = '%s is a required field';
-		$strings['CustomAttributeInvalid'] = 'The value provided for %s is invalid';
+		$strings['CustomAttributeRequired'] = '%s is a required field.';
+		$strings['CustomAttributeInvalid'] = 'The value provided for %s is invalid.';
 		$strings['AttachmentLoadingError'] = 'Sorry, there was a problem loading the requested file.';
 		$strings['InvalidAttachmentExtension'] = 'You can only upload files of type: %s';
 		$strings['InvalidStartSlot'] = 'The start date and time requested is not valid.';
@@ -522,6 +570,15 @@ class en_us extends Language
 		$strings['ReservationCriticalError'] = 'There was a critical error saving your reservation. If this continues, contact your system administrator.';
 		$strings['InvalidStartReminderTime'] = 'The start reminder time is not valid.';
 		$strings['InvalidEndReminderTime'] = 'The end reminder time is not valid.';
+		$strings['QuotaExceeded'] = 'Quota limit exceeded.';
+		$strings['MultiDayRule'] = '%s does not allow reservations across days.';
+		$strings['InvalidReservationData'] = 'There were problems with your reservation request.';
+		$strings['PasswordError'] = 'Password must contain at least %s letters and at least %s numbers.';
+		$strings['PasswordErrorRequirements'] = 'Password must contain a combination of at least %s upper and lower case letters and %s numbers.';
+		$strings['NoReservationAccess'] = 'You are not allowed to change this reservation.';
+		$strings['PasswordControlledExternallyError'] = 'Your password is controlled by an external system and cannot be updated here.';
+		$strings['NoResources'] = 'You have not added any resources.';
+		$strings['ParticipationNotAllowed'] = 'You are not allowed to join this reservation.';
 		// End Errors
 
 		// Page Titles
@@ -577,6 +634,9 @@ class en_us extends Language
 		$strings['Group'] = 'Group';
 		$strings['ManageConfiguration'] = 'Application Configuration';
 		$strings['LookAndFeel'] = 'Look and Feel';
+		$strings['ManageResourceGroups'] = 'Resource Groups';
+		$strings['ManageResourceTypes'] = 'Resource Types';
+		$strings['ManageResourceStatus'] = 'Resource Statuses';
 		// End Page Titles
 
 		// Day representations
@@ -605,6 +665,7 @@ class en_us extends Language
 		$strings['ReservationCreatedAdminSubject'] = 'Notification: A Reservation Was Created';
 		$strings['ReservationUpdatedAdminSubject'] = 'Notification: A Reservation Was Updated';
 		$strings['ReservationDeleteAdminSubject'] = 'Notification: A Reservation Was Removed';
+		$strings['ReservationApprovalAdminSubject'] = 'Notification: Reservation Requires Your Approval';
 		$strings['ParticipantAddedSubject'] = 'Reservation Participation Notification';
 		$strings['ParticipantDeletedSubject'] = 'Reservation Removed';
 		$strings['InviteeAddedSubject'] = 'Reservation Invitation';
@@ -613,6 +674,7 @@ class en_us extends Language
 		$strings['ReportSubject'] = 'Your Requested Report (%s)';
 		$strings['ReservationStartingSoonSubject'] = 'Reservation for %s is starting soon';
 		$strings['ReservationEndingSoonSubject'] = 'Reservation for %s is ending soon';
+		$strings['UserAdded'] = 'A new user has been added';
 		// End Email Subjects
 
 		$this->Strings = $strings;

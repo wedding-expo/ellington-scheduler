@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Common/namespace.php');
@@ -156,9 +156,9 @@ class ReservationSeries
 	}
 
 	/**
-	 * @var ReservationAttachment|null
+	 * @var ReservationAttachment[]|array
 	 */
-	protected $addedAttachment;
+	protected $addedAttachments = array();
 
 	/**
 	 * @return int[]
@@ -240,6 +240,11 @@ class ReservationSeries
 	 */
 	protected $endReminder;
 
+	/**
+	 * @var bool
+	 */
+	protected $allowParticipation = false;
+
 	protected function __construct()
 	{
 		$this->_repeatOptions = new RepeatNone();
@@ -294,7 +299,7 @@ class ReservationSeries
 	{
 		$this->_repeatOptions = $repeatOptions;
 
-		$dates = $repeatOptions->GetDates($this->CurrentInstance()->Duration());
+		$dates = $repeatOptions->GetDates($this->CurrentInstance()->Duration()->ToTimezone($this->_bookedBy->Timezone));
 
 		if (empty($dates))
 		{
@@ -305,6 +310,28 @@ class ReservationSeries
 		{
 			$this->AddNewInstance($date);
 		}
+	}
+
+	/**
+	 * @return TimeInterval|null
+	 */
+	public function MaxBufferTime() {
+
+		$max = new TimeInterval(0);
+
+		foreach ($this->AllResources() as $resource)
+		{
+			if ($resource->HasBufferTime())
+			{
+				$buffer = $resource->GetBufferTime();
+				if ($buffer->TotalSeconds() > $max->TotalSeconds())
+				{
+					$max = $buffer;
+				}
+			}
+		}
+
+		return $max->TotalSeconds() > 0 ? $max : null;
 	}
 
 	/**
@@ -432,6 +459,22 @@ class ReservationSeries
 	}
 
 	/**
+	 * @param bool $shouldAllowParticipation
+	 */
+	public function AllowParticipation($shouldAllowParticipation)
+	{
+		$this->allowParticipation = $shouldAllowParticipation;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function GetAllowParticipation()
+	{
+		return $this->allowParticipation;
+	}
+
+	/**
 	 * @param int[] $inviteeIds
 	 * @return void
 	 */
@@ -521,11 +564,11 @@ class ReservationSeries
 	}
 
 	/**
-	 * @return ReservationAttachment|null
+	 * @return ReservationAttachment[]|array
 	 */
-	public function AddedAttachment()
+	public function AddedAttachments()
 	{
-		return $this->addedAttachment;
+		return $this->addedAttachments;
 	}
 
 	/**
@@ -533,15 +576,18 @@ class ReservationSeries
 	 */
 	public function AddAttachment(ReservationAttachment $attachment)
 	{
-		$this->addedAttachment = $attachment;
+		$this->addedAttachments[] = $attachment;
 	}
 
 	public function WithSeriesId($seriesId)
 	{
 		$this->seriesId = $seriesId;
-		if ($this->addedAttachment != null)
+		foreach ($this->addedAttachments as $addedAttachment)
 		{
-			$this->addedAttachment->WithSeriesId($seriesId);
+			if ($addedAttachment != null)
+			{
+				$addedAttachment->WithSeriesId($seriesId);
+			}
 		}
 	}
 
@@ -571,5 +617,3 @@ class ReservationSeries
 		$this->endReminder = $reminder;
 	}
 }
-
-?>

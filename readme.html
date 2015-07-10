@@ -1,15 +1,14 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-		"http://www.w3.org/TR/html4/loose.dtd">
-<html>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title>phpScheduleIt Readme</title>
+	<title>Booked Readme</title>
 </head>
 <body>
-<h1>Welcome to phpScheduleIt!</h1>
+<h1>Welcome to Booked Scheduler!</h1>
 
 <h2>Prerequisites</h2>
 <ul>
-	<li>PHP 5.2 or greater (5.3 + recommended)</li>
+	<li>PHP 5.2 or greater (5.3+ recommended)</li>
 	<li>MySQL 5.0 or greater</li>
 	<li>Web server (Apache, IIS)</li>
 	<li>OS - Windows, Mac, Unix</li>
@@ -20,9 +19,200 @@
 <a href="readme_installation.html#upgrading">Upgrading</a>
 
 <h2>General Application Help</h2>
-phpScheduleIt application help is available from the Help menu item.
+Booked application help is available from the Help menu item.
 
 <h2>Release Notes</h2>
+
+<h4>2.5.15</h4>
+<ul>
+    <li>Added ability for users to join reservations without being invited</li>
+    <li>Upgraded CAS library to 1.3.3</li>
+    <li>Added Active Directory option to sync group membership into Booked</li>
+    <li>Added user details popup</li>
+    <li>Added ability to manage user and group permissions from resource management page</li>
+    <li>Fixed bug preventing recurring reservations from being deleted in management page</li>
+    <li>Fixed bug incorrectly grouping recurring reservations on calendar views</li>
+    <li>Updated Italian language</li>
+    <li>Updated Spanish language</li>
+</ul>
+
+<h4>2.5.14</h4>
+<ul>
+    <li>Added notice to schedule when no resources have been added</li>
+    <li>Added emails to participants and invitees when a reservation is updated</li>
+    <li>Added resource image to reservation email</li>
+    <li>Added ability to set default homepage for new users</li>
+    <li>Added dashboard item for current resource availability</li>
+    <li>Fixed bug displaying wrong reservation dates on reservation save confirmation message</li>
+    <li>Fixed bug on view schedule page when using daily layouts</li>
+    <li>Fixed bug preventing individual reservations from being added to external calendars</li>
+    <li>Fixed bug which did not check Sunday checkbox on recurring reservations</li>
+    <li>Fixed bug on dst change preventing all reservations on that day</li>
+    <li>Fixed bug causing permission updates performed by schedule admins to wipe out certain permissions</li>
+    <li>Updated Italian language pack</li>
+    <li>Updated Spanish language pack</li>
+</ul>
+
+<h4>2.5.13</h4>
+<ul>
+    <li>Fixed bug preventing reservations from being added to Outlook</li>
+    <li>Fixed bug preventing accessories from showing in reservation popup</li>
+    <li>Fixed bug preventing resource filter from working on view schedule</li>
+    <li>Added Drupal authentication plugin (Drupal 7.x with MySQL only)</li>
+    <li>Added ability to display participant and invitee lists in the reservation label</li>
+    <li>Applied patch for HTTP security headers</li>
+    <li>Updated Italian language</li>
+</ul>
+
+<h4>2.5.12</h4>
+<ul>
+    <li>Fixed English admin help page</li>
+</ul>
+
+<h4>2.5.11</h4>
+<ul>
+    <li>Fixed issue that was sending approval request emails on every reservation create/update if approval emails were enabled</li>
+</ul>
+
+<h4>2.5.10</h4>
+<ul>
+    <li>Fixed issue sending email from *nix servers</li>
+</ul>
+
+<h4>2.5.9</h4>
+<ul>
+    <li>Added custom attributes to reports</li>
+    <li>Added resource groups to calendar views</li>
+    <li>Added ability to enter maintenance mode</li>
+    <li>Added ability manage user groups through API</li>
+    <li>Added more options for customizing the reservation slot label, including using custom attributes</li>
+    <li>Added ability to customize reservation label for My Calendar, Resource Calendar, ICS feeds, RSS feeds and the reservation popup</li>
+    <li>Added list of dates and resources to reservation confirmation message</li>
+    <li>Added ability to receive reservation approval request emails</li>
+    <li>Added API to get schedule slots</li>
+    <li>Added finer-grained control over what profile values can be managed through Booked when using an authentication plugin</li>
+    <li>Reduced the size of the bookings page</li>
+    <li>Fixed bug graying out resources and dates when user and schedule timezone don't match</li>
+    <li>Fixed bug handling non-UTC dates in API</li>
+    <li>Fixed bug performing case sensitive match when checking if user is admin</li>
+    <li>Fixed bug for GetAvailability API</li>
+    <li>Updated German language files</li>
+    <li>Updated Portuguese language files</li>
+</ul>
+
+<h4>2.5.8</h4>
+<ul>
+    <li>Added schedule and resource filter to My Calendar</li>
+    <li>Fixed bug displaying week in calendar views</li>
+    <li>Reduced the size of the bookings page by ~35%</li>
+    <li>Updated German language files</li>
+    <li>Updated Japanese language files</li>
+    <li>Updated Portuguese language files</li>
+</ul>
+
+<h4>2.5.7</h4>
+<ul>
+    <li>Fixed potential XSS vulnerability on login page</li>
+</ul>
+
+<h4>2.5.6</h4>
+<ul>
+    <li>Fixed problem navigating to reservation details from tall schedule view</li>
+    <li>Fixed problem rendering resource group management page</li>
+</ul>
+
+<h4>2.5.5</h4>
+<ul>
+    <li>Fixed problem updating plugin config files through UI</li>
+    <li>Fixed date parsing in web services</li>
+</ul>
+
+<h4>2.5.4</h4>
+<ul>
+    <li>Fixed error updating resources</li>
+</ul>
+
+<h4>2.5.3</h4>
+<ul>
+    <li>Fixed manage reservations/resources custom attribute filter when multiple attributes are provided</li>
+    <li>Fixed javascript error when recaptcha is disabled during registration</li>
+    <li>Fixed error updating usage configuration of resources</li>
+    <li>Fixed installer to handle the case when the database exists but no tables have been created</li>
+    <li>Changed installer to use mysqli</li>
+    <li>Fixed error filtering blackouts by resource</li>
+    <li>Fixed error creating recurring reservation which sometimes picked the wrong week of the month</li>
+</ul>
+
+<h4>2.5.2</h4>
+<ul>
+    <li>Added ability for admins to filter reservations by custom attributes</li>
+    <li>Added ability for admins update reservation custom attributes inline on manage reservations page</li>
+    <li>Added paging and filtering on Manage Resources</li>
+    <li>Added bulk update on Manage Resources</li>
+    <li>Added admin dashboard for all upcoming reservations</li>
+    <li>Added ability to leave protocol off script.url setting to auto-detect http vs https</li>
+    <li>Fixed bug failing to display error message when invalid daily layout is being created</li>
+    <li>Fixed missing HTML tags on print report page</li>
+    <li>Added Croatian translation</li>
+    <li>Updated Czech translation</li>
+    <li>Fixed overly restrictive password validator</li>
+    <li>Changed reservation confirmation screen to notify when the reservation requires approval</li>
+    <li>Updates to Italian language pack</li>
+</ul>
+
+<h4>2.5.1</h4>
+<ul>
+    <li>Updated German language files</li>
+    <li>Changed reservations web service to not default to current user if no user is provided</li>
+    <li>Added resource availability web service</li>
+    <li>Added reservation approval web service</li>
+    <li>Fixed bug creating a opening new reservation window without a selected resource id</li>
+    <li>Fixed bug where reservations ending at midnight would show on the next day for condensed view</li>
+    <li>Fixed bug where role restricted pages could not be opened up to everyone</li>
+    <li>Fixed bug when a hidden resource belongs to a group</li>
+    <li>Fixed bug with schedule admin being able to see reservation list and see blackout list</li>
+    <li>Fixed bug where readonly schedule page failed to render</li>
+    <li>Fixed bug  adding/removing resource images</li>
+    <li>Fixed sample data import</li>
+    <li>Cleaned up sample post-reservation plugin example</li>
+</ul>
+
+<h4>2.5</h4>
+<ul>
+    <li>Application renamed from phpScheduleIt to Booked Scheduler <a href="http://www.bookedscheduler.com/phpscheduleit" target="_blank">(why?)</a></li>
+    <li>Added ability to reserve resource groups</li>
+    <li>Added ability to filter schedule resources</li>
+    <li>Added ability to specify resource type</li>
+    <li>Added enhanced resource status management</li>
+    <li>Added ability to specify buffer time between reservations (per resource)</li>
+    <li>Custom attributes now appear on all reservation emails and balloons</li>
+    <li>Added ability set custom attributes for an individual resource, user or resource type</li>
+    <li>Added ability manage config files for all plugins through the UI</li>
+    <li>Added ability to set reservation colors per user</li>
+    <li>Added ability to subscribe to reservation Atom feeds</li>
+    <li>Added ability update blackouts</li>
+    <li>Added ability attach multiple items to a reservation</li>
+    <li>Added Shibboleth authentication plugin (thank you to the folks at UCSF)</li>
+    <li>Added ability to email admin for all new account creations</li>
+    <li>Updates and cleanup on the API</li>
+    <li>Removed password regex setting in favor of password complexity settings</li>
+    <li>Changed schedule drop downs to exclude schedules if the user does not have permission to any of the resources belonging to it</li>
+    <li>Added wide and condensed booking page views</li>
+    <li>Added option to allow all users access to reports</li>
+    <li>Added setting for default 'from' email address</li>
+    <li>Changed the reservation page to default to the minimum resource reservation time</li>
+    <li>Changed reservation update to grant permissions to all users if auto-assign permissions is being turned on</li>
+    <li>Fixed showing 'Private' when the current user is the reservation owner</li>
+    <li>Fixed bug where recurring reservations across daylight savings time boundaries were not being updated to the correct time</li>
+    <li>Fixed bug where schedule would freeze on certain daylight savings boundaries</li>
+    <li>Fixed pagination bug on manage reservations page</li>
+    <li>Fixed bug allowing invitees to join a reservation that was already at capacity</li>
+    <li>Fixed bug not enforcing resource cross day reservation constraint</li>
+    <li>Fixed bug where quota rules were being enforced cumulatively for resources on a schedule</li>
+    <li>Fixed bug where reminders were being sent for deleted reservations</li>
+    <li>Updated all mysql_* calls to mysqli_*</li>
+    <li>Numerous other minor fixes and updates</li>
+</ul>
 
 <h4>2.4.2</h4>
 <ul>
@@ -154,24 +344,6 @@ phpScheduleIt application help is available from the Help menu item.
 	<li>Roles</li>
 	<li>Better Microsoft Outlook integration</li>
 	<li>Easier installation process</li>
-</ul>
-
-<h2>Road Map - 2.3</h2>
-<ul>
-	<li><h4>Planned Features</h4>
-		<ul>
-			<li>Reporting and statistics</li>
-			<li>Recurring blackout times</li>
-			<li>More features depending on timing and community needs</li>
-		</ul>
-	<li><h4>Planned Enhancements</h4>
-		<ul>
-			<li>Enhanced privacy controls</li>
-			<li>More plugin points</li>
-			<li>Minor bugfixes</li>
-			<li>More enhancements depending on timing and community needs</li>
-		</ul>
-	</li>
 </ul>
 
 </body>

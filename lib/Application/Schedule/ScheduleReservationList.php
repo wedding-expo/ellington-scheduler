@@ -1,27 +1,23 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 interface IScheduleReservationList
 {
 	/**
-	 * @return array[int]IReservationSlot
+	 * @return array|IReservationSlot[]
 	 */
 	function BuildSlots();
 }
@@ -81,6 +77,11 @@ class ScheduleReservationList implements IScheduleReservationList
 	private $_firstLayoutTime;
 
 	/**
+	 * @var Date
+	 */
+	private $_lastLayoutTime;
+
+	/**
 	 * @param array|ReservationListItem[] $items
 	 * @param IScheduleLayout $layout
 	 * @param Date $layoutDate
@@ -102,6 +103,8 @@ class ScheduleReservationList implements IScheduleReservationList
 
 	public function BuildSlots()
 	{
+		$sw = StopWatch::StartNew();
+
 		$slots = array();
 
 		for ($currentIndex = 0; $currentIndex < count($this->_layoutItems); $currentIndex++)
@@ -121,7 +124,6 @@ class ScheduleReservationList implements IScheduleReservationList
 				}
 
 				$endingPeriodIndex = max($this->GetLayoutIndexEndingAt($endTime), $currentIndex);
-
 				$span = ($endingPeriodIndex - $currentIndex) + 1;
 
 				$slots[] = $item->BuildSlot($layoutItem, $this->_layoutItems[$endingPeriodIndex],
@@ -135,42 +137,75 @@ class ScheduleReservationList implements IScheduleReservationList
 			}
 		}
 
+		$sw->Stop();
+//		Log::Debug('BuildSlots() took %s seconds', $sw->GetTotalSeconds());
+
 		return $slots;
 	}
 
 	private function IndexItems()
 	{
-		foreach ($this->_items as $item)
+		$sw = StopWatch::StartNew();
+
+		foreach ($this->_items as $index => $item)
 		{
-			if ($item->EndDate()->ToTimezone($this->_destinationTimezone)->Equals($this->_firstLayoutTime))
+			if ($item->HasBufferTime())
 			{
-				continue;
-			}
-
-			$start = $item->StartDate()->ToTimezone($this->_destinationTimezone);
-
-			$startsInPast = $this->ItemStartsOnPastDate($item);
-			if ($startsInPast)
-			{
-				$start = $this->_firstLayoutTime;
-			}
-			elseif ($this->ItemIsNotOnLayoutBoundary($item))
-			{
-				$layoutItem = $this->FindClosestLayoutIndexBeforeStartingTime($item);
-				if (!empty($layoutItem))
+				$bufferItem = new BufferItem($item, BufferItem::LOCATION_BEFORE);
+				if (!$this->Collides($bufferItem, $index))
 				{
-					$start = $layoutItem->BeginDate()->ToTimezone($this->_destinationTimezone);
+					$this->IndexItem($bufferItem);
 				}
 			}
 
-			$this->_itemsByStartTime[$start->Timestamp()] = $item;
+			$this->IndexItem($item);
+
+			if ($item->HasBufferTime())
+			{
+				$bufferItem = new BufferItem($item, BufferItem::LOCATION_AFTER);
+				if (!$this->Collides($bufferItem, $index))
+				{
+					$this->IndexItem($bufferItem);
+				}
+			}
 		}
+
+		$sw->Stop();
+//		Log::Debug('IndexItems() took %s seconds', $sw->GetTotalSeconds());
+	}
+
+	private function IndexItem(ReservationListItem $item)
+	{
+		if (($item->StartDate()->Compare($this->_lastLayoutTime) >= 0) ||
+				($item->EndDate()->Compare($this->_firstLayoutTime) <= 0))
+		{
+			// skip the item if it starts after this layout or ends before it
+			return;
+		}
+
+		$start = $item->StartDate()->ToTimezone($this->_destinationTimezone);
+
+		$startsInPast = $this->ItemStartsOnPastDate($item);
+		if ($startsInPast)
+		{
+			$start = $this->_firstLayoutTime;
+		}
+		elseif ($this->ItemIsNotOnLayoutBoundary($item))
+		{
+			$layoutItem = $this->FindClosestLayoutIndexBeforeStartingTime($item);
+			if (!empty($layoutItem))
+			{
+				$start = $layoutItem->BeginDate()->ToTimezone($this->_destinationTimezone);
+			}
+		}
+
+		$this->_itemsByStartTime[$start->Timestamp()] = $item;
 	}
 
 	private function ItemStartsOnPastDate(ReservationListItem $item)
 	{
 		//Log::Debug("PAST");
-		return $item->StartDate()->LessThan($this->_layoutDateStart);
+		return $item->StartDate()->Compare($this->_layoutDateStart) <= 0;
 	}
 
 	private function ItemEndsOnFutureDate(ReservationListItem $item)
@@ -181,6 +216,8 @@ class ScheduleReservationList implements IScheduleReservationList
 
 	private function IndexLayout()
 	{
+		$sw = StopWatch::StartNew();
+
 		if (!LayoutIndexCache::Contains($this->_layoutDateStart))
 		{
 			LayoutIndexCache::Add($this->_layoutDateStart, $this->_layoutItems, $this->_layoutDateStart,
@@ -188,8 +225,12 @@ class ScheduleReservationList implements IScheduleReservationList
 		}
 		$cachedIndex = LayoutIndexCache::Get($this->_layoutDateStart);
 		$this->_firstLayoutTime = $cachedIndex->GetFirstLayoutTime();
+		$this->_lastLayoutTime = $cachedIndex->GetLastLayoutTime();
 		$this->_layoutByStartTime = $cachedIndex->LayoutByStartTime();
 		$this->_layoutIndexByEndTime = $cachedIndex->LayoutIndexByEndTime();
+
+		$sw->Stop();
+//		Log::Debug('IndexLayout() took %s seconds', $sw->GetTotalSeconds());
 	}
 
 	/**
@@ -271,6 +312,31 @@ class ScheduleReservationList implements IScheduleReservationList
 		$timeKey = $item->StartDate()->Timestamp();
 		return !(array_key_exists($timeKey, $this->_layoutByStartTime));
 	}
+
+	private function Collides(ReservationListItem $item, $itemIndex)
+	{
+		$previousItem = $itemIndex > 0 ? $this->_items[--$itemIndex] : null;
+		$nextItem = $itemIndex < count($this->_items)-1 ? $this->_items[++$itemIndex] : null;
+
+		$itemDateRange = new DateRange($item->StartDate(), $item->EndDate());
+		if ($previousItem != null)
+		{
+			if ($itemDateRange->Overlaps(new DateRange($previousItem->StartDate(), $previousItem->EndDate())))
+			{
+				return true;
+			}
+		}
+
+		if ($nextItem != null)
+		{
+			if ($itemDateRange->Overlaps(new DateRange($nextItem->StartDate(), $nextItem->EndDate())))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
 
 class LayoutIndexCache
@@ -311,6 +377,7 @@ class LayoutIndexCache
 class CachedLayoutIndex
 {
 	private $_firstLayoutTime;
+	private $_lastLayoutTime;
 	private $_layoutByStartTime = array();
 	private $_layoutIndexByEndTime = array();
 
@@ -322,14 +389,20 @@ class CachedLayoutIndex
 	public function __construct($schedulePeriods, Date $startDate, Date $endDate)
 	{
 		$this->_firstLayoutTime = $endDate;
+		$this->_lastLayoutTime = $startDate;
 
 		for ($i = 0; $i < count($schedulePeriods); $i++)
 		{
 			/** @var Date $itemBegin */
 			$itemBegin = $schedulePeriods[$i]->BeginDate();
+			$itemEnd = $schedulePeriods[$i]->EndDate();
 			if ($itemBegin->LessThan($this->_firstLayoutTime))
 			{
-				$this->_firstLayoutTime = $schedulePeriods[$i]->BeginDate();
+				$this->_firstLayoutTime = $itemBegin;
+			}
+			if ($itemEnd->GreaterThan($this->_lastLayoutTime))
+			{
+				$this->_lastLayoutTime = $itemEnd;
 			}
 
 			/** @var Date $endTime */
@@ -346,9 +419,9 @@ class CachedLayoutIndex
 
 	public function GetFirstLayoutTime() { return $this->_firstLayoutTime; }
 
+	public function GetLastLayoutTime() { return $this->_lastLayoutTime; }
+
 	public function LayoutByStartTime() { return $this->_layoutByStartTime; }
 
 	public function LayoutIndexByEndTime() { return $this->_layoutIndexByEndTime; }
 }
-
-?>

@@ -1,23 +1,23 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
-*/
- 
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
 require_once(ROOT_DIR . 'Presenters/SchedulePresenter.php');
 require_once(ROOT_DIR . 'Domain/Access/namespace.php');
@@ -52,7 +52,7 @@ interface IReservationPopupPage
 	 */
 	function SetSummary($summary);
 
-    /**
+	/**
 	 * @param $title string
 	 */
 	function SetTitle($title);
@@ -83,6 +83,71 @@ interface IReservationPopupPage
 	 * @return void
 	 */
 	public function SetHideUser($hideUserInfo);
+
+	/**
+	 * @param Attribute[] $attributes
+	 */
+	public function BindAttributes($attributes);
+}
+
+class PopupFormatter
+{
+	private $values = array();
+
+	public function Add($name, $value)
+	{
+		$this->values[$name] = $value;
+	}
+
+	private function GetValue($name)
+	{
+		if (isset($this->values[$name]))
+		{
+			return $this->values[$name];
+		}
+
+		return '';
+	}
+
+	public function Display()
+	{
+		$label = Configuration::Instance()->GetSectionKey(ConfigSection::RESERVATION_LABELS, ConfigKeys::RESERVATION_LABELS_RESERVATION_POPUP);
+
+		if (empty($label))
+		{
+			$label = "{name} {dates} {title} {resources} {participants} {accessories} {description} {attributes}";
+		}
+		$label = str_replace('{name}', $this->GetValue('name'), $label);
+		$label = str_replace('{dates}', $this->GetValue('dates'), $label);
+		$label = str_replace('{title}', $this->GetValue('title'), $label);
+		$label = str_replace('{resources}', $this->GetValue('resources'), $label);
+		$label = str_replace('{participants}', $this->GetValue('participants'), $label);
+		$label = str_replace('{accessories}', $this->GetValue('accessories'), $label);
+		$label = str_replace('{description}', $this->GetValue('description'), $label);
+
+		if (strpos($label, '{attributes}') !== false)
+		{
+			$label = str_replace('{attributes}', $this->GetValue('attributes'), $label);
+		}
+		else
+		{
+			$matches = array();
+			preg_match_all('/\{(att\d+?)\}/', $label, $matches);
+
+			$matches = $matches[0];
+			if (count($matches) > 0)
+			{
+				for ($m = 0; $m < count($matches); $m++)
+				{
+					$id = filter_var($matches[$m], FILTER_SANITIZE_NUMBER_INT);
+					$value = $this->GetValue('att' . $id);
+					$label = str_replace($matches[$m], $value, $label);
+				}
+			}
+		}
+
+		return $label;
+	}
 }
 
 class ReservationPopupPage extends Page implements IReservationPopupPage
@@ -91,22 +156,29 @@ class ReservationPopupPage extends Page implements IReservationPopupPage
 	 * @var ReservationPopupPresenter
 	 */
 	private $_presenter;
-	
+
 	public function __construct()
 	{
 		parent::__construct();
-		
-		$this->_presenter = new ReservationPopupPresenter($this, new ReservationViewRepository(), new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization()));
+
+		$this->_presenter = new ReservationPopupPresenter($this,
+														  new ReservationViewRepository(),
+														  new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization()),
+														  new AttributeService(new AttributeRepository()));
 	}
 
 	public function IsAuthenticated()
 	{
-		return Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_VIEW_RESERVATIONS, new BooleanConverter()) ||
-						parent::IsAuthenticated();
+		return Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_VIEW_RESERVATIONS,
+														new BooleanConverter()) ||
+				parent::IsAuthenticated();
 	}
 
 	public function PageLoad()
 	{
+		$formatter = new PopupFormatter();
+		$this->Set('formatter', $formatter);
+
 		if (!$this->IsAuthenticated())
 		{
 			$this->Set('authorized', false);
@@ -116,12 +188,12 @@ class ReservationPopupPage extends Page implements IReservationPopupPage
 			$this->Set('authorized', true);
 			$this->_presenter->PageLoad();
 		}
-		
+
 		$this->Set('ReservationId', $this->GetReservationId());
-		
+
 		$this->Display('Ajax/respopup.tpl');
 	}
-	
+
 	/**
 	 * @return string
 	 */
@@ -129,32 +201,32 @@ class ReservationPopupPage extends Page implements IReservationPopupPage
 	{
 		return $this->GetQuerystring('id');
 	}
-	
+
 	function SetName($first, $last)
 	{
 		$this->Set('fullName', new FullName($first, $last));
 	}
-	
+
 	function SetResources($resources)
 	{
 		$this->Set('resources', $resources);
 	}
-	
+
 	function SetParticipants($users)
 	{
 		$this->Set('participants', $users);
 	}
-	
+
 	function SetSummary($summary)
 	{
 		$this->Set('summary', $summary);
 	}
 
-    function SetTitle($title)
-    {
-        $this->Set('title', $title);
-    }
-	
+	function SetTitle($title)
+	{
+		$this->Set('title', $title);
+	}
+
 	function SetDates($startDate, $endDate)
 	{
 		$this->Set('startDate', $startDate);
@@ -187,6 +259,14 @@ class ReservationPopupPage extends Page implements IReservationPopupPage
 	{
 		$this->Set('hideUserInfo', $hideUserInfo);
 	}
+
+	/**
+	 * @param Attribute[] $attributes
+	 */
+	public function BindAttributes($attributes)
+	{
+		$this->Set('attributes', $attributes);
+	}
 }
 
 
@@ -196,7 +276,7 @@ class ReservationPopupPresenter
 	 * @var IReservationPopupPage
 	 */
 	private $_page;
-	
+
 	/*
 	 * @var IReservationViewRepository
 	 */
@@ -206,21 +286,35 @@ class ReservationPopupPresenter
 	 * @var IReservationAuthorization
 	 */
 	private $_reservationAuthorization;
-	 
-	public function __construct(IReservationPopupPage $page, IReservationViewRepository $reservationRepository, IReservationAuthorization $reservationAuthorization)
+
+	/**
+	 * @var IAttributeService
+	 */
+	private $attributeService;
+
+	public function __construct(IReservationPopupPage $page,
+								IReservationViewRepository $reservationRepository,
+								IReservationAuthorization $reservationAuthorization,
+								IAttributeService $attributeService)
 	{
 		$this->_page = $page;
 		$this->_reservationRepository = $reservationRepository;
 		$this->_reservationAuthorization = $reservationAuthorization;
+		$this->attributeService = $attributeService;
 	}
-	
+
 	public function PageLoad()
 	{
-		$hideUserInfo = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_HIDE_USER_DETAILS, new BooleanConverter());
-		$hideReservationDetails = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY, ConfigKeys::PRIVACY_HIDE_RESERVATION_DETAILS, new BooleanConverter());
+		$hideUserInfo = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY,
+																 ConfigKeys::PRIVACY_HIDE_USER_DETAILS,
+																 new BooleanConverter());
+		$hideReservationDetails = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY,
+																		   ConfigKeys::PRIVACY_HIDE_RESERVATION_DETAILS,
+																		   new BooleanConverter());
 
-		$tz = ServiceLocator::GetServer()->GetUserSession()->Timezone;
-		
+		$userSession = ServiceLocator::GetServer()->GetUserSession();
+		$tz = $userSession->Timezone;
+
 		$reservation = $this->_reservationRepository->GetReservationForEditing($this->_page->GetReservationId());
 
 		if (!$reservation->IsDisplayable())
@@ -230,7 +324,8 @@ class ReservationPopupPresenter
 
 		if ($hideReservationDetails || $hideUserInfo)
 		{
-			$canViewDetails = $this->_reservationAuthorization->CanViewDetails($reservation, ServiceLocator::GetServer()->GetUserSession());
+			$canViewDetails = $this->_reservationAuthorization->CanViewDetails($reservation,
+																			   ServiceLocator::GetServer()->GetUserSession());
 
 			$hideReservationDetails = !$canViewDetails && $hideReservationDetails;
 			$hideUserInfo = !$canViewDetails && $hideUserInfo;
@@ -249,6 +344,9 @@ class ReservationPopupPresenter
 		$this->_page->SetAccessories($reservation->Accessories);
 
 		$this->_page->SetDates($startDate, $endDate);
+
+		$attributeValues = $this->attributeService->GetReservationAttributes($userSession, $reservation);
+
+		$this->_page->BindAttributes($attributeValues);
 	}
 }
-?>

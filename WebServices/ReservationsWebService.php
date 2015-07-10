@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/WebService/namespace.php');
@@ -60,7 +60,6 @@ class ReservationsWebService
 	 * @name GetReservations
 	 * @description Gets a list of reservations for the specified parameters.
 	 * Optional query string parameters: userId, resourceId, scheduleId, startDateTime, endDateTime.
-	 * If no query string parameters are provided, the current user will be used.
 	 * If no dates are provided, reservations for the next two weeks will be returned.
 	 * If dates do not include the timezone offset, the timezone of the authenticated user will be assumed.
 	 * @response ReservationsResponse
@@ -74,17 +73,12 @@ class ReservationsWebService
 		$resourceId = $this->GetResourceId();
 		$scheduleId = $this->GetScheduleId();
 
-		if (!$this->FilterProvided($userId, $resourceId, $scheduleId))
-		{
-			$userId = $this->server->GetSession()->UserId;
-		}
-
 		Log::Debug('GetReservations called. userId=%s, startDate=%s, endDate=%s', $userId, $startDate, $endDate);
 
 		$reservations = $this->reservationViewRepository->GetReservationList($startDate, $endDate, $userId, null,
 																			 $scheduleId, $resourceId);
 
-		$response = new ReservationsResponse($this->server, $reservations, $this->privacyFilter);
+		$response = new ReservationsResponse($this->server, $reservations, $this->privacyFilter, $startDate, $endDate);
 		$this->server->WriteResponse($response);
 	}
 
@@ -137,19 +131,19 @@ class ReservationsWebService
 	 */
 	private function GetEndDate()
 	{
-		return $this->GetBaseDate(WebServiceQueryStringKeys::END_DATE_TIME)->AddDays(14);
+		return $this->GetBaseDate(WebServiceQueryStringKeys::END_DATE_TIME, 14);
 	}
 
 	/**
 	 * @param string $queryStringKey
 	 * @return Date
 	 */
-	private function GetBaseDate($queryStringKey)
+	private function GetBaseDate($queryStringKey, $defaultNumberOfDays = 0)
 	{
 		$dateQueryString = $this->server->GetQueryString($queryStringKey);
 		if (empty($dateQueryString))
 		{
-			return Date::Now();
+			return Date::Now()->AddDays($defaultNumberOfDays);
 		}
 
 		return WebServiceDate::GetDate($dateQueryString, $this->server->GetSession());
@@ -185,5 +179,3 @@ class ReservationsWebService
 		return $this->server->GetQueryString(WebServiceQueryStringKeys::SCHEDULE_ID);
 	}
 }
-
-?>

@@ -1,28 +1,28 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
-require_once(ROOT_DIR . 'Pages/Ajax/IReservationSaveResultsPage.php');
+require_once(ROOT_DIR . 'Pages/Ajax/IReservationSaveResultsView.php');
 require_once(ROOT_DIR . 'Presenters/Reservation/ReservationPresenterFactory.php');
 
-interface IReservationSavePage extends IReservationSaveResultsPage, IRepeatOptionsComposite
+interface IReservationSavePage extends IReservationSaveResultsView, IRepeatOptionsComposite
 {
 	/**
 	 * @return int
@@ -70,13 +70,11 @@ interface IReservationSavePage extends IReservationSaveResultsPage, IRepeatOptio
 	public function GetResources();
 
 	/**
-	 * @abstract
 	 * @return int[]
 	 */
 	public function GetParticipants();
 
 	/**
-	 * @abstract
 	 * @return int[]
 	 */
 	public function GetInvitees();
@@ -87,22 +85,24 @@ interface IReservationSavePage extends IReservationSaveResultsPage, IRepeatOptio
 	public function SetReferenceNumber($referenceNumber);
 
 	/**
-	 * @abstract
+	 * @param bool $requiresApproval
+	 */
+	public function SetRequiresApproval($requiresApproval);
+
+	/**
 	 * @return AccessoryFormElement[]|array
 	 */
 	public function GetAccessories();
 
 	/**
-	 * @abstract
 	 * @return AttributeFormElement[]|array
 	 */
 	public function GetAttributes();
 
 	/**
-	 * @abstract
-	 * @return UploadedFile
+	 * @return UploadedFile[]
 	 */
-	public function GetAttachment();
+	public function GetAttachments();
 
 	/**
 	 * @return bool
@@ -133,6 +133,11 @@ interface IReservationSavePage extends IReservationSaveResultsPage, IRepeatOptio
 	 * @return string
 	 */
 	public function GetEndReminderInterval();
+
+	/**
+	 * @return bool
+	 */
+	public function GetAllowParticipation();
 }
 
 class ReservationSavePage extends SecurePage implements IReservationSavePage
@@ -164,6 +169,9 @@ class ReservationSavePage extends SecurePage implements IReservationSavePage
 
 			if ($this->_reservationSavedSuccessfully)
 			{
+				$this->Set('Resources', $reservation->AllResources());
+				$this->Set('Instances', $reservation->Instances());
+				$this->Set('Timezone', ServiceLocator::GetServer()->GetUserSession()->Timezone);
 				$this->Display('Ajax/reservation/save_successful.tpl');
 			}
 			else
@@ -187,12 +195,17 @@ class ReservationSavePage extends SecurePage implements IReservationSavePage
 		$this->Set('ReferenceNumber', $referenceNumber);
 	}
 
-	public function ShowErrors($errors)
+	public function SetRequiresApproval($requiresApproval)
+	{
+		$this->Set('RequiresApproval', $requiresApproval);
+	}
+
+	public function SetErrors($errors)
 	{
 		$this->Set('Errors', $errors);
 	}
 
-	public function ShowWarnings($warnings)
+	public function SetWarnings($warnings)
 	{
 		// set warnings variable
 	}
@@ -399,15 +412,15 @@ class ReservationSavePage extends SecurePage implements IReservationSavePage
 	}
 
 	/**
-	 * @return UploadedFile
+	 * @return UploadedFile[]
 	 */
-	public function GetAttachment()
+	public function GetAttachments()
 	{
 		if ($this->AttachmentsEnabled())
 		{
-			return $this->server->GetFile(FormKeys::RESERVATION_FILE);
+			return $this->server->GetFiles(FormKeys::RESERVATION_FILE);
 		}
-		return null;
+		return array();
 	}
 
 	private function AttachmentsEnabled()
@@ -466,6 +479,15 @@ class ReservationSavePage extends SecurePage implements IReservationSavePage
 	{
 		return $this->server->GetForm(FormKeys::END_REMINDER_INTERVAL);
 	}
+
+	/**
+	 * @return bool
+	 */
+	public function GetAllowParticipation()
+	{
+		$val = $this->server->GetForm(FormKeys::ALLOW_PARTICIPATION);
+		return !empty($val);
+	}
 }
 
 class AccessoryFormElement
@@ -493,5 +515,3 @@ class AccessoryFormElement
 		return $element;
 	}
 }
-
-?>

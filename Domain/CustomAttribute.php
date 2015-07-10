@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class CustomAttributeTypes
@@ -32,6 +32,7 @@ class CustomAttributeCategory
 	const USER = 2;
 	//const GROUP = 3;
 	const RESOURCE = 4;
+	const RESOURCE_TYPE = 5;
 }
 
 class CustomAttribute
@@ -65,6 +66,16 @@ class CustomAttribute
 	 * @var bool
 	 */
 	protected $required;
+
+	/**
+	 * @var int
+	 */
+	protected $entityId;
+
+	/**
+	 * @var string|null
+	 */
+	protected $entityDescription;
 
 	/**
 	 * @var string
@@ -117,11 +128,35 @@ class CustomAttribute
 	}
 
 	/**
-	 * @return boolean
+	 * @return bool
 	 */
 	public function Required()
 	{
 		return $this->required;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function UniquePerEntity()
+	{
+		return !empty($this->entityId);
+	}
+
+	/**
+	 * @return int|null
+	 */
+	public function EntityId()
+	{
+		return empty($this->entityId) ? null : $this->entityId;
+	}
+
+	/**
+	 * @return null|string
+	 */
+	public function EntityDescription()
+	{
+		return $this->entityDescription;
 	}
 
 	/**
@@ -157,9 +192,10 @@ class CustomAttribute
 	 * @param bool $required
 	 * @param string $possibleValues
 	 * @param int $sortOrder
+	 * @param int|null $entityId
 	 * @return CustomAttribute
 	 */
-	public function __construct($id, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder)
+	public function __construct($id, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder,$entityId = null)
 	{
 		$this->id = $id;
 		$this->label = $label;
@@ -167,6 +203,7 @@ class CustomAttribute
 		$this->category = $category;
 		$this->regex = $regex;
 		$this->required = $required;
+		$this->entityId = $entityId;
 		$this->SetSortOrder($sortOrder);
 		$this->SetPossibleValues($possibleValues);
 	}
@@ -180,11 +217,12 @@ class CustomAttribute
 	 * @param bool $required
 	 * @param string $possibleValues
 	 * @param int $sortOrder
+	 * @param int|null $entityId
 	 * @return CustomAttribute
 	 */
-	public static function Create($label, $type, $category, $regex, $required, $possibleValues, $sortOrder)
+	public static function Create($label, $type, $category, $regex, $required, $possibleValues, $sortOrder, $entityId = null)
 	{
-		return new CustomAttribute(null, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder);
+		return new CustomAttribute(null, $label, $type, $category, $regex, $required, $possibleValues, $sortOrder, $entityId);
 	}
 
 	/**
@@ -194,7 +232,7 @@ class CustomAttribute
 	 */
 	public static function FromRow($row)
 	{
-		return new CustomAttribute(
+		$attribute = new CustomAttribute(
 			$row[ColumnNames::ATTRIBUTE_ID],
 			$row[ColumnNames::ATTRIBUTE_LABEL],
 			$row[ColumnNames::ATTRIBUTE_TYPE],
@@ -202,8 +240,14 @@ class CustomAttribute
 			$row[ColumnNames::ATTRIBUTE_CONSTRAINT],
 			$row[ColumnNames::ATTRIBUTE_REQUIRED],
 			$row[ColumnNames::ATTRIBUTE_POSSIBLE_VALUES],
-			$row[ColumnNames::ATTRIBUTE_SORT_ORDER]
+			$row[ColumnNames::ATTRIBUTE_SORT_ORDER],
+			$row[ColumnNames::ATTRIBUTE_ENTITY_ID],
+			$row[ColumnNames::ATTRIBUTE_ENTITY_ID]
 		);
+
+		$attribute->WithEntityDescription($row[ColumnNames::ATTRIBUTE_ENTITY_DESCRIPTION]);
+
+		return $attribute;
 	}
 
 	/**
@@ -252,12 +296,14 @@ class CustomAttribute
 	 * @param bool $required
 	 * @param string $possibleValues
 	 * @param int $sortOrder
+	 * @param int|null $entityId
 	 */
-	public function Update($label, $regex, $required, $possibleValues, $sortOrder)
+	public function Update($label, $regex, $required, $possibleValues, $sortOrder, $entityId)
 	{
 		$this->label = $label;
 		$this->regex = $regex;
 		$this->required = $required;
+		$this->entityId = $entityId;
 		$this->SetPossibleValues($possibleValues);
 		$this->SetSortOrder($sortOrder);
 	}
@@ -280,6 +326,12 @@ class CustomAttribute
 	{
 		$this->sortOrder = intval($sortOrder);
 	}
-}
 
-?>
+	/**
+	 * @param string $entityDescription
+	 */
+	public function WithEntityDescription($entityDescription)
+	{
+		$this->entityDescription = $entityDescription;
+	}
+}

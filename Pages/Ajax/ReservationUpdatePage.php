@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationSavePage.php');
@@ -68,6 +68,9 @@ class ReservationUpdatePage extends ReservationSavePage implements IReservationU
 
 			if ($this->_reservationSavedSuccessfully)
 			{
+				$this->Set('Resources', $reservation->AllResources());
+				$this->Set('Instances', $reservation->Instances());
+				$this->Set('Timezone', ServiceLocator::GetServer()->GetUserSession()->Timezone);
 				$this->Display('Ajax/reservation/update_successful.tpl');
 			}
 			else
@@ -91,12 +94,12 @@ class ReservationUpdatePage extends ReservationSavePage implements IReservationU
 		$this->Set('ReferenceNumber', $referenceNumber);
 	}
 
-	public function ShowErrors($errors)
+	public function SetErrors($errors)
 	{
 		$this->Set('Errors', $errors);
 	}
 
-	public function ShowWarnings($warnings)
+	public function SetWarnings($warnings)
 	{
 		// set warnings variable
 	}
@@ -122,5 +125,3 @@ class ReservationUpdatePage extends ReservationSavePage implements IReservationU
 		return array();
 	}
 }
-
-?>

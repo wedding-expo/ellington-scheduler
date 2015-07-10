@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 interface IEntityAttributeList
@@ -26,15 +22,16 @@ interface IEntityAttributeList
 	public function GetLabels();
 
 	/**
+	 * @param null $entityId
 	 * @return array|CustomAttribute[]
 	 */
-	public function GetDefinitions();
+	public function GetDefinitions($entityId = null);
 
 	/**
-	 * @param $entityId int
-	 * @return array|string[]
+	 * @param $entityId int|null
+	 * @return array|Attribute[]
 	 */
-	public function GetValues($entityId);
+	public function GetAttributes($entityId = null);
 }
 
 class AttributeList implements IEntityAttributeList
@@ -50,35 +47,40 @@ class AttributeList implements IEntityAttributeList
 	private $values = array();
 
 	/**
-	 * @var array|int[]
+	 * @var array|int
 	 */
-	private $attributeOrder = array();
+	private $attribute_order = array();
 
 	/**
-	 * @var array|string[]
-	 */
-	private $initialValues = array();
-
-	/**
-	 * @var array|Attribute[]
-	 */
-	private $initialAttributes = array();
-
-	/**
-	 * @var array|Attribute[]
-	 */
-	private $entityValues = array();
-
-	/**
-	 * @var array|CustomAttribute[]
+	 * @var CustomAttribute[]|array
 	 */
 	private $definitions = array();
+
+	/**
+	 * @var CustomAttribute[]|array
+	 */
+	private $entityDefinitions = array();
+
+	/**
+	 * @var array|int[]
+	 */
+	private $entityAttributes = array();
 
 	public function AddDefinition(CustomAttribute $attribute)
 	{
 		$this->labels[] = $attribute->Label();
-		$this->definitions[$attribute->Id()] = $attribute;
-		$this->attributeOrder[$attribute->Id()] = count($this->attributeOrder);
+		$this->attribute_order[$attribute->Id()] = 1;
+		if ($attribute->UniquePerEntity())
+		{
+			$this->entityDefinitions[$attribute->EntityId()][$attribute->Id()] = $attribute;
+			$this->entityAttributes[$attribute->Id()] = 1;
+//			Log::Debug('Adding custom attribute definition for entityId=%s, label=%s', $attribute->EntityId(), $attribute->Label());
+		}
+		else
+		{
+			$this->definitions[$attribute->Id()] = $attribute;
+//			Log::Debug('Adding custom attribute definition label=%s', $attribute->Label());
+		}
 	}
 
 	/**
@@ -90,11 +92,17 @@ class AttributeList implements IEntityAttributeList
 	}
 
 	/**
+	 * @param null $entityId
 	 * @return array|CustomAttribute[]
 	 */
-	public function GetDefinitions()
+	public function GetDefinitions($entityId = null)
 	{
-		return $this->definitions;
+		if (empty($entityId) || !array_key_exists($entityId, $this->entityDefinitions))
+		{
+			return $this->definitions;
+		}
+
+		return array_merge($this->definitions, $this->entityDefinitions[$entityId]);
 	}
 
 	/**
@@ -105,77 +113,54 @@ class AttributeList implements IEntityAttributeList
 		$entityId = $attributeEntityValue->EntityId;
 		$attributeId = $attributeEntityValue->AttributeId;
 
-		if (!array_key_exists($entityId, $this->values))
-		{
-			$this->values[$entityId] = $this->GetInitialValues();
-			$this->entityValues[$entityId] = $this->GetInitialAttributes();
-		}
-
 		if ($this->AttributeExists($attributeId))
 		{
-			$this->values[$entityId][$this->GetAttributeIndex($attributeId)] = $attributeEntityValue->Value;
-			$this->entityValues[$entityId][$this->GetAttributeIndex($attributeId)] = new Attribute($this->definitions[$attributeId], $attributeEntityValue->Value);
+			Log::Debug('Adding custom attribute value for entityId=%s, attributeId=%s', $entityId, $attributeId);
+			$this->values[$entityId][$attributeId] = new Attribute($this->definitions[$attributeId], $attributeEntityValue->Value);
+		}
+		elseif ($this->IsEntityAttribute($attributeId))
+		{
+			Log::Debug('Adding entity specific custom attribute value for entityId=%s, attributeId=%s', $entityId,
+					   $attributeId);
+			$this->values[$entityId][$attributeId] = new Attribute($this->entityDefinitions[$entityId][$attributeId], $attributeEntityValue->Value);
 		}
 	}
 
-	/**
-	 * @param $entityId int
-	 * @return array|string[]
-	 */
-	public function GetValues($entityId)
+	public function GetAttributes($entityId = null)
 	{
-		if (array_key_exists($entityId, $this->values))
+		$attributes = array();
+		foreach ($this->attribute_order as $attributeId => $placeholder)
 		{
-			return $this->values[$entityId];
-		}
-
-		return $this->GetInitialValues();
-	}
-
-	/**
-	 * @param $entityId int
-	 * @return array|Attribute[]
-	 */
-	public function GetAttributeValues($entityId)
-	{
-		if (array_key_exists($entityId, $this->entityValues))
-		{
-			return $this->entityValues[$entityId];
-		}
-
-		return $this->GetInitialAttributes();
-	}
-
-	/**
-	 * @return array|string[]
-	 */
-	private function GetInitialValues()
-	{
-		if (empty($this->initialValues))
-		{
-			foreach ($this->attributeOrder as $id => $i)
+			$definition = null;
+			if ($this->AttributeExists($attributeId))
 			{
-				$this->initialValues[$i] = null;
+
+				$definition = $this->definitions[$attributeId];
 			}
-		}
-
-		return $this->initialValues;
-	}
-
-	/**
-	 * @return array|Attribute[]
-	 */
-	private function GetInitialAttributes()
-	{
-		if (empty($this->initialAttributes))
+			elseif (!empty($entityId) && $this->EntityAttributeExists($attributeId, $entityId))
 			{
-				foreach ($this->attributeOrder as $id => $i)
+
+				$definition = $this->entityDefinitions[$entityId][$attributeId];
+			}
+
+			if ($definition != null)
+			{
+				if (empty($entityId) || !array_key_exists($entityId, $this->values) || !array_key_exists($attributeId,
+																					 $this->values[$entityId])
+				)
 				{
-					$this->initialAttributes[$i] = new Attribute($this->definitions[$id]);
+					$attributes[] = new Attribute($definition);
+				}
+				else
+				{
+					$attributes[] = $this->values[$entityId][$definition->Id()];
 				}
 			}
+		}
 
-			return $this->initialAttributes;
+		Log::Debug('Found %s attributes for entityId %s', count($attributes), $entityId);
+
+		return $attributes;
 	}
 
 	/**
@@ -184,16 +169,28 @@ class AttributeList implements IEntityAttributeList
 	 */
 	private function AttributeExists($attributeId)
 	{
-		return array_key_exists($attributeId, $this->attributeOrder);
+		return array_key_exists($attributeId, $this->definitions) && !$this->IsEntityAttribute($attributeId);
 	}
 
 	/**
 	 * @param $attributeId int
-	 * @return int
+	 * @param $entityId int
+	 * @return bool
 	 */
-	private function GetAttributeIndex($attributeId)
+	private function EntityAttributeExists($attributeId, $entityId)
 	{
-		return $this->attributeOrder[$attributeId];
+		return $this->IsEntityAttribute($attributeId) && array_key_exists($entityId,
+																		  $this->entityDefinitions) && array_key_exists($attributeId,
+																														$this->entityDefinitions[$entityId]);
+	}
+
+	/**
+	 * @param $attributeId int
+	 * @return bool
+	 */
+	private function IsEntityAttribute($attributeId)
+	{
+		return array_key_exists($attributeId, $this->entityAttributes);
 	}
 }
 

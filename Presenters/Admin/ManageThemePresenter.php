@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2013 Nick Korbel
+Copyright 2013-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Presenters/ActionPresenter.php');
@@ -32,6 +32,7 @@ class ManageThemePresenter extends ActionPresenter
 		parent::__construct($page);
 		$this->page = $page;
 		$this->AddAction('update', 'UpdateTheme');
+		$this->AddAction('removeLogo', 'RemoveLogo');
 	}
 
 	public function UpdateTheme()
@@ -42,6 +43,18 @@ class ManageThemePresenter extends ActionPresenter
 		if ($logoFile != null)
 		{
 			Log::Debug('Replacing logo with ' . $logoFile->OriginalName());
+
+			$this->RemoveLogo();
+//			$targets = glob(ROOT_DIR . 'Web/img/custom-logo.*');
+//			foreach ($targets as $target) {
+//				$removed = unlink($target);
+//				if (!$removed)
+//				{
+//					Log::Error('Could not remove existing logo. Ensure %s is writable.',
+//						$target);
+//				}
+//			}
+
 			$target =  ROOT_DIR . 'Web/img/custom-logo.' . $logoFile->Extension();
 			$copied = copy($logoFile->TemporaryName(), $target);
 			if (!$copied)
@@ -63,6 +76,25 @@ class ManageThemePresenter extends ActionPresenter
 		}
 	}
 
+	public function RemoveLogo()
+	{
+		try
+		{
+			$targets = glob(ROOT_DIR . 'Web/img/custom-logo.*');
+			foreach ($targets as $target) {
+				$removed = unlink($target);
+				if (!$removed)
+				{
+					Log::Error('Could not remove existing logo. Ensure %s is writable.', $target);
+				}
+			}
+		}
+		catch(Exception $ex)
+		{
+			Log::Error('Could not remove logos. %s', $ex);
+		}
+	}
+
 	protected function LoadValidators($action)
 	{
 		$this->page->RegisterValidator('logoFile', new FileUploadValidator($this->page->GetLogoFile()));
@@ -72,5 +104,3 @@ class ManageThemePresenter extends ActionPresenter
 		$this->page->RegisterValidator('cssFileExt', new FileTypeValidator($this->page->GetCssFile(), 'css'));
 	}
 }
-
-?>

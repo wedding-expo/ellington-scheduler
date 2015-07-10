@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Common/Helpers/StopWatch.php');
@@ -48,6 +44,13 @@ interface IDailyLayout
 	 * @return mixed
 	 */
 	function GetPeriods(Date $displayDate);
+
+	/**
+	 * @param Date $date
+	 * @param int $resourceId
+	 * @return DailyReservationSummary
+	 */
+	function GetSummary(Date $date, $resourceId);
 }
 
 class DailyLayout implements IDailyLayout
@@ -56,6 +59,7 @@ class DailyLayout implements IDailyLayout
 	 * @var IReservationListing
 	 */
 	private $_reservationListing;
+
 	/**
 	 * @var IScheduleLayout
 	 */
@@ -73,32 +77,60 @@ class DailyLayout implements IDailyLayout
 
 	public function GetLayout(Date $date, $resourceId)
 	{
-		$hideBlocked = Configuration::Instance()->GetSectionKey(ConfigSection::SCHEDULE, ConfigKeys::SCHEDULE_HIDE_BLOCKED_PERIODS, new BooleanConverter());
-		$sw = new StopWatch();
-		$sw->Start();
+		try
+		{
+			$hideBlocked = Configuration::Instance()->GetSectionKey(ConfigSection::SCHEDULE, ConfigKeys::SCHEDULE_HIDE_BLOCKED_PERIODS, new BooleanConverter());
+			$sw = new StopWatch();
+			$sw->Start();
+
+			$items = $this->_reservationListing->OnDateForResource($date, $resourceId);
+			$sw->Record('listing');
+
+			$list = new ScheduleReservationList($items, $this->_scheduleLayout, $date, $hideBlocked);
+			$slots = $list->BuildSlots();
+			$sw->Record('slots');
+			$sw->Stop();
+
+			Log::Debug('DailyLayout::GetLayout - For resourceId %s on date %s, took %s seconds to get reservation listing, %s to build the slots, %s total seconds for %s reservations. Memory consumed=%sMB',
+				$resourceId,
+				$date->ToString(),
+				$sw->GetRecordSeconds('listing'),
+				$sw->TimeBetween('slots', 'listing'),
+				$sw->GetTotalSeconds(),
+				count($items),
+				round(memory_get_usage()/1048576,2));
+
+			return $slots;
+		}
+		catch(Exception $ex)
+		{
+			Log::Error('Error getting layout on date %s for resourceId %s. Exception=%s', $date->ToString(), $resourceId, $ex);
+			throw($ex);
+		}
+	}
+
+	public function GetSummary(Date $date, $resourceId)
+	{
+		$summary = new DailyReservationSummary();
 
 		$items = $this->_reservationListing->OnDateForResource($date, $resourceId);
-		$sw->Record('listing');
+		if (count($items) > 0)
+		{
+			foreach ($items as $item)
+			{
+				if ($item->IsReservation())
+				{
+					$summary->AddReservation($item);
+				}
+			}
+		}
 
-		$list = new ScheduleReservationList($items, $this->_scheduleLayout, $date, $hideBlocked);
-		$slots = $list->BuildSlots();
-		$sw->Record('slots');
-		$sw->Stop();
-
-//		Log::Debug("DailyLayout::GetLayout - For resourceId %s on date %s, took %s seconds to get reservation listing, %s to build the slots, %s total seconds for %s reservations",
-//			$resourceId,
-//			$date->ToString(),
-//			$sw->GetRecordSeconds('listing'),
-//			$sw->TimeBetween('slots', 'listing'),
-//			$sw->GetTotalSeconds(),
-//			count($items));
-
-		return $slots;
+		return $summary;
 	}
 
 	public function IsDateReservable(Date $date)
 	{
-		return !$date->GetDate()->LessThan(Date::Now()->GetDate());
+		return $date->DateCompare(Date::Now()) >= 0;
 	}
 
 	public function GetLabels(Date $displayDate)
@@ -139,7 +171,7 @@ class DailyLayout implements IDailyLayout
 
 		/** @var $periodsToReturn SpanablePeriod[] */
 		$periodsToReturn = array();
-
+		$tempPeriod = $periods[0];
 		for ($i = 0; $i < count($periods); $i++)
 		{
 			$span = 1;
@@ -147,19 +179,19 @@ class DailyLayout implements IDailyLayout
 			$periodStart = $currentPeriod->BeginDate();
 			$periodLength = $periodStart->GetDifference($currentPeriod->EndDate())->Hours();
 
-			if (!$periods[$i]->IsLabelled() && ($periodStart->Minute() == 0 && $periodLength < 1))
+			if (!$currentPeriod->IsLabelled() && ($periodStart->Minute() == 0 && $periodLength < 1))
 			{
 				$span = 0;
 				$nextPeriodTime = $periodStart->AddMinutes(60);
+
 				$tempPeriod = $currentPeriod;
 				while ($tempPeriod != null && $tempPeriod->BeginDate()->LessThan($nextPeriodTime))
 				{
 					$span++;
-					$i++;
-					$tempPeriod = $periods[$i];
+					$tempPeriod = $periods[++$i];
 				}
-				$i--;
-
+				if($span>0)
+					$i--;
 			}
 			$periodsToReturn[] = new SpanablePeriod($currentPeriod, $span);
 

@@ -1,27 +1,26 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 interface ISchedulePageBuilder
 {
-
 	/**
 	 * @param ISchedulePage $page
 	 * @param array[int]ISchedule $schedules
@@ -49,10 +48,9 @@ interface ISchedulePageBuilder
 	/**
 	 * @param ISchedulePage $page
 	 * @param DateRange $dateRange display dates
-	 * @param UserSession $user
+	 * @param ISchedule $schedule
 	 */
-	public function BindDisplayDates(ISchedulePage $page, DateRange $dateRange, UserSession $userSession,
-									 ISchedule $schedule);
+	public function BindDisplayDates(ISchedulePage $page, DateRange $dateRange, ISchedule $schedule);
 
 	/**
 	 * @param ISchedulePage $page
@@ -60,6 +58,48 @@ interface ISchedulePageBuilder
 	 * @param IDailyLayout $dailyLayout
 	 */
 	public function BindReservations(ISchedulePage $page, $resources, IDailyLayout $dailyLayout);
+
+	/**
+	 * @param ISchedulePage $page
+	 * @param ResourceGroupTree $resourceGroupTree
+	 */
+	public function BindResourceGroups(ISchedulePage $page, ResourceGroupTree $resourceGroupTree);
+
+	/**
+	 * @param ISchedulePage $page
+	 * @param ResourceType[] $resourceTypes
+	 */
+	public function BindResourceTypes(ISchedulePage $page, $resourceTypes);
+
+	/**
+	 * @param int $scheduleId
+	 * @param ISchedulePage $page
+	 * @return int
+	 */
+	public function GetGroupId($scheduleId, ISchedulePage $page);
+
+	/**
+	 * @param int $scheduleId
+	 * @param ISchedulePage $page
+	 * @return int
+	 */
+	public function GetResourceId($scheduleId, ISchedulePage $page);
+
+	/**
+	 * @param int $scheduleId
+	 * @param ISchedulePage $page
+	 * @return ScheduleResourceFilter
+	 */
+	public function GetResourceFilter($scheduleId, ISchedulePage $page);
+
+	/**
+	 * @param ISchedulePage $page
+	 * @param ScheduleResourceFilter $filter
+	 * @param Attribute[] $resourceCustomAttributes
+	 * @param Attribute[] $resourceTypeCustomAttributes
+	 */
+	public function BindResourceFilter(ISchedulePage $page, ScheduleResourceFilter $filter, $resourceCustomAttributes,
+									   $resourceTypeCustomAttributes);
 }
 
 class SchedulePageBuilder implements ISchedulePageBuilder
@@ -76,8 +116,12 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		$page->SetScheduleId($scheduleId);
 		$page->SetScheduleName($currentSchedule->GetName());
 		$page->SetFirstWeekday($currentSchedule->GetWeekdayStart());
-		$direction = $page->GetScheduleDirection($scheduleId);
-		$page->SetScheduleDirection($direction);
+		$style = $page->GetScheduleStyle($scheduleId);
+		$page->SetScheduleStyle($style);
+		if ($currentSchedule->GetIsCalendarSubscriptionAllowed())
+		{
+			$page->SetSubscriptionUrl(new CalendarSubscriptionUrl(null, $currentSchedule->GetPublicId(), null));
+		}
 	}
 
 	/**
@@ -95,7 +139,7 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		}
 		elseif (!empty($user->ScheduleId))
 		{
-			$schedule = $this->GetSchedule($schedules,$user->ScheduleId);
+			$schedule = $this->GetSchedule($schedules, $user->ScheduleId);
 			if ($schedule->GetId() != $user->ScheduleId)
 			{
 				$schedule = $this->GetDefaultSchedule($schedules);
@@ -117,7 +161,9 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		$userTimezone = $user->Timezone;
 		$providedDate = $page->GetSelectedDate();
 		$date = empty($providedDate) ? Date::Now() : new Date($providedDate, $userTimezone);
-		$selectedDate = $date->ToTimezone($userTimezone)->GetDate();
+		$selectedDate = $date
+						->ToTimezone($userTimezone)
+						->GetDate();
 		$selectedWeekday = $selectedDate->Weekday();
 
 		$scheduleLength = $schedule->GetDaysVisible();
@@ -162,13 +208,7 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		return $applicableDates;
 	}
 
-	/**
-	 * @see ISchedulePageBuilder::BindDisplayDates()
-	 */
-	public function BindDisplayDates(ISchedulePage $page,
-									 DateRange $dateRange,
-									 UserSession $userSession,
-									 ISchedule $schedule)
+	public function BindDisplayDates(ISchedulePage $page, DateRange $dateRange, ISchedule $schedule)
 	{
 		$scheduleLength = $schedule->GetDaysVisible();
 		if ($page->GetShowFullWeek())
@@ -176,12 +216,9 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 			$scheduleLength = 7;
 		}
 
-		// we don't want to display the last date in the range (it will be midnight of the last day)
-		$adjustedDateRange = new DateRange($dateRange->GetBegin()->ToTimezone($userSession->Timezone), $dateRange->GetEnd()->ToTimezone($userSession->Timezone)->AddDays(-1));
+		$page->SetDisplayDates($dateRange);
 
-		$page->SetDisplayDates($adjustedDateRange);
-
-		$startDate = $adjustedDateRange->GetBegin();
+		$startDate = $dateRange->GetBegin();
 
 		$startDay = $schedule->GetWeekdayStart();
 
@@ -210,7 +247,7 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 	}
 
 	/**
-	 * @param array[int]Schedule $schedules
+	 * @param array|Schedule[] $schedules
 	 * @return Schedule
 	 */
 	private function GetDefaultSchedule($schedules)
@@ -227,7 +264,7 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 	}
 
 	/**
-	 * @param array[int]Schedule $schedules
+	 * @param array|Schedule[] $schedules
 	 * @param int $scheduleId
 	 * @return Schedule
 	 */
@@ -245,6 +282,164 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		return $schedules[0];
 	}
 
-}
+	public function BindResourceGroups(ISchedulePage $page, ResourceGroupTree $resourceGroupTree)
+	{
+		$page->SetResourceGroupTree($resourceGroupTree);
+	}
 
-?>
+	public function GetGroupId($scheduleId, ISchedulePage $page)
+	{
+		$groupId = $page->GetGroupId();
+		if (!empty($groupId))
+		{
+			return $groupId;
+		}
+
+		$cookie = $this->getTreeCookie($scheduleId);
+
+		if (!empty($cookie))
+		{
+			if (strpos($cookie, '-') === false)
+			{
+				return $groupId;
+			}
+		}
+
+		return null;
+	}
+
+	public function GetResourceId($scheduleId, ISchedulePage $page)
+	{
+		$resourceId = $page->GetResourceId();
+
+		if (!empty($resourceId))
+		{
+			return $resourceId;
+		}
+
+		$cookie = $this->getTreeCookie($scheduleId);
+
+		if (!empty($cookie))
+		{
+			if (strpos($cookie, '-') !== false)
+			{
+				$parts = explode('-', $cookie);
+				return $parts[2];
+			}
+		}
+
+		return null;
+	}
+
+	private function getTreeCookie($scheduleId)
+	{
+		$cookie = ServiceLocator::GetServer()
+				  ->GetCookie('tree' . $scheduleId);
+		if (!empty($cookie))
+		{
+			$val = json_decode($cookie, true);
+			return $val['selected_node'];
+		}
+
+		return null;
+	}
+
+	public function BindResourceTypes(ISchedulePage $page, $resourceTypes)
+	{
+		$page->SetResourceTypes($resourceTypes);
+	}
+
+	/**
+	 * @param int $scheduleId
+	 * @param ISchedulePage $page
+	 * @return ScheduleResourceFilter
+	 */
+	public function GetResourceFilter($scheduleId, ISchedulePage $page)
+	{
+		$filter = new ScheduleResourceFilter();
+		if ($page->FilterSubmitted())
+		{
+			$filter = new ScheduleResourceFilter($scheduleId,
+												 $page->GetResourceTypeId(),
+												 $page->GetMaxParticipants(),
+												 $this->AsAttributeValues($page->GetResourceAttributes()),
+												 $this->AsAttributeValues($page->GetResourceTypeAttributes()));
+		}
+		else
+		{
+			$cookie = ServiceLocator::GetServer()
+					  ->GetCookie('resource_filter' . $scheduleId);
+			if (!empty($cookie))
+			{
+				$val = json_decode($cookie);
+				$filter = ScheduleResourceFilter::FromCookie($val);
+			}
+		}
+
+		$filter->ScheduleId = $scheduleId;
+		$filter->ResourceId = $this->GetResourceId($scheduleId, $page);
+		$filter->GroupId = $this->GetGroupId($scheduleId, $page);
+
+		return $filter;
+	}
+
+	public function BindResourceFilter(ISchedulePage $page, ScheduleResourceFilter $filter, $resourceCustomAttributes,
+									   $resourceTypeCustomAttributes)
+	{
+		if ($filter->ResourceAttributes != null)
+		{
+			foreach ($filter->ResourceAttributes as $attributeFilter)
+			{
+				$this->SetAttributeValue($attributeFilter, $resourceCustomAttributes);
+			}
+		}
+
+		if ($filter->ResourceTypeAttributes != null)
+		{
+			foreach ($filter->ResourceTypeAttributes as $attributeFilter)
+			{
+				$this->SetAttributeValue($attributeFilter, $resourceTypeCustomAttributes);
+			}
+		}
+
+		$page->SetResourceCustomAttributes($resourceCustomAttributes);
+		$page->SetResourceTypeCustomAttributes($resourceTypeCustomAttributes);
+
+		ServiceLocator::GetServer()
+		->SetCookie(new Cookie('resource_filter' . $filter->ScheduleId, json_encode($filter)));
+		$page->SetFilter($filter);
+	}
+
+	/**
+	 * @param $attributeFormElements AttributeFormElement[]
+	 * @return AttributeValue[]
+	 */
+	private function AsAttributeValues($attributeFormElements)
+	{
+		$vals = array();
+		foreach ($attributeFormElements as $e)
+		{
+			if (!empty($e->Value) || (is_numeric($e->Value) && $e->Value == 0))
+			{
+				$vals[] = new AttributeValue($e->Id, $e->Value);
+			}
+		}
+		return $vals;
+	}
+
+	/**
+	 * @param AttributeValue $attributeFilter
+	 * @param Attribute[] $attributes
+	 */
+	private function SetAttributeValue($attributeFilter, $attributes) {
+
+		foreach ($attributes as $attribute)
+		{
+			if ($attributeFilter->AttributeId == $attribute->Id())
+			{
+				$attribute->SetValue($attributeFilter->Value);
+				break;
+			}
+		}
+	}
+}

@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class Installer
@@ -81,17 +81,17 @@ class Installer
 
         $results[] = $this->ExecuteScript($hostname, $database_name, $this->user, $this->password, $populate_data);
 
-        //$upgradeResults = $this->Upgrade();
+        $upgradeResults = $this->Upgrade();
 
 		/**
-		 * Populate sample data given in /phpScheduleIt/database_schema/sample-data-utf8.sql
+		 * Populate sample data given in /Booked Scheduler/database_schema/sample-data-utf8.sql
 		 */
 		if ($should_create_sample_data)
 		{
 			$results[] = $this->ExecuteScript($hostname, $database_name, $this->user, $this->password, $populate_sample_data);
 		}
 
-        //$results = array_merge($results, $upgradeResults);
+        $results = array_merge($results, $upgradeResults);
         return $results;
     }
 
@@ -179,14 +179,14 @@ class Installer
         $sqlErrorText = null;
         $sqlStmt = null;
 
-        $link = @mysql_connect($hostname, $db_user, $db_password);
+        $link = @mysqli_connect($hostname, $db_user, $db_password);
         if (!$link)
         {
             $result->SetConnectionError();
             return $result;
         }
 
-        $select_db_result = @mysql_select_db($database_name, $link);
+        $select_db_result = @mysqli_select_db($link, $database_name);
         if (!$select_db_result)
         {
             $result->SetAuthenticationError();
@@ -198,11 +198,11 @@ class Installer
         {
             if (strlen($stmt) > 3 && substr(ltrim($stmt), 0, 2) != '/*')
             {
-                $queryResult = @mysql_query($stmt);
+                $queryResult = @mysqli_query($link, $stmt);
                 if (!$queryResult)
                 {
-                    $sqlErrorCode = mysql_errno();
-                    $sqlErrorText = mysql_error();
+                    $sqlErrorCode = mysqli_errno($link);
+                    $sqlErrorText = mysqli_error($link);
                     $sqlStmt = $stmt;
                     break;
                 }
@@ -227,27 +227,34 @@ class Installer
         $database_user = $config->GetSectionKey(ConfigSection::DATABASE, ConfigKeys::DATABASE_USER);
         $database_password = $config->GetSectionKey(ConfigSection::DATABASE, ConfigKeys::DATABASE_PASSWORD);
 
-        $link = mysql_connect($hostname, $database_user, $database_password);
+        $link = mysqli_connect($hostname, $database_user, $database_password);
         if (!$link)
         {
             return false;
         }
 
-        $select_db_result = mysql_select_db($database_name, $link);
+        $select_db_result = mysqli_select_db($link, $database_name);
         if (!$select_db_result)
         {
             return false;
         }
 
+		$select_table_result = mysqli_query($link, 'select * from layouts');
+
+		if (!$select_table_result)
+		{
+			return false;
+		}
+
         $getVersion = 'SELECT * FROM `dbversion` order by version_number desc limit 0,1';
-        $result = mysql_query($getVersion);
+        $result = mysqli_query($link, $getVersion);
 
         if (!$result)
         {
             return 2.0;
         }
 
-        if ($row = mysql_fetch_assoc($result))
+        if ($row = mysqli_fetch_assoc($result))
         {
             $versionNumber = $row['version_number'];
 
@@ -256,11 +263,11 @@ class Installer
 				// bug in 2.2 upgrade did not insert version number, check for table instead
 
 				$getCustomAttributes = 'SELECT * FROM custom_attributes';
-				$customAttributesResults = mysql_query($getCustomAttributes);
+				$customAttributesResults = mysqli_query($link, $getCustomAttributes);
 
 				if ($customAttributesResults)
 				{
-					mysql_query("insert into dbversion values('2.2', now())");
+					mysqli_query($link, "insert into dbversion values('2.2', now())");
 					return 2.2;
 				}
 			}
@@ -292,5 +299,3 @@ class Installer
         }
     }
 }
-
-?>

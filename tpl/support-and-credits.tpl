@@ -1,33 +1,33 @@
 {*
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl'}
-<h1>About phpScheduleIt</h1>
+<h1>About Booked Scheduler</h1>
 
 <div id="help">
 
 <h2>Support</h2>
 
-<p><a href="http://php.brickhost.com/">phpScheduleIt Official Project Home</a></p>
+<p><a href="http://www.bookedscheduler.com/">Booked Scheduler Official Project Home</a></p>
 
-<p><a href="http://php.brickhost.com/forums/">Support Forum</a></p>
+<p><a href="http://php.brickhost.com/forums/">Community Support</a></p>
 
-<p><a href="https://sourceforge.net/projects/phpscheduleit/">phpScheduleIt SourceForge Project Home</a></p>
+<p><a href="https://sourceforge.net/projects/Booked Scheduler/">Booked Scheduler SourceForge Project Home</a></p>
 
 <h2>Credits</h2>
 
@@ -39,28 +39,29 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 
 <p>Jan Mattila</p>
 
-<h3>Logo/UI</h3>
+<p>Paul Menchini</p>
 
-<p>Hannah Milan</p>
 
 <h3>Translators</h3>
 
 <p>Boris Vatin (French)</p>
 <p>Dariusz Kliszewski, Grzegorz Bis (Polish)</p>
 <p>Tadafumi Kouzato (Japanese)</p>
-<p> (Dutch)</p>
-<p>Julio Guedimin (Spanish)</p>
+<p>Jonne Olie (Dutch)</p>
+<p>Julio Guedimin, Manuel J. Morgado Morano, Laura Arjona (Spanish)</p>
 <p>Jordi Divins (Catalan)</p>
-<p>Daniele Cordella, Marco Ponti (Italian)</p>
+<p>Nicola Ruggero, Daniele Cordella, Marco Ponti (Italian)</p>
 <p>Olli Räisänen, Afaf Fafa (Finnish)</p>
-<p>Jakub Baláš (Czech)</p>
-<p>Maik Standtke (German)</p>
+<p>Jakub Baláš, Leoš Jedlička (Czech)</p>
+<p>Maik Standtke, Sven de Vries (German)</p>
 <p>Stephen Höglund (Swedish)</p>
 <p>Vladislav Zhivkov (Bulgarian)</p>
 <p>Bart Verheyde (Flemisch)</p>
-<p>William Oliveira (Portuguese Brazil)</p>
+<p>William Oliveira, Fábio Luiz Barbosa (Portuguese Brazil)</p>
 <p>Yosef Branse (Hebrew)</p>
 <p>Vladislav Zhivkov (Bulgarian)</p>
+<p>Linas Redeckis (Lithuanian)</p>
+<p>Davor Tomasevic (Croatian)</p>
 
 <h3>Thank you to the following projects and libraries</h3>
 
@@ -86,9 +87,13 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 
 <p>jqplot</p>
 
+<p>FeedWriter</p>
+
+<p>Slim</p>
+
 <h2>License</h2>
 
-<p>phpScheduleIt free and open source, licenced under the GNU GENERAL PUBLIC LICENSE. Please see the included
+<p>Booked Scheduler free and open source, licenced under the GNU GENERAL PUBLIC LICENSE. Please see the included
 	License file for more details.</p>
 
 {include file='globalfooter.tpl'}

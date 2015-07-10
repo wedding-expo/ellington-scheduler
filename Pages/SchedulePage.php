@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
@@ -33,7 +33,7 @@ interface ISchedulePage extends IActionPage
 	/**
 	 * Bind resources to the page
 	 *
-	 * @param arrayResourceDto[] $resources
+	 * @param array|ResourceDto[] $resources
 	 */
 	public function SetResources($resources);
 
@@ -112,30 +112,117 @@ interface ISchedulePage extends IActionPage
 
 	/**
 	 * @param int $scheduleId
-	 * @return string|ScheduleDirection
+	 * @return string|ScheduleStyle
 	 */
-	public function GetScheduleDirection($scheduleId);
+	public function GetScheduleStyle($scheduleId);
 
 	/**
-	 * @param string|ScheduleDirection Direction
+	 * @param string|ScheduleStyle Direction
 	 */
-	public function SetScheduleDirection($direction);
+	public function SetScheduleStyle($direction);
+
+	/**
+	 * @return int
+	 */
+	public function GetGroupId();
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceId();
+
+	/**
+	 * @param ResourceGroupTree $resourceGroupTree
+	 */
+	public function SetResourceGroupTree(ResourceGroupTree $resourceGroupTree);
+
+	/**
+	 * @param ResourceType[] $resourceTypes
+	 */
+	public function SetResourceTypes($resourceTypes);
+
+	/**
+	 * @param Attribute[] $attributes
+	 */
+	public function SetResourceCustomAttributes($attributes);
+
+	/**
+	 * @param Attribute[] $attributes
+	 */
+	public function SetResourceTypeCustomAttributes($attributes);
+
+	/**
+	 * @return bool
+	 */
+	public function FilterSubmitted();
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceTypeId();
+
+	/**
+	 * @return int
+	 */
+	public function GetMaxParticipants();
+
+	/**
+	 * @return AttributeFormElement[]|array
+	 */
+	public function GetResourceAttributes();
+
+	/**
+	 * @return AttributeFormElement[]|array
+	 */
+	public function GetResourceTypeAttributes();
+
+	/**
+	 * @param ScheduleResourceFilter $resourceFilter
+	 */
+	public function SetFilter($resourceFilter);
+
+	/**
+	 * @param CalendarSubscriptionUrl $subscriptionUrl
+	 */
+	public function SetSubscriptionUrl(CalendarSubscriptionUrl $subscriptionUrl);
+
+	/**
+	 * @param bool $shouldShow
+	 */
+	public function ShowPermissionError($shouldShow);
+
+	/**
+	 * @param UserSession $user
+	 * @param Schedule $schedule
+	 * @return string
+	 */
+	public function GetDisplayTimezone(UserSession $user, Schedule $schedule);
 }
 
-class ScheduleDirection
+class ScheduleStyle
 {
-	const vertical = 'vertical';
-	const horizontal = 'horizontal';
+	const Wide = 'Wide';
+	const Tall = 'Tall';
+	const Standard = 'Standard';
+	const CondensedWeek = 'CondensedWeek';
 }
 
 class SchedulePage extends ActionPage implements ISchedulePage
 {
-	protected $scheduleDirection = ScheduleDirection::horizontal;
+	protected $ScheduleStyle = ScheduleStyle::Standard;
+
+	private $resourceCount = 0;
 
 	/**
 	 * @var SchedulePresenter
 	 */
 	protected $_presenter;
+
+	private $_styles = array(
+		ScheduleStyle::Wide => 'Schedule/schedule-days-horizontal.tpl',
+		ScheduleStyle::Tall => 'Schedule/schedule-flipped.tpl',
+		ScheduleStyle::CondensedWeek => 'Schedule/schedule-week-condensed.tpl',
+	);
 
 	public function __construct()
 	{
@@ -143,44 +230,56 @@ class SchedulePage extends ActionPage implements ISchedulePage
 
 		$permissionServiceFactory = new PermissionServiceFactory();
 		$scheduleRepository = new ScheduleRepository();
-		$resourceService = new ResourceService(new ResourceRepository(), $permissionServiceFactory->GetPermissionService());
+		$userRepository = new UserRepository();
+		$resourceService = new ResourceService(new ResourceRepository(), $permissionServiceFactory->GetPermissionService(), new AttributeService(new AttributeRepository()), $userRepository);
 		$pageBuilder = new SchedulePageBuilder();
 		$reservationService = new ReservationService(new ReservationViewRepository(), new ReservationListingFactory());
 		$dailyLayoutFactory = new DailyLayoutFactory();
-		$this->_presenter = new SchedulePresenter($this, $scheduleRepository, $resourceService, $pageBuilder, $reservationService, $dailyLayoutFactory);
+		$scheduleService = new ScheduleService($scheduleRepository, $resourceService);
+		$this->_presenter = new SchedulePresenter($this, $scheduleService, $resourceService, $pageBuilder, $reservationService, $dailyLayoutFactory);
 	}
 
 	public function ProcessPageLoad()
 	{
 		$start = microtime(true);
 
-		$user = ServiceLocator::GetServer()->GetUserSession();
+		$user = ServiceLocator::GetServer()
+				->GetUserSession();
 
 		$this->_presenter->PageLoad($user);
 
 		$endLoad = microtime(true);
 
-		$this->Set('SlotLabelFactory', $user->IsAdmin ? new AdminSlotLabelFactory() : new SlotLabelFactory());
-		$this->Set('DisplaySlotFactory', new DisplaySlotFactory());
-		if ($this->scheduleDirection == ScheduleDirection::horizontal)
+		if ($user->IsAdmin && $this->resourceCount == 0)
 		{
-			$this->Display('schedule.tpl');
+			$this->Set('ShowResourceWarning', true);
+		}
+
+		$this->Set('SlotLabelFactory', $user->IsAdmin ? new AdminSlotLabelFactory() : new SlotLabelFactory($user));
+		$this->Set('DisplaySlotFactory', new DisplaySlotFactory());
+
+		if (array_key_exists($this->ScheduleStyle, $this->_styles))
+		{
+			$this->Display($this->_styles[$this->ScheduleStyle]);
 		}
 		else
 		{
-			$this->Display('schedule-flipped.tpl');
+			$this->Display('Schedule/schedule.tpl');
 		}
 
 		$endDisplay = microtime(true);
 
 		$load = $endLoad - $start;
 		$display = $endDisplay - $endLoad;
-		Log::Debug('Schedule took %s sec to load, %s sec to render', $load, $display);
+		$total = $endDisplay - $start;
+
+		Log::Debug('Schedule took %s sec to load, %s sec to render. Total %s sec', $load, $display, $total);
 	}
 
 	public function ProcessDataRequest($dataRequest)
 	{
-		$this->_presenter->GetLayout(ServiceLocator::GetServer()->GetUserSession());
+		$this->_presenter->GetLayout(ServiceLocator::GetServer()
+									 ->GetUserSession());
 	}
 
 	public function GetScheduleId()
@@ -210,6 +309,7 @@ class SchedulePage extends ActionPage implements ISchedulePage
 
 	public function SetResources($resources)
 	{
+		$this->resourceCount = count($resources);
 		$this->Set('Resources', $resources);
 	}
 
@@ -238,9 +338,10 @@ class SchedulePage extends ActionPage implements ISchedulePage
 
 	public function ShowInaccessibleResources()
 	{
-		return Configuration::Instance()->GetSectionKey(ConfigSection::SCHEDULE,
-														ConfigKeys::SCHEDULE_SHOW_INACCESSIBLE_RESOURCES,
-														new BooleanConverter());
+		return Configuration::Instance()
+			   ->GetSectionKey(ConfigSection::SCHEDULE,
+							   ConfigKeys::SCHEDULE_SHOW_INACCESSIBLE_RESOURCES,
+							   new BooleanConverter());
 	}
 
 	public function ShowFullWeekToggle($showShowFullWeekToggle)
@@ -270,7 +371,7 @@ class SchedulePage extends ActionPage implements ISchedulePage
 		return $this->GetQuerystring(QueryStringKeys::LAYOUT_DATE);
 	}
 
-	public function GetScheduleDirection($scheduleId)
+	public function GetScheduleStyle($scheduleId)
 	{
 		$cookie = $this->server->GetCookie("schedule-direction-$scheduleId");
 		if ($cookie != null)
@@ -278,14 +379,100 @@ class SchedulePage extends ActionPage implements ISchedulePage
 			return $cookie;
 		}
 
-		return ScheduleDirection::horizontal;
+		return ScheduleStyle::Standard;
 	}
 
-	public function SetScheduleDirection($direction)
+	public function SetScheduleStyle($direction)
 	{
-		$this->scheduleDirection = $direction;
+		$this->ScheduleStyle = $direction;
 		$this->Set('CookieName', 'schedule-direction-' . $this->GetVar('ScheduleId'));
-		$this->Set('CookieValue', $direction == ScheduleDirection::vertical ? ScheduleDirection::horizontal : ScheduleDirection::vertical);
+		$this->Set('CookieValue', $direction);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetGroupId()
+	{
+		return $this->GetQuerystring(QueryStringKeys::GROUP_ID);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function GetResourceId()
+	{
+		return $this->GetQuerystring(QueryStringKeys::RESOURCE_ID);
+	}
+
+	public function SetResourceGroupTree(ResourceGroupTree $resourceGroupTree)
+	{
+		$this->Set('ResourceGroupsAsJson', json_encode($resourceGroupTree->GetGroups()));
+	}
+
+	public function SetResourceTypes($resourceTypes)
+	{
+		$this->Set('ResourceTypes', $resourceTypes);
+	}
+
+	public function SetResourceCustomAttributes($attributes)
+	{
+		$this->Set('ResourceAttributes', $attributes);
+	}
+
+	public function SetResourceTypeCustomAttributes($attributes)
+	{
+		$this->Set('ResourceTypeAttributes', $attributes);
+	}
+
+	public function FilterSubmitted()
+	{
+		$k = $this->GetForm(FormKeys::SUBMIT);
+
+		return !empty($k);
+	}
+
+	public function GetResourceTypeId()
+	{
+		return $this->GetForm(FormKeys::RESOURCE_TYPE_ID);
+	}
+
+	public function GetMaxParticipants()
+	{
+		$max = $this->GetForm(FormKeys::MAX_PARTICIPANTS);
+		return intval($max);
+	}
+
+	public function GetResourceAttributes()
+	{
+		return AttributeFormParser::GetAttributes($this->GetForm('r' . FormKeys::ATTRIBUTE_PREFIX));
+	}
+
+	public function GetResourceTypeAttributes()
+	{
+		return AttributeFormParser::GetAttributes($this->GetForm('rt' . FormKeys::ATTRIBUTE_PREFIX));
+	}
+
+	public function SetFilter($resourceFilter)
+	{
+		$this->Set('ResourceIdFilter', $this->GetResourceId());
+		$this->Set('ResourceTypeIdFilter', $resourceFilter->ResourceTypeId);
+		$this->Set('MaxParticipantsFilter', $resourceFilter->MinCapacity);
+	}
+
+	public function SetSubscriptionUrl(CalendarSubscriptionUrl $subscriptionUrl)
+	{
+		$this->Set('SubscriptionUrl', $subscriptionUrl);
+	}
+
+	public function ShowPermissionError($shouldShow)
+	{
+		$this->Set('IsAccessible', !$shouldShow);
+	}
+
+	public function GetDisplayTimezone(UserSession $user, Schedule $schedule)
+	{
+		return $user->Timezone;
 	}
 }
 
@@ -293,7 +480,6 @@ class DisplaySlotFactory
 {
 	public function GetFunction(IReservationSlot $slot, $accessAllowed = false)
 	{
-		$slot->IsPending();
 		if ($slot->IsReserved())
 		{
 			if ($this->IsMyReservation($slot))
@@ -304,7 +490,8 @@ class DisplaySlotFactory
 			{
 				return 'displayMyParticipating';
 			}
-			else{
+			else
+			{
 				return 'displayReserved';
 			}
 		}
@@ -339,20 +526,21 @@ class DisplaySlotFactory
 
 	private function UserHasAdminRights()
 	{
-		return ServiceLocator::GetServer()->GetUserSession()->IsAdmin;
+		return ServiceLocator::GetServer()
+			   ->GetUserSession()->IsAdmin;
 	}
 
 	private function IsMyReservation(IReservationSlot $slot)
 	{
-		$mySession = ServiceLocator::GetServer()->GetUserSession();
+		$mySession = ServiceLocator::GetServer()
+					 ->GetUserSession();
 		return $slot->IsOwnedBy($mySession);
 	}
 
 	private function AmIParticipating(IReservationSlot $slot)
 	{
-		$mySession = ServiceLocator::GetServer()->GetUserSession();
+		$mySession = ServiceLocator::GetServer()
+					 ->GetUserSession();
 		return $slot->IsParticipating($mySession);
 	}
 }
-
-?>

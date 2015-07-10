@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 interface ISavedReport
@@ -183,6 +183,14 @@ class SavedReport implements ISavedReport
 	/**
 	 * @return int|null
 	 */
+	public function ParticipantId()
+	{
+		return $this->filter->ParticipantId();
+	}
+
+	/**
+	 * @return int|null
+	 */
 	public function GroupId()
 	{
 		return $this->filter->GroupId();
@@ -263,7 +271,7 @@ class ReportSerializer
 	 */
 	public static function Serialize(SavedReport $report)
 	{
-		$template = 'usage=%s;selection=%s;groupby=%s;range=%s;range_start=%s;range_end=%s;resourceid=%s;scheduleid=%s;userid=%s;groupid=%s;accessoryid=%s';
+		$template = 'usage=%s;selection=%s;groupby=%s;range=%s;range_start=%s;range_end=%s;resourceid=%s;scheduleid=%s;userid=%s;groupid=%s;accessoryid=%s;participantid=%s';
 
 		return sprintf($template,
 					   $report->Usage(),
@@ -276,7 +284,8 @@ class ReportSerializer
 					   $report->ScheduleId(),
 					   $report->UserId(),
 					   $report->GroupId(),
-					   $report->AccessoryId());
+					   $report->AccessoryId(),
+					   $report->ParticipantId());
 	}
 
 	/**
@@ -294,7 +303,10 @@ class ReportSerializer
 		{
 			$keyValue = explode('=', $pair);
 
-			$values[$keyValue[0]] = $keyValue[1];
+			if (count($keyValue) == 2)
+			{
+				$values[$keyValue[0]] = $keyValue[1];
+			}
 		}
 
 		return new SavedReport($reportName, $userId, self::GetUsage($values), self::GetSelection($values), self::GetGroupBy($values), self::GetRange($values), self::GetFilter($values));
@@ -378,13 +390,14 @@ class ReportSerializer
 	 */
 	private static function GetFilter($values)
 	{
-		$resourceId = $values['resourceid'];
-		$scheduleId = $values['scheduleid'];
-		$userId = $values['userid'];
-		$groupId = $values['groupid'];
-		$accessoryId = $values['accessoryid'];
+		$resourceId = isset($values['resourceid']) ? $values['resourceid'] : '';
+		$scheduleId = isset($values['scheduleid']) ? $values['scheduleid'] : '';
+		$userId = isset($values['userid']) ? $values['userid'] : '';
+		$groupId = isset($values['groupid']) ? $values['groupid'] : '';
+		$accessoryId = isset($values['accessoryid']) ? $values['accessoryid'] : '';
+		$participantId = isset($values['participantid']) ? $values['participantid'] : '';
 
-		return new Report_Filter($resourceId, $scheduleId, $userId, $groupId, $accessoryId);
+		return new Report_Filter($resourceId, $scheduleId, $userId, $groupId, $accessoryId, $participantId);
 	}
 }
 

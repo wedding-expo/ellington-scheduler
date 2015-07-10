@@ -4,47 +4,14 @@
 }
 
 body {
-	font: 11px Helvetica, "Helvetica Neue", "Lucida Grande", Verdana, Arial, sans-serif;
+	font: 12px Helvetica, "Helvetica Neue", "Lucida Grande", Verdana, Arial, sans-serif;
 	background-color: #fefefe;
-	margin: 0px;
+	margin: 0;
 	color: #333333;
 }
 
 html, body {
 	height: 100%;
-}
-
-#page-header {
-	background-color: #bbb;
-	border-bottom: #4c5c67 solid 1px;
-	margin-bottom: 0px;
-	width: 100%;
-	border: none;
-	padding: 0;
-	background-image: url(../img/scheduleit-header-gradient.png);
-}
-
-#page-header span.tab {
-	padding: 0px 10px 3px 10px;
-	margin: 2px 3px 1px 3px;
-	vertical-align: middle;
-	border-left: 2px solid #000000;
-	border-right: 2px solid #000000;
-	border-top: 2px solid #000000;
-	border-bottom: 3px solid #000000;
-}
-
-#signout {
-	float: right;
-	padding-right: 10px;
-	color: #fff;
-	font-size: 11pt;
-	text-align: right;
-	vertical-align: middle;
-}
-
-#signout a {
-	color: #fff;
 }
 
 img {
@@ -58,11 +25,12 @@ h1 {
 	border-bottom: solid 1px #999;
 }
 
-.textbox {
+.textbox, .pulldown {
 	font-size: 12px;
-	color: #36648B;
+	color: #716e71;
 	padding: 2px 3px;
 	border: solid 1px #aaaaaa;
+	margin:1px;
 }
 
 .button {
@@ -79,11 +47,39 @@ h1 {
 	font-weight: bold;
 	color: #565656;
 	cursor: pointer;
-	padding: 5px 10px 6px 7px; /* Links */
+	padding: 5px 10px 6px 7px;
+	-moz-box-shadow: 0px 0px 3px 0px #ccc;
+	-webkit-box-shadow: 0px 0px 3px 0px #ccc;
+	box-shadow: 0px 0px 3px 0px #ccc;
+}
+
+.main-div-shadow {
+	-moz-box-shadow: 0px 0px 3px 0px #dddddd;
+	-webkit-box-shadow: 0px 0px 3px 0px #dddddd;
+	box-shadow: 0px 0px 3px 0px #dddddd;
+	background-color: #F1F1F1;
+	border: solid 1px #ccc;
+	padding: 10px;
+}
+
+.main-div-header {
+	background-color: #ddd;
+	margin:-10px -10px 10px -10px;
+	line-height:25px;
+	padding-left:15px;
+	font-size:1.2em;
+	font-weight: bold;
+	color:#777;
+	border-bottom: solid 1px #ccc;
 }
 
 .button:hover {
-	background-color: #e0e0e0;
+	background-color: #e8e8e8;
+}
+
+.button.disabled
+{
+	color:#949494;
 }
 
 /*********************************************************/
@@ -114,9 +110,8 @@ div.success {
 div.warning {
 	border: solid 1px #c77600;
 	text-align: center;
-	background: #f6c500;/* url("../img/tick-.png") no-repeat scroll 5px 5px;*/
+	background: #f6c500;
 }
-
 
 div.error table {
 	width: 100%;
@@ -137,7 +132,7 @@ div.error li {
 }
 
 #content {
-	margin: 0px 15px 15px 15px;
+	margin: 10px 15px 15px 15px;
 	padding: 0;
 }
 
@@ -164,7 +159,7 @@ div.page-footer {
 	text-align: center;
 	height: 38px;
 	background-color: #e3f2ff;
-	background: url(../img/header-top.png) repeat;
+	background: url(../img/footer-gradient.png) repeat;
 	padding-top: 1px;
 	border-top: solid 1px #333333;
 	font-size: 8pt;
@@ -192,16 +187,16 @@ form.login, form.forgot, form.register, #reservationForm, form.box-form, #activa
 	margin: 0 0 0 8px;
 	padding: 20px 16px 48px 16px;
 	font-weight: normal;
-	-moz-border-radius: 11px;
-	-khtml-border-radius: 11px;
-	-webkit-border-radius: 11px;
-	border-radius: 11px;
+	-moz-border-radius: 2px;
+	-khtml-border-radius: 2px;
+	-webkit-border-radius: 2px;
+	border-radius: 2px;
 	background: #fff;
 	border: 1px solid #e5e5e5;
-	-moz-box-shadow: rgba(200, 200, 200, 1) 0 4px 18px;
-	-webkit-box-shadow: rgba(200, 200, 200, 1) 0 4px 18px;
-	-khtml-box-shadow: rgba(200, 200, 200, 1) 0 4px 18px;
-	box-shadow: rgba(200, 200, 200, 1) 0 4px 18px;
+	-moz-box-shadow: rgba(200, 200, 200, 1) 0 4px 5px;
+	-webkit-box-shadow: rgba(200, 200, 200, 1) 0 4px 5px;
+	-khtml-box-shadow: rgba(200, 200, 200, 1) 0 4px 5px;
+	box-shadow: rgba(200, 200, 200, 1) 0 4px 5px;
 }
 
 form.login {
@@ -210,24 +205,23 @@ form.login {
 
 div.registrationHeader, div.forgot_pwdHeader, .reservationHeader, div.box-form div.header {
 	padding: 5px 15px;
-	border: none;
-	-moz-border-radius: 13px;
-	-khtml-border-radius: 13px;
-	-webkit-border-radius: 13px;
-	border-radius: 13px;
-	-moz-box-shadow: rgba(200, 200, 200, 1) 3px 3px 10px;
-	-webkit-box-shadow: rgba(200, 200, 200, 1) 3px 3px 10px;
-	-khtml-box-shadow: rgba(200, 200, 200, 1) 3px 3px 10px;
-	box-shadow: rgba(200, 200, 200, 1) 3px 3px 10px;
+	-moz-border-radius: 3px;
+	-khtml-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	-moz-box-shadow: rgba(200, 200, 200, 1) 3px 3px 8px;
+	-webkit-box-shadow: rgba(200, 200, 200, 1) 3px 3px 8px;
+	-khtml-box-shadow: rgba(200, 200, 200, 1) 3px 3px 8px;
+	box-shadow: rgba(200, 200, 200, 1) 3px 3px 8px;
 	text-decoration: none;
 	margin: 0 0 20px 0;
-	height: 2em;
-	background: url('../img/button_bg.gif') repeat-x 0 0;
+	background-color: rgba(18, 52, 86, 0.72);
+	background-color: rgba(74, 74, 86, 0.80);
 	color: #fff;
 }
 
 .registrationHeader h3, .forgot_pwdHeader h3, .reservationHeader h3, div.box-form h3.header {
-	font: bold 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
+	font: bold 18px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
 	vertical-align: middle;
 }
 
@@ -248,8 +242,8 @@ form.box-form li {
 	list-style: none;
 }
 
-#registrationbox .input, #reservationbox .input {
-	font-size: 18px;
+#registrationbox .input {
+	font-size: 16px;
 	width: 97%;
 	padding: 3px;
 	margin: 2px 0 5px 0;
@@ -325,35 +319,21 @@ p.regsubmit {
 	float: left;
 }
 
-form li {
-	font: 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	color: #666;
+#reservationForm, label.res, label.reg {
+	font: 16px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
+	color: #4f4f4f;
 }
 
 p.forgot {
-	font: 14px/18px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
+	font: 14px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
 }
 
 ul.no-style {
 	list-style-type: none;
 }
 
-li.res-req, li.reg-req, .rsv-req {
-	color: #a00;
-}
-
-label.res-req, label.reg-req, .rsv-req {
-	font-size: 18px;
-	color: #a00;
-}
-
-label.res, label.reg {
-	font-size: 18px;
-	color: #666;
-}
-
 textarea.input-area {
-	font: 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
+	font: 16px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
 	width: 98%;
 	padding: 3px;
 	margin: 2px 0 5px 0;
@@ -367,96 +347,21 @@ td.center {
 	text-align: center;
 }
 
-table.reg-admin {
-	border-collapse: collapse;
-}
-
-table.reg-admin td {
-	padding: 3px;
-}
-
-th.admin-radio {
-	vertical-align: middle;
-	color: #777;
-	border-bottom: 2px solid #aaa;
-	padding: 0 0 3px 0;
-}
-
-th.admin-fieldHeading {
-	font: bold 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	width: 400px;
-	text-align: left;
-}
-
-th.admin-radio {
-	font: bold 15px/18px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	width: 100px;
-}
-
-th.reporting {
-	font: bold 15px/18px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	width: 150px;
-	text-align: center;
-}
-
-td.admin-fieldName {
-	font: bold 15px/18px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	color: #777;
-}
-
-tr.admin-lastline {
-	border-bottom: 2px solid #aaa;
-}
-
-.rsv-checkbox h4 {
-	display: inline;
-	padding: 0 20px 0 5px;
-}
-
-.rsv-checkbox input {
-	margin: 0 0 0 3px;
-}
-
-.rsv-checkbox {
-	padding: 0 0 10px 0;
-}
-
-.pulldown {
-	font-weight: bold;
-	margin: 2px 0 5px;
-	padding: 3px;
-	border: 1px solid #e5e5e5;
-	background: #fbfbfb;
-	color: #777;
-}
-
-textarea.input-areashow {
-	font: 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
-	width: 98%;
-	padding: 3px;
-	margin: 2px 0 5px 0;
-	border: 1px solid #e0e0e0;
-	background: #fbfbfb;
-	color: #777;
-}
-
 .inline {
 	display: inline;
 }
 
 .dateinput {
-	font: 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
 	width: 100px;
 	padding: 3px;
 	margin: 2px 0 5px 0;
 	border: 1px solid #e0e0e0;
 	background: #fbfbfb;
 	color: #777;
-	text-align: center;
+	/*text-align: center;*/
 }
 
 .repeatDiv select {
-	font: 18px/24px Helvetica, "Lucida Grande", Verdana, Arial, sans-serif;
 	width: 100px;
 	padding: 3px;
 	margin: 2px 0 5px 0;
@@ -476,7 +381,7 @@ fieldset {
 
 legend {
 	font-size: 11px;
-	padding: 0px 5px;
+	padding: 0 5px;
 }
 
 a, a:visited {
@@ -501,14 +406,9 @@ a.page:hover, a.page.current {
 	font-weight: normal;
 }
 
-div.clear {
-	clear: both;
-	height: 0px;
-}
-
 .dialog {
 	display: none;
-	max-height: 600px;
+	/*max-height: 600px;*/
 	overflow: auto;
 }
 
@@ -555,9 +455,9 @@ div.notification-status {
 	font-size: 11pt;
 }
 
-#help p.setting span {
+#help p.setting span, #help span.setting, #helpPopupDiv p.setting span, #helpPopupDiv span.setting {
 	color: green;
-	font-family: Courier;
+	font-family: Courier, serif;
 	display: block;
 }
 
@@ -621,19 +521,27 @@ select.customAttribute {
 	display: none;
 }
 
+.validationSummary li {
+	font-size: 10pt;
+	color: red;
+}
+
 ul.indented li {
 	margin-left: 25px;
 }
 
 .clear {
 	clear: both;
+	height:0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
 }
 
 .bold {
 	font-weight: bold;
 }
 
-#resourceDetailsPopup {
+#resourceDetailsPopup, #userDetailsPopup {
 	min-width: 300px;
 	max-width: 1000px;
 	width: auto;
@@ -643,13 +551,13 @@ ul.indented li {
 	margin-left: 25px;
 }
 
-#resourceDetailsPopup h4 {
+#resourceDetailsPopup h4, #userDetailsPopup #userDetailsName {
 	border-bottom: solid 1px #000;
 	font-size: 12pt;
 	margin-bottom: 3px;
 }
 
-#resourceDetailsPopup .customAttribute {
+#resourceDetailsPopup .customAttribute, #userDetailsPopup .customAttribute {
 	font-size: inherit;
 }
 
@@ -668,15 +576,41 @@ ul.indented li {
 	float: left;
 }
 
-#resourceDetailsDiv {
+#resourceDetailsDiv, #userDetailsDiv {
 	display: none;
 	position: absolute;
 	border: solid 2px #212121;
-	background-color: #fafafa;
-	padding: 5px;
 	background-color: #fff;
+	padding: 5px;
+	-moz-box-shadow: 0px 0px 3px 0px #212121;
+	-webkit-box-shadow: 0px 0px 3px 0px #212121;
+	box-shadow: 0px 0px 3px 0px #212121;
+}
+
+#userDetailsPopup .label {
+	font-weight: bold;
 }
 
 .hidden {
-	display:none;
+	display: none;
+}
+
+.center {
+	text-align: center;
+}
+
+.image-button {
+	cursor: pointer;
+}
+
+.block {
+	display:block;
+}
+
+#reservationCreated .resources, #reservationUpdated .resources {
+	margin-top:10px;
+}
+
+#reservationCreated .dates, #reservationUpdated .dates {
+	margin-top:10px;
 }

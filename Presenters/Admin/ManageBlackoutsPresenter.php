@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Pages/Admin/ManageBlackoutsPage.php');
@@ -27,6 +27,8 @@ class ManageBlackoutsActions
 {
 	const ADD = 'add';
 	const DELETE = 'delete';
+	const LOAD = 'load';
+	const UPDATE = 'update';
 }
 
 class ManageBlackoutsPresenter extends ActionPresenter
@@ -66,6 +68,8 @@ class ManageBlackoutsPresenter extends ActionPresenter
 
 		$this->AddAction(ManageBlackoutsActions::ADD, 'AddBlackout');
 		$this->AddAction(ManageBlackoutsActions::DELETE, 'DeleteBlackout');
+		$this->AddAction(ManageBlackoutsActions::LOAD, 'LoadBlackout');
+		$this->AddAction(ManageBlackoutsActions::UPDATE, 'UpdateBlackout');
 	}
 
 	public function PageLoad($userTimezone)
@@ -104,7 +108,8 @@ class ManageBlackoutsPresenter extends ActionPresenter
 	private function GetDate($dateString, $timezone, $defaultDays)
 	{
 		$date = null;
-		if (is_null($dateString)) {
+		if (is_null($dateString))
+		{
 			$date = Date::Now()->AddDays($defaultDays)->ToTimezone($timezone)->GetDate();
 
 		}
@@ -156,12 +161,73 @@ class ManageBlackoutsPresenter extends ActionPresenter
     public function DeleteBlackout()
     {
         $id = $this->page->GetBlackoutId();
+		$scope = $this->page->GetSeriesUpdateScope();
 
-        Log::Debug('Deleting blackout with id %s', $id);
+        Log::Debug('Deleting blackout. BlackoutId=%s, DeleteScope=%s', $id, $scope);
 
-        $this->manageBlackoutsService->Delete($id);
+        $this->manageBlackoutsService->Delete($id, $scope);
     }
 
-}
+	public function LoadBlackout()
+	{
+		$id = $this->page->GetBlackoutId();
+		$session = ServiceLocator::GetServer()->GetUserSession();
 
-?>
+		Log::Debug('Loading blackout for editing. Id=%s', $id);
+		$series = $this->manageBlackoutsService->LoadBlackout($id, $session->UserId);
+
+		if ($series != null)
+		{
+			$this->page->BindResources($this->resourceRepository->GetResourceList());
+			$this->page->SetBlackoutResources($series->ResourceIds());
+			$this->page->SetBlackoutId($id);
+			$this->page->SetBlackoutStartDate($series->CurrentBlackout()->StartDate()->ToTimezone($session->Timezone));
+			$this->page->SetBlackoutEndDate($series->CurrentBlackout()->EndDate()->ToTimezone($session->Timezone));
+			$this->page->SetTitle($series->Title());
+			$this->page->SetIsRecurring($series->RepeatType() != RepeatType::None);
+			$repeatConfiguration = $series->RepeatConfiguration();
+			$this->page->SetRepeatInterval($repeatConfiguration->Interval);
+			$this->page->SetRepeatMonthlyType($repeatConfiguration->MonthlyType);
+			if ($repeatConfiguration->TerminationDate != null)
+			{
+				$this->page->SetRepeatTerminationDate($repeatConfiguration->TerminationDate->ToTimezone($session->Timezone));
+			}
+			$this->page->SetRepeatType($repeatConfiguration->Type);
+			$this->page->SetRepeatWeekdays($repeatConfiguration->Weekdays);
+			$this->page->SetWasBlackoutFound(true);
+		}
+		else
+		{
+			$this->page->SetWasBlackoutFound(false);
+		}
+
+		$this->page->ShowBlackout();
+	}
+
+	public function UpdateBlackout()
+	{
+		$session = ServiceLocator::GetServer()->GetUserSession();
+
+		$id = $this->page->GetUpdateBlackoutId();
+		$scope = $this->page->GetSeriesUpdateScope();
+
+		Log::Debug('Updating blackout. BlackoutId=%s, UpdateScope=%s', $id, $scope);
+
+		$resourceIds = $this->page->GetBlackoutResourceIds();
+		$startDate = $this->page->GetBlackoutStartDate();
+		$startTime = $this->page->GetBlackoutStartTime();
+		$endDate = $this->page->GetBlackoutEndDate();
+		$endTime = $this->page->GetBlackoutEndTime();
+		$blackoutDate = DateRange::Create($startDate . ' ' . $startTime, $endDate . ' ' . $endTime, $session->Timezone);
+
+		$title = $this->page->GetBlackoutTitle();
+		$conflictAction = $this->page->GetBlackoutConflictAction();
+
+		$repeatOptionsFactory = new RepeatOptionsFactory();
+		$repeatOptions = $repeatOptionsFactory->CreateFromComposite($this->page, $session->Timezone);
+
+		$result = $this->manageBlackoutsService->Update($id, $blackoutDate, $resourceIds, $title, ReservationConflictResolution::Create($conflictAction), $repeatOptions, $scope);
+
+		$this->page->ShowUpdateResult($result->WasSuccessful(), $result->Message(), $result->ConflictingReservations(), $result->ConflictingBlackouts(), $session->Timezone);
+	}
+}

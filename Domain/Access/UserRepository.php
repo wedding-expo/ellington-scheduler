@@ -1,27 +1,29 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
-
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+ * Copyright 2011-2015 Nick Korbel
+ *
+ * This file is part of Booked Scheduler.
+ *
+ * Booked Scheduler is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Booked Scheduler is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 
 require_once(ROOT_DIR . 'Domain/User.php');
 require_once(ROOT_DIR . 'Domain/Values/AccountStatus.php');
 require_once(ROOT_DIR . 'Domain/Values/FullName.php');
+require_once(ROOT_DIR . 'Domain/Values/UserPreferences.php');
+require_once(ROOT_DIR . 'lib/Email/Messages/AccountCreationEmail.php');
 
 interface IUserRepository extends IUserViewRepository
 {
@@ -63,6 +65,105 @@ interface IUserRepository extends IUserViewRepository
 	 * @return void
 	 */
 	function DeleteById($userId);
+}
+
+class UserFilter
+{
+	private $username;
+	private $email;
+	private $firstName;
+	private $lastName;
+	private $phone;
+	private $organization;
+	private $position;
+	private $attributes;
+	/**
+	 * @var array|ISqlFilter[]
+	 */
+	private $_and = array();
+
+
+	public function __construct(
+			$username = null,
+			$email = null,
+			$firstName = null,
+			$lastName = null,
+			$phone = null,
+			$organization = null,
+			$position = null,
+			$attributes = null
+	)
+	{
+		$this->username = $username;
+		$this->email = $email;
+		$this->firstName = $firstName;
+		$this->lastName = $lastName;
+		$this->phone = $phone;
+		$this->organization = $organization;
+		$this->position = $position;
+		$this->attributes = $attributes;
+	}
+
+	/**
+	 * @param ISqlFilter $filter
+	 * @return UserFilter
+	 */
+	public function _And(ISqlFilter $filter)
+	{
+		$this->_and[] = $filter;
+		return $this;
+	}
+
+	public function GetFilter()
+	{
+		$filter = new SqlFilterNull();
+
+		if (!empty($this->username))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::USERNAME, $this->username));
+		}
+		if (!empty($this->email))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::EMAIL, $this->email));
+		}
+		if (!empty($this->firstName))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::FIRST_NAME, $this->firstName));
+		}
+		if (!empty($this->lastName))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::LAST_NAME, $this->lastName));
+		}
+		if (!empty($this->phone))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::PHONE_NUMBER, $this->phone));
+		}
+		if (!empty($this->organization))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::ORGANIZATION, $this->organization));
+		}
+		if (!empty($this->position))
+		{
+			$filter->_And(new SqlFilterEquals(ColumnNames::POSITION, $this->position));
+		}
+
+		if (!empty($this->attributes))
+		{
+			$attributeFilter = AttributeFilter::Create(TableNames::USERS_ALIAS . '.' . ColumnNames::USER_ID, $this->attributes);
+
+			if ($attributeFilter != null)
+			{
+				$filter->_And($attributeFilter);
+			}
+		}
+
+		foreach ($this->_and as $and)
+		{
+			$filter->_And($and);
+		}
+
+		return $filter;
+	}
 }
 
 interface IUserViewRepository
@@ -168,7 +269,9 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		while ($row = $reader->GetRow())
 		{
-			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL], $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
+			$preferences = isset($row[ColumnNames::USER_PREFERENCES]) ? $row[ColumnNames::USER_PREFERENCES] : '';
+			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL],
+								   $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE], $preferences);
 		}
 
 		return $users;
@@ -186,7 +289,8 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		if ($row = $reader->GetRow())
 		{
-			return new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL], $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
+			return new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL],
+							   $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
 		}
 
 		return null;
@@ -232,6 +336,10 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 				$ownedGroups = $this->LoadOwnedGroups($userId);
 				$user->WithOwnedGroups($ownedGroups);
 			}
+
+			$preferences = $this->LoadPreferences($userId);
+			$user->WithPreferences($preferences);
+
 			$user->WithDefaultSchedule($row[ColumnNames::DEFAULT_SCHEDULE_ID]);
 
 			$this->_cache->Add($userId, $user);
@@ -290,10 +398,17 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 		$db = ServiceLocator::GetDatabase();
 		$id = $db->ExecuteInsert(new RegisterUserCommand($user->Username(), $user->EmailAddress(), $user->FirstName(),
 														 $user->LastName(), $user->encryptedPassword, $user->passwordSalt, $user->Timezone(), $user->Language(),
-														 $user->Homepage(), $user->GetAttribute(UserAttribute::Phone), $user->GetAttribute(UserAttribute::Organization),
-														 $user->GetAttribute(UserAttribute::Position), $user->StatusId(), $user->GetPublicId(), $user->GetDefaultScheduleId()));
+														 $user->Homepage(), $user->GetAttribute(UserAttribute::Phone),
+														 $user->GetAttribute(UserAttribute::Organization),
+														 $user->GetAttribute(UserAttribute::Position), $user->StatusId(), $user->GetPublicId(),
+														 $user->GetDefaultScheduleId()));
 
 		$user->WithId($id);
+
+		if (Configuration::Instance()->GetKey(ConfigKeys::REGISTRATION_NOTIFY, new BooleanConverter()))
+		{
+			ServiceLocator::GetEmailService()->Send(new AccountCreationEmail($user));
+		}
 
 		foreach ($user->GetAddedAttributes() as $added)
 		{
@@ -304,6 +419,15 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 		foreach ($addedPreferences as $event)
 		{
 			$db->Execute(new AddEmailPreferenceCommand($id, $event->EventCategory(), $event->EventType()));
+		}
+
+		$userGroups = $user->Groups();
+		if (!empty($userGroups))
+		{
+			foreach ($userGroups as $group)
+			{
+				$db->Execute(new AddUserGroupCommand($id, $group->GroupId));
+			}
 		}
 
 		return $id;
@@ -349,7 +473,9 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		if ($user->HaveAttributesChanged())
 		{
-			$updateAttributesCommand = new UpdateUserAttributesCommand($userId, $user->GetAttribute(UserAttribute::Phone), $user->GetAttribute(UserAttribute::Organization), $user->GetAttribute(UserAttribute::Position));
+			$updateAttributesCommand = new UpdateUserAttributesCommand($userId, $user->GetAttribute(UserAttribute::Phone),
+																	   $user->GetAttribute(UserAttribute::Organization),
+																	   $user->GetAttribute(UserAttribute::Position));
 			$db->Execute($updateAttributesCommand);
 		}
 
@@ -373,6 +499,26 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 		foreach ($user->GetAddedAttributes() as $added)
 		{
 			$db->Execute(new AddAttributeValueCommand($added->AttributeId, $added->Value, $user->Id(), CustomAttributeCategory::USER));
+		}
+
+		foreach ($user->GetPreferences()->AddedPreferences() as $added)
+		{
+			$db->Execute(new AddUserPreferenceCommand($user->Id(), $added, $user->GetPreference($added)));
+		}
+
+		foreach ($user->GetPreferences()->ChangedPreferences() as $updated)
+		{
+			$db->Execute(new UpdateUserPreferenceCommand($user->Id(), $updated, $user->GetPreference($updated)));
+		}
+
+		foreach ($user->GetRemovedGroups() as $removed)
+		{
+			$db->Execute(new DeleteUserGroupCommand($user->Id(), $removed->GroupId));
+		}
+
+		foreach ($user->GetAddedGroups() as $added)
+		{
+			$db->Execute(new AddUserGroupCommand($user->Id(), $added->GroupId));
 		}
 	}
 
@@ -410,7 +556,8 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		while ($row = $reader->GetRow())
 		{
-			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL], $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
+			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL],
+								   $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
 		}
 
 		return $users;
@@ -427,7 +574,8 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		while ($row = $reader->GetRow())
 		{
-			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL], $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
+			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL],
+								   $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
 		}
 
 		return $users;
@@ -445,7 +593,8 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 		while ($row = $reader->GetRow())
 		{
-			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL], $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
+			$users[] = new UserDto($row[ColumnNames::USER_ID], $row[ColumnNames::FIRST_NAME], $row[ColumnNames::LAST_NAME], $row[ColumnNames::EMAIL],
+								   $row[ColumnNames::TIMEZONE_NAME], $row[ColumnNames::LANGUAGE_CODE]);
 		}
 
 		return $users;
@@ -463,6 +612,7 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 			$allowedResourceIds[] = $row[ColumnNames::RESOURCE_ID];
 		}
 
+		$reader->Free();
 		return $allowedResourceIds;
 	}
 
@@ -497,6 +647,22 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 		}
 
 		return array_values($groups);
+	}
+
+	public function LoadPreferences($userId)
+	{
+		$command = new GetUserPreferencesCommand($userId);
+		$reader = ServiceLocator::GetDatabase()->Query($command);
+
+		$preferences = new UserPreferences();
+		while ($row = $reader->GetRow())
+		{
+			$preferences->Add($row[ColumnNames::PREFERENCE_NAME], $row[ColumnNames::PREFERENCE_VALUE]);
+		}
+
+		$reader->Free();
+
+		return $preferences;
 	}
 
 	/**
@@ -580,7 +746,7 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 	public function UserExists($emailAddress, $userName)
 	{
-		$reader = ServiceLocator::GetDatabase()->Query(new CheckUserExistanceCommand($userName, $emailAddress));
+		$reader = ServiceLocator::GetDatabase()->Query(new CheckUserExistenceCommand($userName, $emailAddress));
 
 		if ($row = $reader->GetRow())
 		{
@@ -593,57 +759,61 @@ class UserRepository implements IUserRepository, IAccountActivationRepository
 
 class UserDto
 {
-	private $userId;
-	private $firstName;
-	private $lastName;
-	private $emailAddress;
-	private $timezone;
-	private $languageCode;
+	public $UserId;
+	public $FirstName;
+	public $LastName;
+	public $FullName;
+	public $EmailAddress;
+	public $Timezone;
+	public $LanguageCode;
+	public $Preferences;
 
-	public function __construct($userId, $firstName, $lastName, $emailAddress, $timezone = null, $languageCode = null)
+	public function __construct($userId, $firstName, $lastName, $emailAddress, $timezone = null, $languageCode = null, $preferences = null)
 	{
-		$this->userId = $userId;
-		$this->firstName = $firstName;
-		$this->lastName = $lastName;
-		$this->emailAddress = $emailAddress;
-		$this->timezone = $timezone;
-		$this->languageCode = $languageCode;
+		$this->UserId = $userId;
+		$this->FirstName = $firstName;
+		$this->LastName = $lastName;
+		$this->EmailAddress = $emailAddress;
+		$this->Timezone = $timezone;
+		$this->LanguageCode = $languageCode;
+		$name = new FullName($this->FirstName(), $this->LastName());
+		$this->FullName = $name->__toString() . " ({$this->EmailAddress})";
+		$this->Preferences = UserPreferences::Parse($preferences)->All();
 	}
 
 	public function Id()
 	{
-		return $this->userId;
+		return $this->UserId;
 	}
 
 	public function FirstName()
 	{
-		return $this->firstName;
+		return $this->FirstName;
 	}
 
 	public function LastName()
 	{
-		return $this->lastName;
+		return $this->LastName;
 	}
 
 	public function FullName()
 	{
-		$name = new FullName($this->FirstName(), $this->LastName());
-		return $name->__toString() . " ({$this->emailAddress})";
+		return $this->FullName;
 	}
 
 	public function EmailAddress()
 	{
-		return $this->emailAddress;
+		return $this->EmailAddress;
 	}
 
 	public function Timezone()
 	{
-		return $this->timezone;
+		return $this->Timezone;
 	}
 
 	public function Language()
 	{
-		return $this->languageCode;
+		return $this->LanguageCode;
 	}
 
 }
@@ -682,6 +852,20 @@ class UserItemView
 	public $Organization;
 	public $Position;
 	public $Language;
+	public $ReservationColor;
+	/**
+	 * @var CustomAttributes
+	 */
+	public $Attributes;
+	/**
+	 * @var UserPreferences
+	 */
+	public $Preferences;
+
+	public function __construct()
+	{
+		$this->Attributes = new Customattributes();
+	}
 
 	public function IsActive()
 	{
@@ -706,8 +890,38 @@ class UserItemView
 		$user->Position = $row[ColumnNames::POSITION];
 		$user->Language = $row[ColumnNames::LANGUAGE_CODE];
 
+		if (isset($row[ColumnNames::ATTRIBUTE_LIST]))
+		{
+			$user->Attributes = CustomAttributes::Parse($row[ColumnNames::ATTRIBUTE_LIST]);
+		}
+		else
+		{
+			$user->Attributes = new CustomAttributes();
+		}
+
+		if (isset($row[ColumnNames::USER_PREFERENCES]))
+		{
+			$preferences = UserPreferences::Parse($row[ColumnNames::USER_PREFERENCES]);
+			if (!empty($preferences))
+			{
+				$user->ReservationColor = $preferences->Get(UserPreferences::RESERVATION_COLOR);
+			}
+			$user->Preferences = $preferences;
+		}
+		else
+		{
+			$user->Preferences = new UserPreferences();
+		}
+
 		return $user;
 	}
-}
 
-?>
+	/**
+	 * @param $attributeId int
+	 * @return null|string
+	 */
+	public function GetAttributeValue($attributeId)
+	{
+		return $this->Attributes->Get($attributeId);
+	}
+}

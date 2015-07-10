@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'Pages/Admin/AdminPage.php');
@@ -36,49 +36,46 @@ interface IManageAttributesPage extends IActionPage
 	public function GetType();
 
 	/**
-	 * @abstract
 	 * return int|CustomAttributeCategory
 	 */
 	public function GetCategory();
 
 	/**
-	 * @abstract
 	 * return string
 	 */
 	public function GetValidationExpression();
 
 	/**
-	 * @abstract
 	 * return bool
 	 */
 	public function GetIsRequired();
 
 	/**
-	 * @abstract
+	 * @return int|null
+	 */
+	public function GetEntityId();
+
+	/**
 	 * return string
 	 */
 	public function GetPossibleValues();
 
 	/**
-	 * @abstract
 	 * return int|CustomAttributeCategory
 	 */
 	public function GetRequestedCategory();
 
 	/**
-	 * @abstract
 	 * @return int
 	 */
 	public function GetSortOrder();
 
 	/**
-	 * @abstract
 	 * @param $attributes CustomAttribute[]|array
 	 */
 	public function BindAttributes($attributes);
 
 	/**
-	 * @abstract
 	 * @param $categoryId int|CustomAttributeCategory
 	 */
 	public function SetCategory($categoryId);
@@ -148,6 +145,11 @@ class ManageAttributesPage extends ActionPage implements IManageAttributesPage
 	{
 		$required = $this->GetForm(FormKeys::ATTRIBUTE_IS_REQUIRED);
 		return !empty($required);
+	}
+
+	public function GetEntityId()
+	{
+		return $this->GetForm(FormKeys::ATTRIBUTE_ENTITY);
 	}
 
 	public function GetPossibleValues()

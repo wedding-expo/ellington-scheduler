@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Pages/SecurePage.php');
@@ -37,11 +37,15 @@ interface IReservationPage extends IPage
 	function BindAvailableResources($resources);
 
 	/**
-	 * @abstract
 	 * @param $accessories array|AccessoryDto[]
 	 * @return void
 	 */
 	function BindAvailableAccessories($accessories);
+
+	/**
+	 * @param $groups ResourceGroupTree
+	 */
+	function BindResourceGroups($groups);
 
 	/**
 	 * @param SchedulePeriod $selectedStart
@@ -76,69 +80,64 @@ interface IReservationPage extends IPage
 	function SetScheduleId($scheduleId);
 
 	/**
-	 * @abstract
 	 * @param ReservationUserView[] $participants
-	 * @return void
 	 */
 	function SetParticipants($participants);
 
 	/**
-	 * @abstract
 	 * @param ReservationUserView[] $invitees
-	 * @return void
 	 */
 	function SetInvitees($invitees);
 
 	/**
-	 * @abstract
 	 * @param $accessories ReservationAccessory[]|array
-	 * @return void
 	 */
 	function SetAccessories($accessories);
 
 	/**
-	 * @abstract
 	 * @param $attachments ReservationAttachmentView[]|array
-	 * @return void
 	 */
 	function SetAttachments($attachments);
 
 	/**
-	 * @abstract
 	 * @param $canChangeUser
-	 * @return void
 	 */
 	function SetCanChangeUser($canChangeUser);
 
 	/**
-	 * @abstract
 	 * @param bool $canShowAdditionalResources
 	 */
 	function ShowAdditionalResources($canShowAdditionalResources);
 
 	/**
-	 * @abstract
 	 * @param bool $canShowUserDetails
 	 */
 	function ShowUserDetails($canShowUserDetails);
 
 	/**
-	 * @abstract
+	 * @param bool $shouldShow
+	 */
+	function SetShowParticipation($shouldShow);
+
+	/**
 	 * @param bool $showReservationDetails
 	 */
 	function ShowReservationDetails($showReservationDetails);
 
 	/**
-	 * @abstract
 	 * @param $attributes array|Attribute[]
 	 */
 	function SetCustomAttributes($attributes);
 
 	/**
-	 * @abstract
 	 * @param bool $isHidden
 	 */
 	function HideRecurrence($isHidden);
+
+	/**
+	 * @param bool $allowParticipation
+	 */
+	function SetAllowParticipantsToJoin($allowParticipation);
 }
 
 abstract class ReservationPage extends Page implements IReservationPage
@@ -163,10 +162,12 @@ abstract class ReservationPage extends Page implements IReservationPage
 			$this->permissionServiceFactory = new PermissionServiceFactory();
 		}
 
+		$userRepository = new UserRepository();
+
 		$this->initializationFactory = new ReservationInitializerFactory(
 			new ScheduleRepository(),
-			new UserRepository(),
-			new ResourceService(new ResourceRepository(), $this->permissionServiceFactory->GetPermissionService()),
+			$userRepository,
+			new ResourceService(new ResourceRepository(), $this->permissionServiceFactory->GetPermissionService(), new AttributeService(new AttributeRepository()), $userRepository),
 			new ReservationAuthorization(AuthorizationServiceFactory::GetAuthorizationService()),
 			new AttributeRepository(),
 			ServiceLocator::GetServer()->GetUserSession()
@@ -196,10 +197,11 @@ abstract class ReservationPage extends Page implements IReservationPage
 		$this->Set('ReturnUrl', $this->GetLastPage(Pages::SCHEDULE));
 		$this->Set('ReservationAction', $this->GetReservationAction());
 		$this->Set('MaxUploadSize', UploadedFile::GetMaxSize());
+		$this->Set('MaxUploadCount', UploadedFile::GetMaxUploadCount());
 		$this->Set('UploadsEnabled', Configuration::Instance()->GetSectionKey(ConfigSection::UPLOADS,
 																			  ConfigKeys::UPLOAD_ENABLE_RESERVATION_ATTACHMENTS,
 																			  new BooleanConverter()));
-		$this->Set('ShowParticipation', !Configuration::Instance()->GetSectionKey(ConfigSection::RESERVATION,
+		$this->Set('AllowParticipation', !Configuration::Instance()->GetSectionKey(ConfigSection::RESERVATION,
 																				  ConfigKeys::RESERVATION_PREVENT_PARTICIPATION,
 																				  new BooleanConverter()));
 		$remindersEnabled = Configuration::Instance()->GetSectionKey(ConfigSection::RESERVATION,
@@ -251,6 +253,11 @@ abstract class ReservationPage extends Page implements IReservationPage
 	public function BindAvailableAccessories($accessories)
 	{
 		$this->Set('AvailableAccessories', $accessories);
+	}
+
+	public function BindResourceGroups($groups)
+	{
+		$this->Set('ResourceGroupsAsJson', json_encode($groups->GetGroups()));
 	}
 
 	public function SetSelectedStart(SchedulePeriod $selectedStart, Date $startDate)
@@ -305,6 +312,11 @@ abstract class ReservationPage extends Page implements IReservationPage
 		$this->Set('Invitees', $invitees);
 	}
 
+	public function SetAllowParticipantsToJoin($allowParticipantsToJoin)
+	{
+		$this->Set('AllowParticipantsToJoin', $allowParticipantsToJoin);
+	}
+
 	public function SetAccessories($accessories)
 	{
 		$this->Set('Accessories', $accessories);
@@ -325,6 +337,11 @@ abstract class ReservationPage extends Page implements IReservationPage
 		$this->Set('ShowUserDetails', $canShowUserDetails);
 	}
 
+	public function SetShowParticipation($shouldShow)
+	{
+		$this->Set('ShowParticipation', $shouldShow);
+	}
+
 	public function ShowReservationDetails($showReservationDetails)
 	{
 		$this->Set('ShowReservationDetails', $showReservationDetails);
@@ -340,5 +357,3 @@ abstract class ReservationPage extends Page implements IReservationPage
 		$this->Set('HideRecurrence', $isHidden);
 	}
 }
-
-?>

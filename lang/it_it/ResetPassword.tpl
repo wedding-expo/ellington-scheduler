@@ -1,29 +1,32 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+Translation: 2014 Nicola Ruggero <nicola@nxnt.org>
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler.
+
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-{include file='..\..\tpl\Email\emailheader.tpl'}
-	
-Questa � la tua password temporanea di phpScheduleIt : {$TemporaryPassword}
+
+
+Questa è la nuova password temporanea per Booked Scheduler: {$TemporaryPassword}
 
 <br/>
 
-La tua vecchia password non funzioner&agrave pi&ugrave.
+La vecchia password è stata disattivata.
+<br/>
+<br />
 
-Prego <a href="{$ScriptUrl}">Loggati in phpScheduleIt</a> e cambia la tua password al pi&ugrave presto.
-	
-{include file='..\..\tpl\Email\emailfooter.tpl'}
+Per favore <a href="{$ScriptUrl}">Accedi a Booked Scheduler</a> e cambia la password il prima possibile.
+

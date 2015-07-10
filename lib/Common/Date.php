@@ -1,16 +1,12 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
-Copyright 2012 Trustees of Columbia University in the City of New York
+Copyright 2011-2015 Nick Korbel
+Copyright 2012-2014 Trustees of Columbia University in the City of New York
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE . See {the
 }
@@ -18,8 +14,14 @@ GNU General Public License for more details .
 
 You should {have
 } received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+//$serverTimezone = ini_get('date.timezone');
+//if (empty($serverTimezone))
+//{
+//	Log::Debug('The server timezone is not set properly in your php.ini file. It is highly recommended that this value is set.');
+//}
 
 class Date
 {
@@ -29,8 +31,8 @@ class Date
 	private $date;
 	private $parts;
 	private $timezone;
-	private $timestamp;
 	private $timestring;
+	private $timestamp;
 
 	const SHORT_FORMAT = "Y-m-d H:i:s";
 
@@ -60,7 +62,7 @@ class Date
 		$this->timezone = $timezone;
 		if (empty($timezone))
 		{
-			$this->timezone = Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE);
+			$this->timezone = date_default_timezone_get();
 		}
 	}
 
@@ -107,13 +109,27 @@ class Date
 			return NullDate::Instance();
 		}
 
-		$date = new DateTime($dateString);
-		$timeOffsetString = $date->getTimezone()->getName();
-		$offsetParts = explode(':', $timeOffsetString);
+		$offset = '';
+		$strLen = strlen($dateString);
+		$hourAdjustment = 0;
+		$minuteAdjustment = 0;
+		if ($strLen > 5)
+		{
+			$offset = substr($dateString, -5);
+			$hourAdjustment = substr($offset, 1, 2);
+			$minuteAdjustment = substr($offset, 3, 2);
+		}
 
-		$d = new Date($date->format(Date::SHORT_FORMAT), 'UTC');
-		$offsetMinutes = ($offsetParts[0] * -60) + $offsetParts[1];
-		return $d->AddMinutes($offsetMinutes);
+		if (BookedStringHelper::Contains($offset, '+'))
+		{
+			$hourAdjustment *= -1;
+			$minuteAdjustment *= -1;
+		}
+
+		$parsed = date_parse($dateString);
+
+		$d = Date::Create($parsed['year'], $parsed['month'], $parsed['day'], $parsed['hour'] + $hourAdjustment, $parsed['minute'] + $minuteAdjustment, $parsed['second'], 'UTC');
+		return $d;
 	}
 
 	/**
@@ -186,6 +202,11 @@ class Date
 	 */
 	public function ToIso()
 	{
+//		$offset = $this->date->getOffset();
+//		$hours = intval(intval($offset) / 3600);
+//		$minutes  = intval(($offset / 60) % 60);
+//		printf("offset = %d%d", $hours, $minutes);
+//		//die(' off '  .$offset . ' tz ' . $this->date->getTimezone()->getOffset());
 		return $this->Format(DateTime::ISO8601);
 	}
 
@@ -219,7 +240,7 @@ class Date
 	 */
 	public function Timestamp()
 	{
-		return intval($this->timestamp);
+		return $this->timestamp;
 	}
 
 	/**
@@ -323,11 +344,31 @@ class Date
 	/**
 	 * Compares this date to the one passed in
 	 * @param Date $end
+	 * @return bool if the current object is greater than the one passed in
+	 */
+	public function GreaterThanOrEqual(Date $end)
+	{
+		return $this->Compare($end) >= 0;
+	}
+
+	/**
+	 * Compares this date to the one passed in
+	 * @param Date $end
 	 * @return bool if the current object is less than the one passed in
 	 */
 	public function LessThan(Date $end)
 	{
 		return $this->Compare($end) < 0;
+	}
+
+	/**
+	 * Compares this date to the one passed in
+	 * @param Date $end
+	 * @return bool if the current object is less than the one passed in
+	 */
+	public function LessThanOrEqual(Date $end)
+	{
+		return $this->Compare($end) <= 0;
 	}
 
 	/**
@@ -411,7 +452,31 @@ class Date
 	 */
 	public function AddMinutes($minutes)
 	{
-		return new Date($this->Format(self::SHORT_FORMAT) . " +" . $minutes . " minutes", $this->timezone);
+		$ts = $this->ToUtc()->Timestamp() + ($minutes * 60);
+		$utcDate = new Date(gmdate(self::SHORT_FORMAT, $ts), 'UTC');
+		return $utcDate->ToTimezone($this->timezone);
+		//return new Date($this->Format(self::SHORT_FORMAT) . " +" . $minutes . " minutes", $this->timezone);
+	}
+
+	/**
+	 * @param int $minutes
+	 * @return Date
+	 */
+	public function SubtractMinutes($minutes)
+	{
+		$ts = $this->ToUtc()->Timestamp() - ($minutes * 60);
+		$utcDate = new Date(gmdate(self::SHORT_FORMAT, $ts), 'UTC');
+		return $utcDate->ToTimezone($this->timezone);
+		//return new Date($this->Format(self::SHORT_FORMAT) . " +" . $minutes . " minutes", $this->timezone);
+	}
+
+	/**
+	 * @param int $hours
+	 * @return Date
+	 */
+	public function AddHours($hours)
+	{
+		return new Date($this->Format(self::SHORT_FORMAT) . " +" . $hours . " hours", $this->timezone);
 	}
 
 	/**
@@ -484,17 +549,15 @@ class Date
 
 	private function InitializeParts()
 	{
-		list($date, $time) = explode(' ', $this->Format('w-' . self::SHORT_FORMAT));
-		list($weekday, $year, $month, $day) = explode("-", $date);
-		list($hour, $minute, $second) = explode(":", $time);
+		$parts = explode(' ', $this->date->format('H i s m d Y w'));
 
-		$this->parts['hours'] = intval($hour);
-		$this->parts['minutes'] = intval($minute);
-		$this->parts['seconds'] = intval($second);
-		$this->parts['mon'] = intval($month);
-		$this->parts['mday'] = intval($day);
-		$this->parts['year'] = intval($year);
-		$this->parts['wday'] = intval($weekday);
+		$this->parts['hours'] = $parts[0];
+		$this->parts['minutes'] = $parts[1];
+		$this->parts['seconds'] =$parts[2];
+		$this->parts['mon'] = $parts[3];
+		$this->parts['mday'] = $parts[4];
+		$this->parts['year'] = $parts[5];
+		$this->parts['wday'] = $parts[6];
 	}
 
 	/**
@@ -617,6 +680,24 @@ class Date
 	{
 		$time = $this->GetTime();
 		return $this->SetTime(new Time($time->Hour(), $time->Minute(), 0, $this->Timezone()));
+	}
+
+	/**
+	 * @param TimeInterval $interval
+	 * @return Date
+	 */
+	public function SubtractInterval(TimeInterval $interval)
+	{
+		return $this->ApplyDifference($interval->Diff()->Invert());
+	}
+
+	/**
+	 * @param TimeInterval $interval
+	 * @return Date
+	 */
+	public function AddInterval(TimeInterval $interval)
+	{
+		return $this->ApplyDifference($interval->Diff());
 	}
 }
 
@@ -826,6 +907,14 @@ class DateDiff
 	}
 
 	/**
+	 * @return DateDiff
+	 */
+	public function Invert()
+	{
+		return new DateDiff($this->seconds*-1);
+	}
+
+	/**
 	 * @return string
 	 */
 	public function __toString()
@@ -845,9 +934,6 @@ class DateDiff
 			$str .= $this->Minutes() . ' minutes';
 		}
 
-		return $str;
-		//return sprintf('%dd%dh%dm', $this->Days(), $this->Hours(), $this->Minutes());
+		return trim($str);
 	}
 }
-
-?>

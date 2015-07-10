@@ -1,21 +1,22 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
+Copyright 2014 Jason Gerfen
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
@@ -40,6 +41,8 @@ abstract class Page implements IPage
 
 	protected function __construct($titleKey = '', $pageDepth = 0)
 	{
+		$this->SetSecurityHeaders();
+
 		$this->path = str_repeat('../', $pageDepth);
 		$this->server = ServiceLocator::GetServer();
 		$resources = Resources::GetInstance();
@@ -54,13 +57,15 @@ abstract class Page implements IPage
 		$this->smarty->assign('CurrentLanguage', $resources->CurrentLanguage);
 		$this->smarty->assign('HtmlLang', $resources->HtmlLang);
 		$this->smarty->assign('HtmlTextDirection', $resources->TextDirection);
-		$this->smarty->assign('Title', 'phpScheduleIt - ' . $resources->GetString($titleKey));
+		$appTitle = Configuration::Instance()->GetKey(ConfigKeys::APP_TITLE);
+		$pageTile =  $resources->GetString($titleKey);
+		$this->smarty->assign('Title', (empty($appTitle) ? 'Booked' : $appTitle) . (empty($pageTile) ? '' : ' - ' . $pageTile));
 		$this->smarty->assign('CalendarJSFile', $resources->CalendarLanguageFile);
 
 		$this->smarty->assign('LoggedIn', $userSession->IsLoggedIn());
 		$this->smarty->assign('Version', Configuration::VERSION);
 		$this->smarty->assign('Path', $this->path);
-		$this->smarty->assign('ScriptUrl', Configuration::Instance()->GetKey(ConfigKeys::SCRIPT_URL));
+		$this->smarty->assign('ScriptUrl', Configuration::Instance()->GetScriptUrl());
 		$this->smarty->assign('UserName', !is_null($userSession) ? $userSession->FirstName : '');
 		$this->smarty->assign('DisplayWelcome', $this->DisplayWelcome());
 		$this->smarty->assign('UserId', $userSession->UserId);
@@ -69,7 +74,8 @@ abstract class Page implements IPage
 		$this->smarty->assign('CanViewResourceAdmin', $userSession->IsResourceAdmin);
 		$this->smarty->assign('CanViewScheduleAdmin', $userSession->IsScheduleAdmin);
 		$this->smarty->assign('CanViewResponsibilities', !$userSession->IsAdmin && ($userSession->IsGroupAdmin || $userSession->IsResourceAdmin || $userSession->IsScheduleAdmin));
-		$this->smarty->assign('CanViewReports', ($userSession->IsAdmin || $userSession->IsGroupAdmin || $userSession->IsResourceAdmin || $userSession->IsScheduleAdmin));
+		$allowAllUsersToReports = Configuration::Instance()->GetSectionKey(ConfigSection::REPORTS, ConfigKeys::REPORTS_ALLOW_ALL, new BooleanConverter());
+		$this->smarty->assign('CanViewReports', ($allowAllUsersToReports || $userSession->IsAdmin || $userSession->IsGroupAdmin || $userSession->IsResourceAdmin || $userSession->IsScheduleAdmin));
         $timeout = Configuration::Instance()->GetKey(ConfigKeys::INACTIVITY_TIMEOUT);
 		if (!empty($timeout))
 		{
@@ -79,8 +85,9 @@ abstract class Page implements IPage
         $this->smarty->assign('CssExtensionFile', Configuration::Instance()->GetKey(ConfigKeys::CSS_EXTENSION_FILE));
         $this->smarty->assign('UseLocalJquery', Configuration::Instance()->GetKey(ConfigKeys::USE_LOCAL_JQUERY, new BooleanConverter()));
         $this->smarty->assign('EnableConfigurationPage', Configuration::Instance()->GetSectionKey(ConfigSection::PAGES, ConfigKeys::PAGES_ENABLE_CONFIGURATION, new BooleanConverter()));
+		$this->smarty->assign('ShowParticipation', !Configuration::Instance()->GetSectionKey(ConfigSection::RESERVATION, ConfigKeys::RESERVATION_PREVENT_PARTICIPATION, new BooleanConverter()));
 
-		$this->smarty->assign('LogoUrl', 'logo4.1.png');
+		$this->smarty->assign('LogoUrl', 'booked.png');
 		if (file_exists($this->path . 'img/custom-logo.png'))
 		{
 			$this->smarty->assign('LogoUrl','custom-logo.png');
@@ -115,7 +122,7 @@ abstract class Page implements IPage
 
 	public function Redirect($url)
 	{
-		if (!StringHelper::StartsWith($url, $this->path))
+		if (!BookedStringHelper::StartsWith($url, $this->path))
 		{
 			$url = $this->path . $url;
 		}
@@ -127,7 +134,7 @@ abstract class Page implements IPage
 
 	public function RedirectResume($url)
 	{
-		if (!StringHelper::StartsWith($url, $this->path))
+		if (!BookedStringHelper::StartsWith($url, $this->path))
 		{
 			$url = $this->path . $url;
 		}
@@ -291,14 +298,27 @@ abstract class Page implements IPage
 	 */
 	protected function Display($templateName)
 	{
-		$this->smarty->display($templateName);
+		if (!$this->InMaintenanceMode())
+		{
+			$this->smarty->display($templateName);
+		}
+		else
+		{
+			$this->smarty->display('maintenance.tpl');
+		}
 	}
 
 	protected function DisplayCsv($templateName, $fileName)
 	{
-		header("Content-Type: text/csv");
-		header("Content-Disposition: inline; filename=$fileName");
+		header("Pragma: public");
+		header("Expires: 0");
+		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+		header("Cache-Control: private", false);
+		header("Content-Type: application/octet-stream");
+		header("Content-Disposition: attachment; filename=$fileName;");
+		header("Content-Transfer-Encoding: binary");
 		echo chr(239) . chr(187) . chr(191);
+
 		$this->Display($templateName);
 	}
 
@@ -333,6 +353,23 @@ abstract class Page implements IPage
 
 		return !empty($timeout);
     }
-}
 
-?>
+	private function InMaintenanceMode()
+	{
+		return is_file(ROOT_DIR . 'maint.txt');
+	}
+
+
+	private function SetSecurityHeaders()
+	{
+		$config = Configuration::Instance();
+		if ($config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_HEADERS, new BooleanConverter()))
+		{
+			header('Strict-Transport-Security: ' . $config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_STRICT_TRANSPORT));
+			header('X-Frame: ' . $config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_X_FRAME));
+			header('X-Xss: ' . $config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_X_XSS));
+			header('X-Content-Type: ' . $config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_X_CONTENT_TYPE));
+			header('Content-Security-Policy: ' . $config->GetSectionKey(ConfigSection::SECURITY, ConfigKeys::SECURITY_CONTENT_SECURITY_POLICY));
+		}
+	}
+}

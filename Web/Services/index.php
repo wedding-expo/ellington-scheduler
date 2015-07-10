@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 define('ROOT_DIR', '../../');
@@ -39,7 +39,7 @@ require_once(ROOT_DIR . 'Web/Services/Help/ApiHelpPage.php');
 
 if (!Configuration::Instance()->GetSectionKey(ConfigSection::API, ConfigKeys::API_ENABLED, new BooleanConverter()))
 {
-	die("phpScheduleIt API has been configured as disabled.<br/><br/>Set \$conf['settings']['api']['enabled'] = 'true' to enable.");
+	die("Booked Scheduler API has been configured as disabled.<br/><br/>Set \$conf['settings']['api']['enabled'] = 'true' to enable.");
 }
 
 \Slim\Slim::registerAutoloader();
@@ -78,6 +78,9 @@ $app->error(function (\Exception $e) use ($app)
 {
 	require_once(ROOT_DIR . 'lib/Common/Logging/Log.php');
 	Log::Error('Slim Exception. %s', $e);
+	$app->response()->header('Content-Type', 'application/json');
+	$app->response()->status(RestResponse::SERVER_ERROR);
+	$app->response()->write('Exception was logged.');
 });
 
 $app->run();
@@ -118,6 +121,7 @@ function RegisterReservations(SlimServer $server, SlimWebServiceRegistry $regist
 	$category->AddSecureGet('/', array($readService, 'GetReservations'), WebServices::AllReservations);
 	$category->AddSecureGet('/:referenceNumber', array($readService, 'GetReservation'), WebServices::GetReservation);
 	$category->AddSecurePost('/:referenceNumber', array($writeService, 'Update'), WebServices::UpdateReservation);
+	$category->AddSecurePost('/:referenceNumber/Approval', array($writeService, 'Approve'), WebServices::ApproveReservation);
 	$category->AddSecureDelete('/:referenceNumber', array($writeService, 'Delete'), WebServices::DeleteReservation);
 
 	$registry->AddCategory($category);
@@ -127,11 +131,16 @@ function RegisterResources(SlimServer $server, SlimWebServiceRegistry $registry)
 {
 	$resourceRepository = new ResourceRepository();
 	$attributeService = new AttributeService(new AttributeRepository());
-	$webService = new ResourcesWebService($server, $resourceRepository, $attributeService);
+	$webService = new ResourcesWebService($server, $resourceRepository, $attributeService, new ReservationViewRepository());
 	$writeWebService = new ResourcesWriteWebService($server, new ResourceSaveController($resourceRepository, new ResourceRequestValidator($attributeService)));
 	$category = new SlimWebServiceRegistryCategory('Resources');
 	$category->AddSecureGet('/', array($webService, 'GetAll'), WebServices::AllResources);
+	$category->AddGet('/Status', array($webService, 'GetStatuses'), WebServices::GetStatuses);
+	$category->AddSecureGet('/Status/Reasons', array($webService, 'GetStatusReasons'), WebServices::GetStatusReasons);
+	$category->AddSecureGet('/Availability', array($webService, 'GetAvailability'), WebServices::AllAvailability);
 	$category->AddSecureGet('/:resourceId', array($webService, 'GetResource'), WebServices::GetResource);
+	$category->AddSecureGet('/:resourceId/Availability', array($webService, 'GetAvailability'), WebServices::GetResourceAvailability);
+
 	$category->AddAdminPost('/', array($writeWebService, 'Create'), WebServices::CreateResource);
 	$category->AddAdminPost('/:resourceId', array($writeWebService, 'Update'), WebServices::UpdateResource);
 	$category->AddAdminDelete('/:resourceId', array($writeWebService, 'Delete'), WebServices::DeleteResource);
@@ -164,10 +173,11 @@ function RegisterUsers(SlimServer $server, SlimWebServiceRegistry $registry)
 
 function RegisterSchedules(SlimServer $server, SlimWebServiceRegistry $registry)
 {
-	$webService = new SchedulesWebService($server, new ScheduleRepository());
+	$webService = new SchedulesWebService($server, new ScheduleRepository(), new PrivacyFilter(new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization())));
 	$category = new SlimWebServiceRegistryCategory('Schedules');
 	$category->AddSecureGet('/', array($webService, 'GetSchedules'), WebServices::AllSchedules);
 	$category->AddSecureGet('/:scheduleId', array($webService, 'GetSchedule'), WebServices::GetSchedule);
+	$category->AddSecureGet('/:scheduleId/Slots', array($webService, 'GetSlots'), WebServices::GetScheduleSlots);
 	$registry->AddCategory($category);
 }
 
@@ -175,7 +185,7 @@ function RegisterAttributes(SlimServer $server, SlimWebServiceRegistry $registry
 {
 	$webService = new AttributesWebService($server, new AttributeService(new AttributeRepository()));
 	$category = new SlimWebServiceRegistryCategory('Attributes');
-	$category->AddSecureGet('/:categoryId', array($webService, 'GetAttributes'), WebServices::AllCustomAttributes);
+	$category->AddSecureGet('Category/:categoryId', array($webService, 'GetAttributes'), WebServices::AllCustomAttributes);
 	$category->AddSecureGet('/:attributeId', array($webService, 'GetAttribute'), WebServices::GetCustomAttribute);
 	$registry->AddCategory($category);
 }
@@ -189,5 +199,3 @@ function RegisterGroups(SlimServer $server, SlimWebServiceRegistry $registry)
 	$category->AddSecureGet('/:groupId', array($webService, 'GetGroup'), WebServices::GetGroup);
 	$registry->AddCategory($category);
 }
-
-?>

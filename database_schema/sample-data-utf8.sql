@@ -21,9 +21,9 @@ insert into users (fname, lname, email, username, password, salt, timezone, last
 
 insert into user_groups values (2,2);	
 	
-insert into resources (`resource_id`, `name`, `location`, `contact_info`, `description`, `notes`, `isactive`, `min_duration`, `min_increment`, `max_duration`, `unit_cost`, `autoassign`, `requires_approval`, `allow_multiday_reservations`, `max_participants`, `min_notice_time`, `max_notice_time`, `image_name`, `legacyid`, `schedule_id`) VALUES
-(1, 'Conference Room 1', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 1, NULL, NULL, NULL, 'resource1.jpg', NULL, 1),
-(2, 'Conference Room 2', NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, NULL, 1, 0, 1, NULL, NULL, NULL, 'resource2.jpg', NULL, 1);
+insert into resources (`resource_id`, `name`, `location`, `contact_info`, `description`, `notes`, `min_duration`, `min_increment`, `max_duration`, `unit_cost`, `autoassign`, `requires_approval`, `allow_multiday_reservations`, `max_participants`, `min_notice_time`, `max_notice_time`, `image_name`, `legacyid`, `schedule_id`) VALUES
+(1, 'Conference Room 1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1, NULL, NULL, NULL, 'resource1.jpg', NULL, 1),
+(2, 'Conference Room 2', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, 0, 1, NULL, NULL, NULL, 'resource2.jpg', NULL, 1);
 
 insert into accessories (`accessory_id`, `accessory_name`, `accessory_quantity`) values
 (1, 'accessory limited to 10', 10),
@@ -35,7 +35,7 @@ insert into user_resource_permissions values (1,1,1),(1,2,1),(2,1,1),(2,2,1);
 
 truncate table custom_attributes;
 insert into custom_attributes(`custom_attribute_id`,`display_label`,`display_type`,`attribute_category`,`validation_regex`,`is_required`,`possible_values`) VALUES
-(1, 'Test Number', 1, 1, null, true, null),
+(1, 'Test Number', 1, 1, null, false, null),
 (2, 'Test String', 1, 1, null, false, null),
-(3, 'Test Number', 1, 4, null, true, null),
+(3, 'Test Number', 1, 4, null, false, null),
 (4, 'Test String', 1, 4, null, false, null);

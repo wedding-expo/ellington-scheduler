@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 interface ISqlFilter
@@ -27,10 +23,19 @@ interface ISqlFilter
 	public function Where();
 }
 
-class SqlFilterColumn
+interface ISqlFilterColumn
+{
+	/**
+	 * @param mixed $columnValue
+	 * @return Criteria
+	 */
+	public function GetCriteria($columnValue);
+}
+
+class SqlFilterColumn implements ISqlFilterColumn
 {
 	private $fullName;
-	
+
 	public function __construct($tableName, $columnName)
 	{
 		$this->fullName = $tableName . '.' . $columnName;
@@ -39,6 +44,28 @@ class SqlFilterColumn
 	public function __toString()
 	{
 		return $this->fullName;
+	}
+
+	public function GetCriteria($columnValue)
+	{
+		return new Criteria($this->fullName, $columnValue);
+	}
+}
+
+class SqlRepeatingFilterColumn implements ISqlFilterColumn
+{
+	private $fullName;
+	private $index;
+
+	public function __construct($tableName, $columnName, $index)
+	{
+		$this->fullName = empty($tableName) ? $columnName :  $tableName . '.' . $columnName;
+		$this->index = $index;
+	}
+
+	public function GetCriteria($columnValue)
+	{
+		return new Criteria($this->fullName, $columnValue, "repeating{$this->index}{$this->fullName}");
 	}
 }
 
@@ -49,20 +76,19 @@ abstract class BaseSqlFilter implements ISqlFilter
 	private $_or = array();
 
 	/**
-	 * @param string|SqlFilterColumn $columnName
+	 * @param string|ISqlFilterColumn $columnName
 	 * @param string $columnValue
 	 */
 	public function __construct($columnName, $columnValue)
 	{
-		if (is_a($columnName, 'SqlFilterColumn'))
+		if (is_string($columnName))
 		{
-			$name = $columnName->__toString();
+			$this->criteria = $this->GetCriteria($columnName, $columnValue);
 		}
 		else
 		{
-			$name = $columnName;
+			$this->criteria = $columnName->GetCriteria($columnValue);
 		}
-		$this->criteria = $this->GetCriteria($name, $columnValue);
 	}
 
 	/**
@@ -97,7 +123,10 @@ abstract class BaseSqlFilter implements ISqlFilter
 			}
 		}
 
-		array_unshift($criteria, $this->criteria);
+		if (!empty($this->criteria))
+		{
+			array_unshift($criteria, $this->criteria);
+		}
 
 		return $criteria;
 	}
@@ -142,11 +171,11 @@ class Criteria
 	public $Value;
 	public $Variable;
 
-	public function __construct($columnName, $columnValue)
+	public function __construct($columnName, $columnValue, $variableName = null)
 	{
 		$this->Name = $columnName;
 		$this->Value = $columnValue;
-		$this->Variable = '@' . $columnName;
+		$this->Variable = empty($variableName) ? "@$columnName" : "@$variableName";
 	}
 }
 
@@ -160,24 +189,63 @@ class SqlFilterEquals extends BaseSqlFilter
 	{
 		parent::__construct($columnName, $columnValue);
 	}
-	
+
 	protected function GetSql()
 	{
 		return "{$this->criteria->Name} = {$this->criteria->Variable}";
 	}
 }
 
+class SqlFilterFreeForm extends BaseSqlFilter
+{
+	/**
+	 * @var Criteria[]
+	 */
+	private $_criteria;
+
+	public function __construct($sql)
+	{
+		$this->sql  = $sql;
+	}
+
+	protected function GetSql()
+	{
+		return $this->sql;
+	}
+
+	public function Substitute($token, ISqlFilter $filter)
+	{
+		$this->sql = str_replace("[$token]", $filter->Where(), $this->sql);
+		$this->_criteria = $filter->Criteria();
+	}
+
+	public function AppendSql($sql)
+	{
+		$this->sql .= $sql;
+	}
+
+	public function Criteria()
+	{
+		return $this->_criteria;
+	}
+}
+
 class SqlFilterLike extends BaseSqlFilter
 {
 	/**
-	 * @param string|SqlFilterColumn $columnName
+	 * @param string|ISqlFilterColumn $columnName
 	 * @param string $columnValue
 	 */
 	public function __construct($columnName, $columnValue)
 	{
+		if (!BookedStringHelper::Contains($columnValue, '%'))
+		{
+
+			$columnValue = '%' . $columnValue . '%';
+		}
 		parent::__construct($columnName, $columnValue);
 	}
-	
+
 	protected function GetSql()
 	{
 		return "{$this->criteria->Name} LIKE {$this->criteria->Variable}";
@@ -185,7 +253,7 @@ class SqlFilterLike extends BaseSqlFilter
 
 	protected function GetCriteria($columnName, $columnValue)
 	{
-		return new Criteria($columnName, $columnValue . '%');
+		return new Criteria($columnName, $columnValue);
 	}
 }
 
@@ -195,9 +263,9 @@ class SqlFilterGreaterThan extends BaseSqlFilter
 	 * @var bool
 	 */
 	private $inclusive = false;
-	
+
 	/**
-	 * @param string|SqlFilterColumn $columnName
+	 * @param string|ISqlFilterColumn $columnName
 	 * @param string $columnValue
 	 * @param bool $inclusive false by default
 	 */
@@ -206,7 +274,7 @@ class SqlFilterGreaterThan extends BaseSqlFilter
 		$this->inclusive = $inclusive;
 		parent::__construct($columnName, $columnValue);
 	}
-	
+
 	protected function GetSql()
 	{
 		$sign = $this->inclusive ? '>=' : '>';
@@ -222,7 +290,7 @@ class SqlFilterLessThan extends BaseSqlFilter
 	private $inclusive = false;
 
 	/**
-	 * @param string|SqlFilterColumn $columnName
+	 * @param string|ISqlFilterColumn $columnName
 	 * @param string $columnValue
 	 * @param bool $inclusive false by default
 	 */
@@ -247,7 +315,7 @@ class SqlFilterIn extends BaseSqlFilter
 	private $possibleValues = array();
 
 	/**
-	 * @param string|SqlFilterColumn $columnName
+	 * @param string|ISqlFilterColumn $columnName
 	 * @param array $possibleValues
 	 */
 	public function __construct($columnName, $possibleValues)
@@ -274,11 +342,11 @@ class SqlFilterNull extends BaseSqlFilter
 	public function __construct()
 	{
 		parent::__construct('1', '1');
+		$this->criteria = null;
 	}
-	
+
 	protected function GetSql()
 	{
 		return '1=1';
 	}
 }
-?>

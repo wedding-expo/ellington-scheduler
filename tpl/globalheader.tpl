@@ -1,26 +1,23 @@
+<!DOCTYPE html>
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-<?xml version="1.0" encoding="{$Charset}"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html
-		xmlns="http://www.w3.org/1999/xhtml" lang="{$HtmlLang}" xml:lang="{$HtmlLang}" dir="{$HtmlTextDirection}">
+<html lang="{$HtmlLang}" dir="{$HtmlTextDirection}">
 <head>
 	<title>{if $TitleKey neq ''}{translate key=$TitleKey args=$TitleArgs}{else}{$Title}{/if}</title>
 	<meta http-equiv="Content-Type" content="text/html; charset={$Charset}"/>
@@ -28,36 +25,34 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 {if $ShouldLogout}
 	<meta http-equiv="REFRESH" content="{$SessionTimeoutSeconds};URL={$Path}logout.php?{QueryStringKeys::REDIRECT}={$smarty.server.REQUEST_URI|urlencode}">
 {/if}
-	<link rel="shortcut icon" href="{$Path}favicon.ico"/>
-	<link rel="icon" href="{$Path}favicon.ico"/>
+	<link rel="shortcut icon" href="{$Path}favicon.png"/>
+	<link rel="icon" href="{$Path}favicon.png"/>
 	{if $UseLocalJquery}
-		<script type="text/javascript" src="{$Path}scripts/js/jquery-1.8.2.min.js"></script>
-		<script type="text/javascript" src="{$Path}scripts/js/jquery-ui-1.9.0.custom.min.js"></script>
+		{jsfile src="js/jquery-1.8.2.min.js"}
+		{jsfile src="js/jquery-ui-1.9.0.custom.min.js"}
 	{else}
 		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/jquery-ui.min.js"></script>
 	{/if}
-	<script type="text/javascript" src="{$Path}scripts/phpscheduleit.js"></script>
-	<script type="text/javascript" src="{$Path}scripts/menubar.js"></script>
-	<style type="text/css">
-		@import url({$Path}css/nav.css);
-		@import url({$Path}css/style.css);
+	{jsfile src="phpscheduleit.js"}
+		{cssfile src="normalize.css"}
+		{cssfile src="nav.css"}
+		{cssfile src="style.css"}
 		{if $UseLocalJquery}
-			@import url({$Path}scripts/css/smoothness/jquery-ui-1.9.0.custom.min.css);
+			{cssfile src="scripts/css/smoothness/jquery-ui-1.9.0.custom.min.css"}
 		{else}
-			@import url(//ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/smoothness/jquery-ui.css);
+			<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.9.0/themes/smoothness/jquery-ui.css" type="text/css"></link>
 		{/if}
 		{if $cssFiles neq ''}
 			{assign var='CssFileList' value=','|explode:$cssFiles}
 			{foreach from=$CssFileList item=cssFile}
-			@import url({$Path}{$cssFile});
+				{cssfile src=$cssFile}
 			{/foreach}
 		{/if}
-		@import url('{$Path}css/{$CssUrl}');
+		{cssfile src=$CssUrl}
 		{if $CssExtensionFile neq ''}
-			@import url('{$CssExtensionFile}');
+			{cssfile src=$CssExtensionFile}
 		{/if}
-	</style>
 
 	{if $printCssFiles neq ''}
 		{assign var='PrintCssFileList' value=','|explode:$printCssFiles}
@@ -88,7 +83,8 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 				{/if}
 				</div>
 			</div>
-			<ul id="nav" class="menubar">
+			<div>
+				<ul id="nav" class="menubar">
 			{if $LoggedIn}
 				<li class="menubaritem first"><a href="{$Path}{Pages::DASHBOARD}">{translate key="Dashboard"}</a></li>
 				<li class="menubaritem"><a href="{$Path}{Pages::PROFILE}">{translate key="MyAccount"}</a>
@@ -96,7 +92,7 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 						<li class="menuitem"><a href="{$Path}{Pages::PROFILE}">{translate key="Profile"}</a></li>
 						<li class="menuitem"><a href="{$Path}{Pages::PASSWORD}">{translate key="ChangePassword"}</a></li>
 						<li class="menuitem"><a href="{$Path}{Pages::NOTIFICATION_PREFERENCES}">{translate key="NotificationPreferences"}</a></li>
-						<li class="menuitem"><a href="{$Path}{Pages::PARTICIPATION}">{translate key="OpenInvitations"}</a></li>
+						{if $ShowParticipation}<li class="menuitem"><a href="{$Path}{Pages::PARTICIPATION}">{translate key="OpenInvitations"}</a></li>{/if}
 					</ul>
 				</li>
 				<li class="menubaritem"><a href="{$Path}{Pages::SCHEDULE}">{translate key="Schedule"}</a>
@@ -124,7 +120,13 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 								href="{$Path}admin/manage_resources.php">{translate key="ManageResources"}</a>
 							<ul>
 								<li class="menuitem"><a
+										href="{$Path}admin/manage_resource_groups.php">{translate key="ManageGroups"}</a></li>
+								<li class="menuitem"><a
 										href="{$Path}admin/manage_accessories.php">{translate key="ManageAccessories"}</a></li>
+								<li class="menuitem"><a
+										href="{$Path}admin/manage_resource_types.php">{translate key="ManageResourceTypes"}</a></li>
+								<li class="menuitem"><a
+										href="{$Path}admin/manage_resource_status.php">{translate key="ManageResourceStatus"}</a></li>
 							</ul>
 						</li>
 						<li class="menuitem"><a href="{$Path}admin/manage_users.php">{translate key="ManageUsers"}</a></li>
@@ -180,11 +182,15 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 			</li>
 			{/if}
 			{/if}
-				<li class="menubaritem"><a href="{$Path}help.php">{translate key=Help}</a><ul>
-					<li><a href="{$Path}help.php?ht=admin">{translate key=Administration}</a></li>
-					<li><a href="{$Path}help.php?ht=about">{translate key=About}</a></li>
-				</ul></li>
+				<li class="menubaritem help"><a href="{$Path}help.php">{translate key=Help}</a>
+					<ul>
+						<li><a href="{$Path}help.php">{translate key=Help}</a></li>
+						{if $CanViewAdmin}<li><a href="{$Path}help.php?ht=admin">{translate key=Administration}</a></li>{/if}
+						<li><a href="{$Path}help.php?ht=about">{translate key=About}</a></li>
+					</ul>
+				</li>
 			</ul>
+			</div>
 			<!-- end #nav -->
 		</div>
 		<!-- end #header -->

@@ -1,27 +1,29 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
- */
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+require_once(ROOT_DIR . 'Pages/Ajax/IReservationSaveResultsView.php');
+require_once(ROOT_DIR . 'lib/Application/Reservation/Persistence/namespace.php');
 
 interface IManageReservationsService
 {
 	/**
-	 * @abstract
 	 * @param $pageNumber int
 	 * @param $pageSize int
 	 * @param $filter ReservationFilter
@@ -29,6 +31,22 @@ interface IManageReservationsService
 	 * @return PageableData|ReservationItemView[]
 	 */
 	public function LoadFiltered($pageNumber, $pageSize, $filter, $user);
+
+	/**
+	 * @param  $referenceNumber string
+	 * @param $user UserSession
+	 * @return ReservationView|null
+	 */
+	public function LoadByReferenceNumber($referenceNumber, $user);
+
+	/**
+	 * @param string $referenceNumber
+	 * @param int $attributeId
+	 * @param string $attributeValue
+	 * @param UserSession $userSession
+	 * @return string[] Any errors that were returned during reservation update
+	 */
+	public function UpdateAttribute($referenceNumber, $attributeId, $attributeValue, $userSession);
 }
 
 class ManageReservationsService implements IManageReservationsService
@@ -38,15 +56,116 @@ class ManageReservationsService implements IManageReservationsService
 	 */
 	private $reservationViewRepository;
 
-	public function __construct(IReservationViewRepository $reservationViewRepository)
+	/**
+	 * @var IReservationAuthorization
+	 */
+	private $reservationAuthorization;
+
+	/**
+	 * @var IReservationHandler
+	 */
+	private $reservationHandler;
+
+	/**
+	 * @var IUpdateReservationPersistenceService
+	 */
+	private $persistenceService;
+
+	/**
+	 * @param IReservationViewRepository $reservationViewRepository
+	 * @param IReservationAuthorization $authorization
+	 * @param IReservationHandler $reservationHandler
+	 * @param IUpdateReservationPersistenceService $persistenceService
+	 */
+	public function __construct(IReservationViewRepository $reservationViewRepository,
+								$authorization = null,
+								$reservationHandler = null,
+								$persistenceService = null)
 	{
 		$this->reservationViewRepository = $reservationViewRepository;
+		$this->reservationAuthorization = $authorization == null ?  new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization()) : $authorization;
+		$this->persistenceService = $persistenceService == null ? new UpdateReservationPersistenceService(new ReservationRepository()) : $persistenceService;
+		$this->reservationHandler = $reservationHandler == null ? ReservationHandler::Create(ReservationAction::Update, $this->persistenceService, ServiceLocator::GetServer()->GetUserSession()) : $reservationHandler;
+
 	}
 
 	public function LoadFiltered($pageNumber, $pageSize, $filter, $user)
 	{
 		return $this->reservationViewRepository->GetList($pageNumber, $pageSize, null, null, $filter->GetFilter());
 	}
+
+	public function LoadByReferenceNumber($referenceNumber, $user)
+	{
+		$reservation = $this->reservationViewRepository->GetReservationForEditing($referenceNumber);
+
+		if ($this->reservationAuthorization->CanEdit($reservation, $user))
+		{
+			return $reservation;
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param string $referenceNumber
+	 * @param int $attributeId
+	 * @param string $attributeValue
+	 * @param UserSession $userSession
+	 * @return string[] Any errors that were returned during reservation update
+	 */
+	public function UpdateAttribute($referenceNumber, $attributeId, $attributeValue, $userSession)
+	{
+		$reservation = $this->persistenceService->LoadByReferenceNumber($referenceNumber);
+		$reservation->UpdateBookedBy($userSession);
+
+		$attributeValues = $reservation->AttributeValues();
+		$attributeValues[$attributeId] = $attributeValue;
+		$reservation->ChangeAttribute(new AttributeValue($attributeId, $attributeValue));
+		$collector = new ManageReservationsUpdateAttributeResultCollector();
+		$this->reservationHandler->Handle($reservation, $collector);
+
+		return $collector->errors;
+	}
 }
 
-?>
+class ManageReservationsUpdateAttributeResultCollector implements IReservationSaveResultsView
+{
+	/**
+	 * @var bool
+	 */
+	public $succeeded = false;
+
+	/**
+	 * @var string[]
+	 */
+	public $warnings;
+
+	/**
+	 * @var string[]
+	 */
+	public $errors;
+
+	/**
+	 * @param bool $succeeded
+	 */
+	public function SetSaveSuccessfulMessage($succeeded)
+	{
+		$this->succeeded = $succeeded;
+	}
+
+	/**
+	 * @param array|string[] $errors
+	 */
+	public function SetErrors($errors)
+	{
+		$this->errors = $errors;
+	}
+
+	/**
+	 * @param array|string[] $warnings
+	 */
+	public function SetWarnings($warnings)
+	{
+		$this->warnings = $warnings;
+	}
+}

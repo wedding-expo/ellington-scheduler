@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/namespace.php');
@@ -36,12 +36,17 @@ class ManageResourcesActions
 	const ActionRemoveImage = 'removeImage';
 	const ActionRename = 'rename';
 	const ActionDelete = 'delete';
-	const ActionBringOnline = 'bringOnline';
-	const ActionTakeOffline = 'takeOffline';
+	const ActionChangeStatus = 'changeStatus';
 	const ActionEnableSubscription = 'enableSubscription';
 	const ActionDisableSubscription = 'disableSubscription';
 	const ActionChangeAttributes = 'changeAttributes';
 	const ActionChangeSort = 'changeSort';
+	const ActionChangeResourceType = 'changeResourceType';
+	const ActionBulkUpdate = 'bulkUpdate';
+	const ActionAddUserPermission = 'addUserPermission';
+	const ActionRemoveUserPermission = 'removeUserPermission';
+	const ActionAddGroupPermission = 'addGroupPermission';
+	const ActionRemoveGroupPermission = 'removeGroupPermission';
 }
 
 class ManageResourcesPresenter extends ActionPresenter
@@ -76,13 +81,19 @@ class ManageResourcesPresenter extends ActionPresenter
 	 */
 	private $attributeService;
 
+	/**
+	 * @var IUserPreferenceRepository
+	 */
+	private $userPreferenceRepository;
+
 	public function __construct(
 		IManageResourcesPage $page,
 		IResourceRepository $resourceRepository,
 		IScheduleRepository $scheduleRepository,
 		IImageFactory $imageFactory,
 		IGroupViewRepository $groupRepository,
-		IAttributeService $attributeService)
+		IAttributeService $attributeService,
+		IUserPreferenceRepository $userPreferenceRepository)
 	{
 		parent::__construct($page);
 
@@ -92,6 +103,7 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->imageFactory = $imageFactory;
 		$this->groupRepository = $groupRepository;
 		$this->attributeService = $attributeService;
+		$this->userPreferenceRepository = $userPreferenceRepository;
 
 		$this->AddAction(ManageResourcesActions::ActionAdd, 'Add');
 		$this->AddAction(ManageResourcesActions::ActionChangeAdmin, 'ChangeAdmin');
@@ -104,18 +116,29 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->AddAction(ManageResourcesActions::ActionRemoveImage, 'RemoveImage');
 		$this->AddAction(ManageResourcesActions::ActionRename, 'Rename');
 		$this->AddAction(ManageResourcesActions::ActionDelete, 'Delete');
-		$this->AddAction(ManageResourcesActions::ActionTakeOffline, 'TakeOffline');
-		$this->AddAction(ManageResourcesActions::ActionBringOnline, 'BringOnline');
+		$this->AddAction(ManageResourcesActions::ActionChangeStatus, 'ChangeStatus');
 		$this->AddAction(ManageResourcesActions::ActionEnableSubscription, 'EnableSubscription');
 		$this->AddAction(ManageResourcesActions::ActionDisableSubscription, 'DisableSubscription');
 		$this->AddAction(ManageResourcesActions::ActionChangeAttributes, 'ChangeAttributes');
 		$this->AddAction(ManageResourcesActions::ActionChangeSort, 'ChangeSortOrder');
+		$this->AddAction(ManageResourcesActions::ActionChangeResourceType, 'ChangeResourceType');
+		$this->AddAction(ManageResourcesActions::ActionBulkUpdate, 'BulkUpdate');
+		$this->AddAction(ManageResourcesActions::ActionAddUserPermission, 'AddUserPermission');
+		$this->AddAction(ManageResourcesActions::ActionRemoveUserPermission, 'RemoveUserPermission');
+		$this->AddAction(ManageResourcesActions::ActionAddGroupPermission, 'AddGroupPermission');
+		$this->AddAction(ManageResourcesActions::ActionRemoveGroupPermission, 'RemoveGroupPermission');
 	}
 
 	public function PageLoad()
 	{
-		$resources = $this->resourceRepository->GetResourceList();
+		$resourceAttributes = $this->attributeService->GetByCategory(CustomAttributeCategory::RESOURCE);
+
+		$filterValues = $this->page->GetFilterValues();
+
+		$results = $this->resourceRepository->GetList($this->page->GetPageNumber(), $this->page->GetPageSize(), null, null, $filterValues->AsFilter($resourceAttributes));
+		$resources = $results->Results();
 		$this->page->BindResources($resources);
+		$this->page->BindPageInfo($results->PageInfo());
 
 		$schedules = $this->scheduleRepository->GetAll();
 		$scheduleList = array();
@@ -126,6 +149,26 @@ class ManageResourcesPresenter extends ActionPresenter
 			$scheduleList[$schedule->GetId()] = $schedule->GetName();
 		}
 		$this->page->BindSchedules($scheduleList);
+		$this->page->AllSchedules($schedules);
+
+		$resourceTypes = $this->resourceRepository->GetResourceTypes();
+		$resourceTypeList = array();
+
+		/* @var $resourceType ResourceType */
+		foreach ($resourceTypes as $resourceType)
+		{
+			$resourceTypeList[$resourceType->Id()] = $resourceType;
+		}
+		$this->page->BindResourceTypes($resourceTypeList);
+
+		$statusReasons = $this->resourceRepository->GetStatusReasons();
+		$statusReasonList = array();
+
+		foreach ($statusReasons as $reason)
+		{
+			$statusReasonList[$reason->Id()] = $reason;
+		}
+		$this->page->BindResourceStatusReasons($statusReasonList);
 
 		$groups = $this->groupRepository->GetGroupsByRole(RoleLevel::RESOURCE_ADMIN);
 		$this->page->BindAdminGroups($groups);
@@ -135,13 +178,14 @@ class ManageResourcesPresenter extends ActionPresenter
 		{
 			$resourceIds[] = $resource->GetId();
 		}
+
 		$attributeList = $this->attributeService->GetAttributes(CustomAttributeCategory::RESOURCE, $resourceIds);
 		$this->page->BindAttributeList($attributeList);
+
+
+		$this->InitializeFilter($filterValues, $resourceAttributes);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function Add()
 	{
 		$name = $this->page->GetResourceName();
@@ -156,9 +200,6 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Add($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function ChangeConfiguration()
 	{
 		$resourceId = $this->page->GetResourceId();
@@ -170,6 +211,7 @@ class ManageResourcesPresenter extends ActionPresenter
 		$minNotice = $this->page->GetStartNoticeMinutes();
 		$maxNotice = $this->page->GetEndNoticeMinutes();
 		$maxParticipants = $this->page->GetMaxParticipants();
+		$bufferTime = $this->page->GetBufferTime();
 
 		Log::Debug('Updating resource id %s', $resourceId);
 
@@ -183,22 +225,17 @@ class ManageResourcesPresenter extends ActionPresenter
 		$resource->SetMinNotice($minNotice);
 		$resource->SetMaxNotice($maxNotice);
 		$resource->SetMaxParticipants($maxParticipants);
+		$resource->SetBufferTime($bufferTime);
 
 		$this->resourceRepository->Update($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function Delete()
 	{
 		$resource = $this->resourceRepository->LoadById($this->page->GetResourceId());
 		$this->resourceRepository->Delete($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function ChangeDescription()
 	{
 		$resource = $this->resourceRepository->LoadById($this->page->GetResourceId());
@@ -208,9 +245,6 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Update($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function ChangeNotes()
 	{
 		$resource = $this->resourceRepository->LoadById($this->page->GetResourceId());
@@ -220,9 +254,6 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Update($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function Rename()
 	{
 		$resource = $this->resourceRepository->LoadById($this->page->GetResourceId());
@@ -232,9 +263,6 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Update($resource);
 	}
 
-	/**
-	 * @internal should only be used for testing
-	 */
 	public function ChangeLocation()
 	{
 		$resource = $this->resourceRepository->LoadById($this->page->GetResourceId());
@@ -295,25 +323,23 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->SaveResourceImage(null);
 	}
 
-	public function TakeOffline()
+	public function ChangeStatus()
 	{
 		$resourceId = $this->page->GetResourceId();
+		$statusId = $this->page->GetStatusId();
+		$statusReasonId = $this->page->GetStatusReasonId();
+		$statusReason = $this->page->GetNewStatusReason();
+
+		Log::Debug('Changing resource status. ResourceId: %s', $resourceId);
+
 		$resource = $this->resourceRepository->LoadById($resourceId);
 
-		Log::Debug('Taking resource offline. ResourceId: %s', $resourceId);
+		if (empty($statusReasonId) && !empty($statusReason))
+		{
+			$statusReasonId = $this->resourceRepository->AddStatusReason($statusId, $statusReason);
+		}
 
-		$resource->TakeOffline();
-		$this->resourceRepository->Update($resource);
-	}
-
-	public function BringOnline()
-	{
-		$resourceId = $this->page->GetResourceId();
-		$resource = $this->resourceRepository->LoadById($resourceId);
-
-		Log::Debug('Bringing resource online. ResourceId: %s', $resourceId);
-
-		$resource->BringOnline();
+		$resource->ChangeStatus($statusId, $statusReasonId);
 		$this->resourceRepository->Update($resource);
 	}
 
@@ -384,6 +410,17 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Update($resource);
 	}
 
+	public function ChangeResourceType()
+	{
+		$resourceId = $this->page->GetResourceId();
+		$resourceTypeId = $this->page->GetResourceTypeId();
+		Log::Debug('Changing resource type for resource %s', $resourceId);
+
+		$resource = $this->resourceRepository->LoadById($resourceId);
+		$resource->SetResourceTypeId($resourceTypeId);
+		$this->resourceRepository->Update($resource);
+	}
+
 	private function GetAttributeValues()
 	{
 		$attributes = array();
@@ -403,14 +440,299 @@ class ManageResourcesPresenter extends ActionPresenter
 		$this->resourceRepository->Update($resource);
 	}
 
+	/**
+	 * @param ResourceFilterValues $filterValues
+	 * @param CustomAttribute[] $resourceAttributes
+	 */
+	public function InitializeFilter($filterValues, $resourceAttributes)
+	{
+		$filters = $filterValues->Attributes;
+		$attributeFilters = array();
+		foreach ($resourceAttributes as $attribute)
+		{
+			$attributeValue = null;
+			if (array_key_exists($attribute->Id(), $filters))
+			{
+				$attributeValue = $filters[$attribute->Id()];
+			}
+			$attributeFilters[] = new Attribute($attribute, $attributeValue);
+		}
+
+		$this->page->BindAttributeFilters($attributeFilters);
+		$this->page->SetFilterValues($filterValues);
+	}
+
+	public function BulkUpdate()
+	{
+		$scheduleId = $this->page->GetScheduleId();
+		$resourceTypeId = $this->page->GetResourceTypeId();
+		$location = $this->page->GetLocation();
+		$contact = $this->page->GetContact();
+		$description = $this->page->GetDescription();
+		$notes = $this->page->GetNotes();
+		$adminGroupId = $this->page->GetAdminGroupId();
+
+		$statusId = $this->page->GetStatusId();
+		$reasonId = $this->page->GetStatusReasonId();
+
+		// need to figure out difference between empty and unchanged
+		$minDuration = $this->page->GetMinimumDuration();
+		$minDurationNone = $this->page->GetMinimumDurationNone();
+		$maxDuration = $this->page->GetMaximumDuration();
+		$maxDurationNone = $this->page->GetMaximumDurationNone();
+		$bufferTime = $this->page->GetBufferTime();
+		$bufferTimeNone = $this->page->GetBufferTimeNone();
+		$minNotice = $this->page->GetStartNoticeMinutes();
+		$minNoticeNone = $this->page->GetStartNoticeNone();
+		$maxNotice = $this->page->GetEndNoticeMinutes();
+		$maxNoticeNone = $this->page->GetEndNoticeNone();
+		$allowMultiDay = $this->page->GetAllowMultiday();
+		$requiresApproval = $this->page->GetRequiresApproval();
+		$autoAssign = $this->page->GetAutoAssign();
+		$allowSubscription = $this->page->GetAllowSubscriptions();
+		$attributes = $this->page->GetAttributes();
+
+		$resourceIds = $this->page->GetBulkUpdateResourceIds();
+
+		foreach ($resourceIds as $resourceId)
+		{
+			try
+			{
+				$resource = $this->resourceRepository->LoadById($resourceId);
+
+				if ($this->ChangingDropDown($scheduleId))
+				{
+					$resource->SetScheduleId($scheduleId);
+				}
+				if ($this->ChangingDropDown($resourceTypeId))
+				{
+					$resource->SetResourceTypeId($resourceTypeId);
+				}
+				if ($this->ChangingValue($location))
+				{
+					$resource->SetLocation($location);
+				}
+				if ($this->ChangingValue($contact))
+				{
+					$resource->SetContact($contact);
+				}
+				if ($this->ChangingValue($description))
+				{
+					$resource->SetDescription($description);
+				}
+				if ($this->ChangingValue($notes))
+				{
+					$resource->SetNotes($notes);
+				}
+				if ($this->ChangingDropDown($adminGroupId))
+				{
+					$resource->SetAdminGroupId($adminGroupId);
+				}
+				if ($this->ChangingDropDown($statusId))
+				{
+					$resource->ChangeStatus($statusId, $reasonId);
+				}
+				if (!$minDurationNone)
+				{
+					$resource->SetMinLength($minDuration);
+				}
+				if (!$maxDurationNone)
+				{
+					$resource->SetMaxLength($maxDuration);
+				}
+				if (!$bufferTimeNone)
+				{
+					$resource->SetBufferTime($bufferTime);
+				}
+				if (!$minNoticeNone)
+				{
+					$resource->SetMinNotice($minNotice);
+				}
+				if (!$maxNoticeNone)
+				{
+					$resource->SetMaxNotice($maxNotice);
+				}
+				if ($this->ChangingDropDown($allowMultiDay))
+				{
+					$resource->SetAllowMultiday($allowMultiDay);
+				}
+				if ($this->ChangingDropDown($requiresApproval))
+				{
+					$resource->SetRequiresApproval($requiresApproval);
+				}
+				if ($this->ChangingDropDown($autoAssign))
+				{
+					$resource->SetAutoAssign($autoAssign);
+				}
+				if ($this->ChangingDropDown($allowSubscription))
+				{
+					if ($allowSubscription)
+					{
+						$resource->EnableSubscription();
+					}
+					else
+					{
+						$resource->DisableSubscription();
+					}
+				}
+
+				/** @var AttributeValue $attribute */
+				foreach ($this->GetAttributeValues() as $attribute)
+				{
+					if (!empty($attribute->Value))
+					{
+						$resource->ChangeAttribute($attribute);
+					}
+				}
+
+				$this->resourceRepository->Update($resource);
+			}
+			catch(Exception $ex)
+			{
+				Log::Error('Error bulk updating resource. Id=%s. Error=%s', $resourceId, $ex);
+			}
+		}
+	}
+
+	public function AddUserPermission()
+	{
+		$userId = $this->page->GetPermissionUserId();
+		$resourceId = $this->page->GetResourceId();
+
+		$this->resourceRepository->AddResourceUserPermission($resourceId, $userId);
+	}
+
+	public function RemoveUserPermission()
+	{
+		$userId = $this->page->GetPermissionUserId();
+		$resourceId = $this->page->GetResourceId();
+
+		$this->resourceRepository->RemoveResourceUserPermission($resourceId, $userId);
+	}
+
+	public function AddGroupPermission()
+	{
+		$groupId = $this->page->GetPermissionGroupId();
+		$resourceId = $this->page->GetResourceId();
+
+		$this->resourceRepository->AddResourceGroupPermission($resourceId, $groupId);
+	}
+
+	public function RemoveGroupPermission()
+	{
+		$groupId = $this->page->GetPermissionGroupId();
+		$resourceId = $this->page->GetResourceId();
+
+		$this->resourceRepository->RemoveResourceGroupPermission($resourceId, $groupId);
+	}
+
 	protected function LoadValidators($action)
 	{
 		if ($action == ManageResourcesActions::ActionChangeAttributes)
 		{
 			$attributes = $this->GetAttributeValues();
-			$this->page->RegisterValidator('attributeValidator', new AttributeValidator($this->attributeService, CustomAttributeCategory::RESOURCE, $attributes));
+			$this->page->RegisterValidator('attributeValidator', new AttributeValidator($this->attributeService, CustomAttributeCategory::RESOURCE, $attributes, $this->page->GetResourceId()));
 		}
+		if ($action == ManageResourcesActions::ActionBulkUpdate)
+		{
+			$attributes = $this->GetAttributeValues();
+			$this->page->RegisterValidator('bulkAttributeValidator', new AttributeValidator($this->attributeService, CustomAttributeCategory::RESOURCE, $attributes, null, true));
+		}
+	}
+
+	public function ProcessDataRequest($dataRequest)
+	{
+		if ($dataRequest == 'all')
+		{
+			$this->page->SetResourcesJson(array_map(array('AdminResourceJson', 'FromBookable'), $this->resourceRepository->GetResourceList()));
+		}
+		else if ($dataRequest == 'users')
+		{
+			$groups = $this->resourceRepository->GetUsersWithPermission($this->page->GetResourceId());
+			$response = new UserResults($groups->Results(), $groups->PageInfo()->Total);
+			$this->page->SetJsonResponse($response);
+		}
+		else if ($dataRequest == 'groups')
+		{
+			$groups = $this->resourceRepository->GetGroupsWithPermission($this->page->GetResourceId());
+			$response = new GroupResults($groups->Results(), $groups->PageInfo()->Total);
+			$this->page->SetJsonResponse($response);
+		}
+	}
+
+	private function ChangingDropDown($value)
+	{
+		return $value != "-1";
+	}
+
+	private function ChangingValue($value)
+	{
+		return !empty($value);
 	}
 }
 
-?>
+class AdminResourceJson
+{
+	public $Id;
+	public $Name;
+
+	public function __construct($id, $name)
+	{
+		$this->Id = $id;
+		$this->Name = $name;
+	}
+
+	public static function FromBookable(BookableResource $resource)
+	{
+		return new AdminResourceJson($resource->GetId(), $resource->GetName());
+	}
+}
+
+class UserResults
+{
+	/**
+	 * @param UserItemView[] $users
+	 * @param int $totalUsers
+	 */
+	public function __construct($users, $totalUsers)
+	{
+		foreach ($users as $user)
+		{
+			$this->Users[] = new AutocompleteUser($user->Id, $user->First, $user->Last, $user->Email, $user->Username);
+		}
+		$this->Total = $totalUsers;
+	}
+
+	/**
+	 * @var int
+	 */
+	public $Total;
+
+	/**
+	 * @var AutocompleteUser[]
+	 */
+	public $Users;
+}
+
+class GroupResults
+{
+	/**
+	 * @param GroupItemView[] $groups
+	 * @param int $totalGroups
+	 */
+	public function __construct($groups, $totalGroups)
+	{
+		$this->Groups = $groups;
+		$this->Total = $totalGroups;
+	}
+
+	/**
+	 * @var int
+	 */
+	public $Total;
+
+	/**
+	 * @var GroupItemView[]
+	 */
+	public $Groups;
+}

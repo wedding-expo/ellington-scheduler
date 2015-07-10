@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 define('ROOT_DIR', '../../');
@@ -260,27 +260,34 @@ class MigrationPresenter
 
 	public function PageLoad()
 	{
-		$legacyDatabase = new Database($this->GetLegacyConnection());
-		$currentDatabase = ServiceLocator::GetDatabase();
-		$runTarget = $this->page->GetRunTarget();
-		if (!empty($runTarget))
+		try
 		{
-			$this->Migrate($runTarget, $legacyDatabase, $currentDatabase);
-		}
-		elseif ($this->page->IsLoggingIn())
-		{
-			if ($this->TestInstallPassword() && $this->TestLegacyConnection())
+			$legacyDatabase = new Database($this->GetLegacyConnection());
+			$currentDatabase = ServiceLocator::GetDatabase();
+			$runTarget = $this->page->GetRunTarget();
+			if (!empty($runTarget))
 			{
-				$this->page->StartMigration();
+				$this->Migrate($runTarget, $legacyDatabase, $currentDatabase);
+			}
+			elseif ($this->page->IsLoggingIn())
+			{
+				if ($this->TestInstallPassword() && $this->TestLegacyConnection())
+				{
+					$this->page->StartMigration();
+				}
+				else
+				{
+					$this->page->DisplayMigrationPrompt();
+				}
 			}
 			else
 			{
 				$this->page->DisplayMigrationPrompt();
 			}
-		}
-		else
+		} catch (Exception $ex)
 		{
-			$this->page->DisplayMigrationPrompt();
+			Log::Error('General migration exception. %s', $ex);
+			throw $ex;
 		}
 	}
 
@@ -322,6 +329,7 @@ class MigrationPresenter
 			}
 		} catch (Exception $ex)
 		{
+			Log::Error('Migration exception. %s', $ex);
 			$this->page->SetError($ex);
 		}
 	}
@@ -400,7 +408,7 @@ class MigrationPresenter
 
 		$getLegacySchedules = new AdHocCommand("select scheduleid, scheduletitle, daystart, dayend, timespan,
                 timeformat, weekdaystart, viewdays, usepermissions, ishidden, showsummary, adminemail, isdefault
-                from schedules order by scheduleid limit $schedulesMigrated, 1000");
+                from schedules order by scheduleid limit $schedulesMigrated, 500");
 
 		$getExistingSchedules = new AdHocCommand('select legacyid from schedules');
 		$reader = $currentDatabase->Query($getExistingSchedules);
@@ -425,7 +433,7 @@ class MigrationPresenter
 										1);
 
 			$currentDatabase->Execute(new AdHocCommand("update schedules set legacyid = \"{$row['scheduleid']}\" where schedule_id = $newId"));
-			$timezone = Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE);
+			$timezone = Configuration::Instance()->GetDefaultTimezone();
 
 			$available = $this->CreateAvailableTimeSlots($row['daystart'], $row['dayend'], $row['timespan']);
 			$unavailable = $this->CreateUnavailableTimeSlots($row['daystart'], $row['dayend'], $row['timespan']);
@@ -445,7 +453,8 @@ class MigrationPresenter
 		$progressCounts = $this->GetProgressCounts($getLegacyCount, $getMigratedCount);
 
 		$this->page->SetProgress($progressCounts);
-		$this->page->SetSchedulesMigrated($schedulesMigrated);
+		$this->page->SetSchedulesMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastScheduleRow($progressCounts->MigratedCount);
 	}
 
 	private function MigrateResources(Database $legacyDatabase, Database $currentDatabase)
@@ -466,7 +475,7 @@ class MigrationPresenter
 
 		$getResources = new AdHocCommand("select machid, scheduleid, name, location, rphone, notes, status, minres, maxres, autoassign, approval,
                         allow_multi, max_participants, min_notice_time, max_notice_time
-                        from resources order by machid limit $resourcesMigrated, 1000");
+                        from resources order by machid limit $resourcesMigrated, 500");
 
 		$reader = $legacyDatabase->Query($getResources);
 
@@ -520,7 +529,8 @@ class MigrationPresenter
 
 		$this->page->SetProgress($progressCounts);
 
-		$this->page->SetResourcesMigrated($resourcesMigrated);
+		$this->page->SetResourcesMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastResourceRow($progressCounts->MigratedCount);
 	}
 
 	private function MigrateAccessories(Database $legacyDatabase, Database $currentDatabase)
@@ -540,7 +550,7 @@ class MigrationPresenter
 		}
 
 		$getAccessories = new AdHocCommand("select resourceid, name, number_available from additional_resources
-		 order by resourceid limit $accessoriesMigrated, 1000");
+		 order by resourceid limit $accessoriesMigrated, 500");
 
 		$reader = $legacyDatabase->Query($getAccessories);
 
@@ -565,7 +575,8 @@ class MigrationPresenter
 		$progressCounts = $this->GetProgressCounts($getLegacyCount, $getMigratedCount);
 
 		$this->page->SetProgress($progressCounts);
-		$this->page->SetAccessoriesMigrated($accessoriesMigrated);
+		$this->page->SetAccessoriesMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastAccessoryRow($progressCounts->MigratedCount);
 	}
 
 	private function MigrateGroups(Database $legacyDatabase, Database $currentDatabase)
@@ -584,7 +595,7 @@ class MigrationPresenter
 			$knownIds[] = $row['legacyid'];
 		}
 
-		$getGroups = new AdHocCommand("select groupid, group_name from groups order by groupid limit $groupsMigrated, 1000");
+		$getGroups = new AdHocCommand("select groupid, group_name from groups order by groupid limit $groupsMigrated, 500");
 
 		$reader = $legacyDatabase->Query($getGroups);
 
@@ -611,7 +622,8 @@ class MigrationPresenter
 		$progressCounts = $this->GetProgressCounts($getLegacyCount, $getMigratedCount);
 		$this->page->SetProgress($progressCounts);
 
-		$this->page->SetGroupsMigrated($groupsMigrated);
+		$this->page->SetGroupsMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastGroupRow($progressCounts->MigratedCount);
 	}
 
 	private function MigrateUsers(Database $legacyDatabase, Database $currentDatabase)
@@ -670,7 +682,7 @@ class MigrationPresenter
 				$row['lname'],
 				'',
 				'',
-				Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE),
+				Configuration::Instance()->GetDefaultTimezone(),
 				empty($row['lang']) ? Configuration::Instance()->GetKey(ConfigKeys::LANGUAGE) : $row['lang'],
 				Pages::DEFAULT_HOMEPAGE_ID,
 				$row['phone'],
@@ -705,12 +717,24 @@ class MigrationPresenter
 		$progressCounts = $this->GetProgressCounts($getLegacyCount, $getMigratedCount);
 		$this->page->SetProgress($progressCounts);
 
-		$this->page->SetUsersMigrated($usersMigrated);
+		$this->page->SetUsersMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastUserRow($progressCounts->MigratedCount);
 	}
 
 	private function MigrateReservations(Database $legacyDatabase, Database $currentDatabase)
 	{
 		$reservationsMigrated = MigrationSession::GetLastReservationRow();
+		$getMigratedCount = new AdHocCommand('SELECT
+				(select count(*) from reservation_series where legacyid is not null) +
+				(select count(*) from blackout_series where legacyid is not null )
+				as count');
+
+		$reader = ServiceLocator::GetDatabase()->Query($getMigratedCount);
+		if ($row = $reader->GetRow())
+		{
+			$reservationsMigrated = $row['count'];
+		}
+
 		Log::Debug('Start migrating reservations. Starting at row %s', $reservationsMigrated);
 
 		$reservationRepository = new ReservationRepository();
@@ -804,7 +828,8 @@ class MigrationPresenter
 			if ($row['is_blackout'] == 1)
 			{
 				// handle blackout
-				$blackout = Blackout::Create($mappedUserId, $mappedResourceId, '', $date);
+				$blackout = BlackoutSeries::Create($mappedUserId, '', $date);
+				$blackout->AddResourceId($mappedResourceId);
 
 				$newId = $blackoutRepository->Add($blackout);
 				$currentDatabase->Execute(new AdHocCommand("update blackout_series set legacyid = \"$legacyId\" where blackout_series_id = $newId"));
@@ -847,6 +872,7 @@ class MigrationPresenter
 				}
 
 				$currentUser = new UserSession($row['memberid']);
+				$currentUser->Timezone = Configuration::Instance()->GetDefaultTimezone();
 				$mappedResource = new MigrateBookableResource($mappedResourceId);
 
 				$reservation = ReservationSeries::Create($mappedUserId, $mappedResource, '', $row['summary'], $date,
@@ -877,15 +903,18 @@ class MigrationPresenter
 
 		Log::Debug('Done migrating reservations (%s reservations)', $reservationsMigrated);
 		$getLegacyCount = new AdHocCommand('select count(*) as count from reservations');
-		$getMigratedCount = new AdHocCommand('SELECT
-		(select count(*) from reservation_series where legacyid is not null) +
-		(select count(*) from blackout_series where legacyid is not null )
-		as count');
+//		$getMigratedCount = new AdHocCommand('SELECT
+//		(select count(*) from reservation_series where legacyid is not null) +
+//		(select count(*) from blackout_series where legacyid is not null )
+//		as count');
 
 		$progressCounts = $this->GetProgressCounts($getLegacyCount, $getMigratedCount);
 		$this->page->SetProgress($progressCounts);
 
-		$this->page->SetReservationsMigrated($reservationsMigrated);
+		Log::Debug('There are %s total legacy reservations and %s already migrated. Progress is %s', $progressCounts->LegacyCount, $progressCounts->MigratedCount, $progressCounts->PercentComplete);
+
+		$this->page->SetReservationsMigrated($progressCounts->MigratedCount);
+		MigrationSession::SetLastReservationRow($progressCounts->MigratedCount);
 	}
 
 	private function CreateAvailableTimeSlots($start, $end, $interval)
@@ -948,7 +977,7 @@ class MigrationPresenter
 		$s = date('Y-m-d', $startDate) . ' ' . $this->MinutesToTime($startTime);
 		$e = date('Y-m-d', $endDate) . ' ' . $this->MinutesToTime($endTime);
 
-		return DateRange::Create($s, $e, Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE));
+		return DateRange::Create($s, $e, Configuration::Instance()->GetDefaultTimezone());
 	}
 
 	private function GetProgressCounts($legacyCountCommand, $migratedCountCommand)
@@ -1006,5 +1035,3 @@ class MigrateBookableResource extends BookableResource
 
 $page = new MigrationPage();
 $page->PageLoad();
-
-?>

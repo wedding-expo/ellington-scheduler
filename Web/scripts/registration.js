@@ -65,16 +65,15 @@ function Registration()
 	function refreshCaptcha()
 	{
 		var captchaImg = $('#captchaImg');
-		if (captchaImg)
+		if (captchaImg.length > 0)
 		{
 			var src = captchaImg.attr('src') + '?' + Math.random();
 			captchaImg.attr('src', src);
 			$('#captchaValue').val('');
 		}
-		else
+		else if(typeof Recaptcha != "undefined")
 		{
 			Recaptcha.reload();
 		}
 	}
-
 }

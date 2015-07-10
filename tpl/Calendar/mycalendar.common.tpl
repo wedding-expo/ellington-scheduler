@@ -1,20 +1,20 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 <div class="calendar-subscription">
 {if $IsSubscriptionAllowed}
@@ -32,11 +32,13 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 
 <div id="calendar"></div>
 
-<script type="text/javascript" src="scripts/js/jquery.qtip.min.js"></script>
-<script type="text/javascript" src="scripts/reservationPopup.js"></script>
-<script type="text/javascript" src="scripts/calendar.js"></script>
-<script type="text/javascript" src="scripts/js/fullcalendar.min.js"></script>
-<script type="text/javascript" src="scripts/admin/edit.js"></script>
+{jsfile src="js/jquery.qtip.min.js"}
+{jsfile src="reservationPopup.js"}
+{jsfile src="calendar.js"}
+{jsfile src="js/fullcalendar.min.js"}
+{jsfile src="admin/edit.js"}
+{jsfile src="js/tree.jquery.js"}
+
 <script type="text/javascript">
 $(document).ready(function() {
 
@@ -44,11 +46,14 @@ $(document).ready(function() {
 	{foreach from=$Calendar->Reservations() item=reservation}
 		reservations.push({
 			id: '{$reservation->ReferenceNumber}',
-			title: '{$reservation->ResourceName|escape:javascript} {$reservation->Title|escape:javascript}',
+			title: '{$reservation->DisplayTitle|escape:javascript}',
 			start: '{format_date date=$reservation->StartDate key=fullcalendar}',
 			end: '{format_date date=$reservation->EndDate key=fullcalendar}',
 			url: 'reservation.php?rn={$reservation->ReferenceNumber}',
-			allDay: false
+			allDay: false,
+			color: '{$reservation->Color}',
+			textColor: '{$reservation->TextColor}',
+			className: '{$reservation->Class}'
 		});
 	{/foreach}
 
@@ -64,12 +69,13 @@ $(document).ready(function() {
 					monthNamesShort: {js_array array=$MonthNamesShort},
 					timeFormat: '{$TimeFormat}',
 					dayMonth: '{$DateFormat}',
-					firstDay: 0,
+					firstDay: {$FirstDay},
 					subscriptionEnableUrl: '{Pages::MY_CALENDAR}?{QueryStringKeys::ACTION}={PersonalCalendarActions::ActionEnableSubscription}',
 					subscriptionDisableUrl: '{Pages::MY_CALENDAR}?{QueryStringKeys::ACTION}={PersonalCalendarActions::ActionDisableSubscription}'
 				};
-		
+
 	var calendar = new Calendar(options, reservations);
 	calendar.init();
+	calendar.bindResourceGroups({$ResourceGroupsAsJson}, {$SelectedGroupNode|default:0});
 });
 </script>

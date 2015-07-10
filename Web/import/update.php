@@ -1,22 +1,23 @@
 <?php
 /*
-Copyright 2012 Alois Schloegl, IST Austria
-Copyright 2012 Moritz Schepp, IST Austria
+Copyright 2012-2014 Alois Schloegl, IST Austria
+Copyright 2012-2014 Moritz Schepp, IST Austria
+Copyright 2013-2014 Patrick Meidl, IST Austria
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once('../../config/config.php');
@@ -30,7 +31,7 @@ $enabled  = $conf['settings']['ics']['import'];
 
 if (!$enabled) {
         header('HTTP/1.1 406 Not Acceptable', true, 406);
-        print json_encode(array('message' => "iCal import is not enabled.<br />"));
+        print json_encode(array('message' => "iCal import is not enabled"));
         return;
 }
 
@@ -40,7 +41,6 @@ header("Content-Type: application/json", true);
 define('ROOT_DIR', '../../');
 
 require_once(ROOT_DIR . 'config/config.php');
-require_once(ROOT_DIR . 'Presenters/Reservation/ReservationHandler.php');
 require_once(ROOT_DIR . 'Pages/Ajax/ReservationSavePage.php');
 #require_once(ROOT_DIR . 'lib/Application/Reservation/Validation/namespace.php');
 require_once(ROOT_DIR . 'lib/Config/namespace.php');
@@ -61,7 +61,6 @@ $params = array(
         'ends_at' => null,
         'summary' => null,
         'description' => null,
-        'contact_info' => null,
 );
 $params = array_merge($params, $_REQUEST);
 
@@ -72,11 +71,11 @@ if ( $ikey != NULL
           print json_encode(array('message' => "your iKey is invalid",'ikey' => $ikey, 'param_ikey' => $params['ikey']));
           return;
 }
-                          
+
 foreach (array('rn', 'username') AS $key) {
   if (!$params[$key]) {
     header('HTTP/1.1 406 Not Acceptable', true, 406);
-    print json_encode(array('message' => "$key has to be set<br />"));
+    print json_encode(array('message' => "$key has to be set"));
     return;
   }
 }
@@ -92,8 +91,20 @@ if ($user instanceof NullUser) {
 
 $user_session = new UserSession($user->Id());
 
+// load resource by contact_info or rid
 $resourceRepository = new ResourceRepository();
-$resource = $resourceRepository->LoadByContactInfo($params['contact_info']);
+$contact_info = trim($_REQUEST['contact_info']);
+$rid = trim($_REQUEST['rid']);
+if ($contact_info && $rid) {
+        header('HTTP/1.1 406 Not Acceptable', true, 406);
+        print json_encode(array('message' => "You must not set both contact_info and rid"));
+        return;
+}
+if ($contact_info) {
+	$resource = $resourceRepository->LoadByContactInfo($contact_info);
+} elseif ($rid) {
+	$resource = $resourceRepository->LoadByPublicId($rid);
+}
 
 $updateAction = ReservationAction::Update;
 $persistenceFactory = new ReservationPersistenceFactory();
@@ -116,20 +127,15 @@ if (!$series) {
 
 $series->ApplyChangesTo(SeriesUpdateScope::FullSeries);
 
-if ($params['contact_info'])
-{
-        $resource = $resourceRepository->LoadByContactInfo($params['contact_info']);
-}
-
 if ($params['starts_at'] || $params['ends_at'])
 {
-        if (!$params['starts_at']) 
+        if (!$params['starts_at'])
         {
                 $params['starts_at'] = $series->CurrentInstance()->Duration()->GetBegin();
         }
-        if (!$params['ends_at']) 
+        if (!$params['ends_at'])
         {
-                $params['ends_at'] = $series->CurrentInstance()->Duration()->GetEnd();  
+                $params['ends_at'] = $series->CurrentInstance()->Duration()->GetEnd();
         }
 
         $timing = DateRange::Create($params['starts_at'], $params['ends_at'], $tz);
@@ -146,13 +152,13 @@ $title = $series->Title();
 if ($params['summary'])
 {
         $title = $params['summary'];
-}        
+}
 
 $description = $series->Description();
 if ($params['description'])
 {
         $description = $params['description'];
-} 
+}
 $series->Update($user->Id(), $resource, $title, $description, $user_session);
 
 $vfactory = new ReservationValidationFactory();
@@ -165,7 +171,7 @@ $validationResult = $validationService->Validate($series);
 $result = $validationResult->CanBeSaved();
 
 if ($result) {
-        try 
+        try
         {
                 $persistenceService->Persist($series);
 
@@ -175,22 +181,22 @@ if ($result) {
                         #'url' => $url . "/reservation.php?rn=" . $rn,
                         'series_id' => $series->SeriesId(),
                         'title' => $title,
-                        'description' => $description,                        
+                        'description' => $description,
                         'reference_number' => $rn
                 );
                 //print json_encode($response,JSON_UNESCAPED_SLASHES);  ## only in Php 5.4
-                print json_encode($response);                       
+                print json_encode($response);
                 return;
-        } 
-        catch (Exception $ex) 
+        }
+        catch (Exception $ex)
         {
                 Log::Error('Error updating reservation: %s', $ex);
                 throw($ex);
         }
 
         $this->notificationService->Notify($reservationSeries);
-} 
-else 
+}
+else
 {
         header('HTTP/1.1 406 Not Acceptable', true, 406);
         $response = array(

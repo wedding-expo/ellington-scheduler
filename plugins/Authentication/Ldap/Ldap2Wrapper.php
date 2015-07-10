@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'plugins/Authentication/Ldap/LDAP2.php');
@@ -64,14 +64,15 @@ class Ldap2Wrapper
 	/**
 	 * @param $username string
 	 * @param $password string
+	 * @param $filter string
 	 * @return bool
 	 */
-	public function Authenticate($username, $password)
-	{
-		$this->PopulateUser($username);
+     public function Authenticate($username, $password, $filter)
+    {
+          $this->PopulateUser($username, $filter);
 
-		if ($this->user == null)
-		{
+         if ($this->user == null)
+         {
 			return false;
 		}
 
@@ -95,13 +96,27 @@ class Ldap2Wrapper
 
 	/**
 	 * @param $username string
+	 * @param $configFilter string
 	 * @return void
 	 */
-	private function PopulateUser($username)
+	private function PopulateUser($username, $configFilter)
 	{
 		$uidAttribute = $this->options->GetUserIdAttribute();
 		Log::Debug('LDAP - uid attribute: %s', $uidAttribute);
+		$RequiredGroup = $this->options->GetRequiredGroup();
+
 		$filter = Net_LDAP2_Filter::create($uidAttribute, 'equals', $username);
+
+		if ($configFilter)
+		{
+			$configFilter = Net_LDAP2_Filter::parse($configFilter);
+			if (Net_LDAP2::isError($configFilter))
+			{
+				$message = 'Could not parse search filter %s: ' . $configFilter->getMessage();
+				Log::Error($message, $username);
+			}
+			$filter = Net_LDAP2_Filter::combine('and', array($filter, $configFilter));
+		}
 
 		$attributes = $this->options->Attributes();
 		Log::Debug('LDAP - Loading user attributes: %s', implode(', ', $attributes));
@@ -121,8 +136,30 @@ class Ldap2Wrapper
 		if ($searchResult->count() == 1 && $currentResult !== false)
 		{
 			Log::Debug('Found user %s', $username);
-			/** @var Net_LDAP2_Entry $entry  */
-			$this->user = new LdapUser($currentResult, $this->options->AttributeMapping());
+
+			if (!empty($RequiredGroup))
+			{
+				Log::Debug('LDAP - Required Group: %s', $RequiredGroup);
+				$group_filter = Net_LDAP2_Filter::create('uniquemember', 'equals', $currentResult->dn());
+				$group_searchResult = $this->ldap->search($RequiredGroup, $group_filter, null);
+				if (Net_LDAP2::isError($group_searchResult) && !empty($RequiredGroup))
+				{
+					$message = 'Could not match Required Group %s: ' . $group_searchResult->getMessage();
+					Log::Error($message, $username);
+				}
+
+				if ($group_searchResult->count() == 1 && $group_searchResult !== false)
+				{
+					Log::Debug('Matched Required Group %s', $RequiredGroup);
+					/** @var Net_LDAP2_Entry $entry  */
+					$this->user = new LdapUser($currentResult, $this->options->AttributeMapping());
+				}
+			}
+			else
+			{
+				/** @var Net_LDAP2_Entry $entry  */
+				$this->user = new LdapUser($currentResult, $this->options->AttributeMapping());
+			}
 		}
 		else
 		{
@@ -137,7 +174,7 @@ class Ldap2Wrapper
 	public function GetLdapUser($username)
 	{
 		return $this->user;
-	}
+    }
 }
 
 ?>

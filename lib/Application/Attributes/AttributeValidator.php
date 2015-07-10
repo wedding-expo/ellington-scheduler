@@ -1,22 +1,22 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
- */
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 require_once(ROOT_DIR . 'lib/Common/Validators/namespace.php');
 
@@ -46,12 +46,16 @@ class AttributeValidator extends ValidatorBase
 	 * @param IAttributeService $service
 	 * @param $category int|CustomAttributeCategory
 	 * @param $attributes array|AttributeValue[]
+	 * @param $entityId int
+	 * @param bool $ignoreEmpty
 	 */
-	public function __construct(IAttributeService $service, $category, $attributes)
+	public function __construct(IAttributeService $service, $category, $attributes, $entityId = null, $ignoreEmpty = false)
 	{
 		$this->service = $service;
 		$this->category = $category;
 		$this->attributes = $attributes;
+		$this->entityId = $entityId;
+		$this->ignoreEmpty = $ignoreEmpty;
 	}
 
 	/**
@@ -65,7 +69,7 @@ class AttributeValidator extends ValidatorBase
 			return;
 		}
 
-		$result = $this->service->Validate($this->category, $this->attributes);
+		$result = $this->service->Validate($this->category, $this->attributes, $this->entityId, $this->ignoreEmpty);
 		$this->isValid = $result->IsValid();
 		$this->messages = $result->Errors();
 	}
@@ -76,4 +80,3 @@ class AttributeValidator extends ValidatorBase
 	}
 
 }
-?>

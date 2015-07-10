@@ -1,28 +1,29 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class CustomAttributeValidationRule implements IReservationValidationRule
 {
-	public function __construct(IAttributeRepository $attributeRepository)
+	/**
+	 * @var IAttributeService
+	 */
+	private $attributeService;
+
+	public function __construct(IAttributeService $attributeService)
 	{
-		$this->attributeRepository = $attributeRepository;
+		$this->attributeService = $attributeService;
 	}
 
 	/**
@@ -33,25 +34,12 @@ class CustomAttributeValidationRule implements IReservationValidationRule
 	{
 		$resources = Resources::GetInstance();
 		$errorMessage = new StringBuilder();
-		$isValid = true;
 
-		$attributes = $this->attributeRepository->GetByCategory(CustomAttributeCategory::RESERVATION);
-		foreach ($attributes as $attribute)
+		$result = $this->attributeService->Validate(CustomAttributeCategory::RESERVATION, $reservationSeries->AttributeValues());
+		$isValid  = $result->IsValid();
+		foreach ($result->Errors() as $error)
 		{
-			$value = $reservationSeries->GetAttributeValue($attribute->Id());
-			$label = $attribute->Label();
-
-			if (!$attribute->SatisfiesRequired($value))
-			{
-				$isValid = false;
-				$errorMessage->AppendLine($resources->GetString('CustomAttributeRequired', $label));
-			}
-
-			if (!$attribute->SatisfiesConstraint($value))
-			{
-				$isValid = false;
-				$errorMessage->AppendLine($resources->GetString('CustomAttributeInvalid', $label));
-			}
+			$errorMessage->AppendLine($error);
 		}
 
 		if (!$isValid)
@@ -62,5 +50,3 @@ class CustomAttributeValidationRule implements IReservationValidationRule
 		return new ReservationRuleResult($isValid, $errorMessage->ToString());
 	}
 }
-
-?>

@@ -1,32 +1,33 @@
 /**
- Copyright 2012 Nick Korbel
+ Copyright 2012-2015 Nick Korbel
 
- This file is part of phpScheduleIt.
+ This file is part of Booked Scheduler.
 
- phpScheduleIt is free software: you can redistribute it and/or modify
+ Booked Scheduler is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
 
- phpScheduleIt is distributed in the hope that it will be useful,
+ Booked Scheduler is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License
- along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
-function Recurrence(recurOptions, recurElements) {
+function Recurrence(recurOptions, recurElements, prefix) {
+	prefix = prefix || '';
 	var e = {
-		repeatOptions:$('#repeatOptions'),
-		repeatDiv:$('#repeatDiv'),
-		repeatInterval:$('#repeatInterval'),
-		repeatTermination:$('#formattedEndRepeat'),
-		repeatTerminationTextbox:$('#EndRepeat'),
-		beginDate: $('#formattedBeginDate'),
-		endDate: $('#formattedEndDate'),
-		beginTime: $('#BeginPeriod'),
-		endTime: $('#EndPeriod')
+		repeatOptions:$('#' + prefix + 'repeatOptions'),
+		repeatDiv:$('#' + prefix + 'repeatDiv'),
+		repeatInterval:$('#' + prefix + 'repeatInterval'),
+		repeatTermination:$('#' + prefix + 'formattedEndRepeat'),
+		repeatTerminationTextbox:$('#' + prefix + 'EndRepeat'),
+		beginDate: $('#' + prefix + 'formattedBeginDate'),
+		endDate: $('#' + prefix + 'formattedEndDate'),
+		beginTime: $('#' + prefix + 'BeginPeriod'),
+		endTime: $('#' + prefix + 'EndPeriod')
 	};
 
 	var options = recurOptions;
@@ -45,10 +46,10 @@ function Recurrence(recurOptions, recurElements) {
 	var ChangeRepeatOptions = function () {
 		var repeatDropDown = elements.repeatOptions;
 		if (repeatDropDown.val() != 'none') {
-			$('#repeatUntilDiv').show();
+			$('#' + prefix + 'repeatUntilDiv').show();
 		}
 		else {
-			$('div[id!=repeatOptions]', elements.repeatDiv).hide();
+			$('div[id!=' + prefix + 'repeatOptions]', elements.repeatDiv).hide();
 		}
 
 		if (repeatDropDown.val() == 'daily') {
@@ -126,11 +127,11 @@ function Recurrence(recurOptions, recurElements) {
 			elements.repeatOptions.val(options.repeatType);
 			elements.repeatInterval.val(options.repeatInterval);
 			for (var i = 0; i < options.repeatWeekdays.length; i++) {
-				var id = "#repeatDay" + options.repeatWeekdays[i];
+				var id = '#' + prefix + 'repeatDay' + options.repeatWeekdays[i];
 				$(id).attr('checked', true);
 			}
 
-			$("#repeatOnMonthlyDiv :radio[value='" + options.repeatMonthlyType + "']").attr('checked', true);
+			$("#" + prefix + "repeatOnMonthlyDiv :radio[value='" + options.repeatMonthlyType + "']").attr('checked', true);
 
 			ChangeRepeatOptions();
 		}

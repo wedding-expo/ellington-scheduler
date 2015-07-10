@@ -1,22 +1,18 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
-Copyright 2012 Moritz Schepp, IST Austria
+Copyright 2011-2015 Nick Korbel
+Copyright 2012-2014 Moritz Schepp, IST Austria
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/Application/Authentication/namespace.php');
@@ -68,6 +64,11 @@ class Authentication implements IAuthentication
 
     public function Validate($username, $password)
     {
+		if (($this->ShowUsernamePrompt() && empty($username)) || ($this->ShowPasswordPrompt() && empty($password)))
+		{
+			return false;
+		}
+
         Log::Debug('Trying to log in as: %s', $username);
 
         $command = new AuthorizationCommand($username);
@@ -132,19 +133,19 @@ class Authentication implements IAuthentication
         $loginPage->SetShowLoginError();
     }
 
-    /**
-     * @param User $user
+	/**
+	 * @param User $user
 	 * @param string $loginTime
 	 * @return UserSession
-     */
-    private function GetUserSession(User $user, $loginTime)
-    {
-        $userSession = new UserSession($user->Id());
-        $userSession->Email = $user->EmailAddress();
-        $userSession->FirstName = $user->FirstName();
-        $userSession->LastName = $user->LastName();
-        $userSession->Timezone = $user->Timezone();
-        $userSession->HomepageId = $user->Homepage();
+	 */
+	private function GetUserSession(User $user, $loginTime)
+	{
+		$userSession = new UserSession($user->Id());
+		$userSession->Email = $user->EmailAddress();
+		$userSession->FirstName = $user->FirstName();
+		$userSession->LastName = $user->LastName();
+		$userSession->Timezone = $user->Timezone();
+		$userSession->HomepageId = $user->Homepage();
 		$userSession->LanguageCode = $user->Language();
 		$userSession->LoginTime = $loginTime;
 		$userSession->PublicId = $user->GetPublicId();
@@ -155,8 +156,18 @@ class Authentication implements IAuthentication
 		$userSession->IsResourceAdmin = $this->roleService->IsResourceAdministrator($user);
 		$userSession->IsScheduleAdmin = $this->roleService->IsScheduleAdministrator($user);
 
+		foreach ($user->Groups() as $group)
+		{
+			$userSession->Groups[] = $group->GroupId;
+		}
+
+		foreach ($user->GetAdminGroups() as $group)
+		{
+			$userSession->AdminGroups[] = $group->GroupId;
+		}
+
 		return $userSession;
-    }
+	}
 
 	public function ShowUsernamePrompt()
 	{
@@ -177,6 +188,39 @@ class Authentication implements IAuthentication
 	{
 		return true;
 	}
-}
 
-?>
+	public function AllowUsernameChange()
+	{
+		return true;
+	}
+
+	public function AllowEmailAddressChange()
+	{
+		return true;
+	}
+
+	public function AllowPasswordChange()
+	{
+		return true;
+	}
+
+	public function AllowNameChange()
+	{
+		return true;
+	}
+
+	public function AllowPhoneChange()
+	{
+		return true;
+	}
+
+	public function AllowOrganizationChange()
+	{
+		return true;
+	}
+
+	public function AllowPositionChange()
+	{
+		return true;
+	}
+}

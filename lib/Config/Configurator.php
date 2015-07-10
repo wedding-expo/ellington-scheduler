@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/external/pear/Config.php');
@@ -57,9 +57,12 @@ class Configurator implements IConfigurationSettings
 	 */
 	public function Merge($configPhp, $distPhp)
 	{
-		$mergedSettings = $this->GetMerged($configPhp, $distPhp);
+		if ($this->IsConfigOutOfDate($configPhp, $distPhp))
+		{
+			$mergedSettings = $this->GetMerged($configPhp, $distPhp);
 
-		$this->WriteSettings($configPhp, $mergedSettings);
+			$this->WriteSettings($configPhp, $mergedSettings);
+		}
 	}
 
 	public function WriteSettings($configFilePath, $mergedSettings)
@@ -105,11 +108,6 @@ class Configurator implements IConfigurationSettings
 		/** @var $current Config_Container */
 		$current = $config->parseConfig($file, 'PHPArray');
 
-		if (PEAR::isError($current))
-		{
-			throw new Exception($current->getMessage());
-		}
-
 		$currentValues = $current->getItem("section", Configuration::SETTINGS)->toArray();
 
 		return $currentValues[Configuration::SETTINGS];
@@ -145,6 +143,11 @@ class Configurator implements IConfigurationSettings
 
 	private function AddErrorReporting($file)
 	{
+		$pathinfo = pathinfo($file);
+		if ($pathinfo['dirname'] != ROOT_DIR . 'config')
+		{
+			return;
+		}
 		$contents = file_get_contents($file);
 		$new = str_replace("<?php", "<?php\r\nerror_reporting(E_ALL & ~E_NOTICE & ~E_STRICT);\r\n", $contents);
 
@@ -166,6 +169,33 @@ class Configurator implements IConfigurationSettings
 		$backupPath = str_replace('.php', time() . '.php', $configFilePath);
 		copy($configFilePath, $backupPath);
 	}
-}
 
-?>
+	private function IsConfigOutOfDate($configPhp, $distPhp)
+	{
+		$currentSettings = $this->GetSettings($configPhp);
+		$newSettings = $this->GetSettings($distPhp);
+
+		if ($this->AreKeysTheSame($currentSettings, $newSettings))
+		{
+			Log::Debug('Config file is already up to date. Skipping config merge.');
+			return false;
+		}
+
+		Log::Debug('Config file is out of date. Merging new config options in.');
+		return true;
+	}
+
+	private function AreKeysTheSame($current, $new)
+	{
+		foreach ($new as $key => $val)
+		{
+			if (!array_key_exists($key, $current) || (is_array($new[$key]) && is_array($current[$key]) && !$this->AreKeysTheSame($current[$key], $new[$key])))
+			{
+				Log::Debug('Could not find key in config file: %s', $key);
+				return false;
+			}
+		}
+
+		return true;
+	}
+}

@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/Values/RoleLevel.php');
@@ -26,6 +26,7 @@ class User
 	public function __construct()
 	{
 		$this->emailPreferences = new EmailPreferences();
+		$this->preferences = new UserPreferences();
 	}
 
 	/**
@@ -123,6 +124,16 @@ class User
 	protected $groups = array();
 
 	/**
+	 * @var UserGroup[]
+	 */
+	private $_addedGroups = array();
+
+	/**
+	 * @var UserGroup[]
+	 */
+	private $_removedGroups = array();
+
+	/**
 	 * @var array|UserGroup[]
 	 */
 	protected $groupsICanAdminister = array();
@@ -133,6 +144,39 @@ class User
 	public function Groups()
 	{
 		return $this->groups;
+	}
+
+	/**
+	 * @return UserGroup[]
+	 */
+	public function GetAddedGroups()
+	{
+		return $this->_addedGroups;
+	}
+
+	/**
+	 * @return UserGroup[]
+	 */
+	public function GetRemovedGroups()
+	{
+		return $this->_removedGroups;
+	}
+
+	/**
+	 * @param int $groupId
+	 * @return bool
+	 */
+	public function IsInGroup($groupId)
+	{
+		foreach($this->groups as $group)
+		{
+			if ($group->GroupId == $groupId)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private $isCalendarSubscriptionAllowed = false;
@@ -200,6 +244,18 @@ class User
 		$this->statusId = AccountStatus::INACTIVE;
 	}
 
+	protected $preferences;
+
+	public function GetPreferences()
+	{
+		return $this->preferences;
+	}
+
+	public function ChangePreference($name, $value)
+	{
+		$this->preferences->Update($name, $value);
+	}
+
 	/**
 	 * @var bool
 	 */
@@ -240,6 +296,11 @@ class User
 	{
 		$this->permissionsChanged = false;
 		$this->allowedResourceIds = $allowedResourceIds;
+	}
+
+	public function WithPreferences(UserPreferences $preferences)
+	{
+		$this->preferences = $preferences;
 	}
 
 	/**
@@ -386,6 +447,8 @@ class User
 		$user->attributes[UserAttribute::Phone] = $row[ColumnNames::PHONE_NUMBER];
 		$user->attributes[UserAttribute::Position] = $row[ColumnNames::POSITION];
 		$user->attributes[UserAttribute::Organization] = $row[ColumnNames::ORGANIZATION];
+
+		$user->isApplicationAdmin = Configuration::Instance()->GetKey(ConfigKeys::ADMIN_EMAIL) == $row[ColumnNames::EMAIL];
 
 		return $user;
 	}
@@ -797,6 +860,36 @@ class User
 		return false;
 	}
 
+	/**
+	 * @param $preferenceName string
+	 * @return null|string
+	 */
+	public function GetPreference($preferenceName)
+	{
+		return $this->preferences->Get($preferenceName);
+	}
+
+	public function ChangeGroups($groups)
+	{
+		$diff = new ArrayDiff($this->groups, $groups);
+
+		$added = $diff->GetAddedToArray1();
+		$removed = $diff->GetRemovedFromArray1();
+
+		/** @var $group UserGroup */
+		foreach ($added as $group)
+		{
+			$this->_addedGroups[] = $group;
+		}
+
+		/** @var $group UserGroup */
+		foreach ($removed as $group)
+		{
+			$this->_removedGroups[] = $group;
+		}
+
+		$this->WithGroups($groups);
+	}
 }
 
 class NullUser extends User
@@ -907,6 +1000,9 @@ class UserGroup
 			$this->IsScheduleAdmin = true;
 		}
 	}
-}
 
-?>
+	public function __toString()
+	{
+		return $this->GroupId . '';
+	}
+}

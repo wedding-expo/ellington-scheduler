@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class ColumnNames
@@ -44,9 +44,14 @@ class ColumnNames
 	const ORGANIZATION = 'organization';
 	const POSITION = 'position';
 	const DEFAULT_SCHEDULE_ID = 'default_schedule_id';
+	const USER_PREFERENCES = 'preferences';
 
 	// USER_ADDRESSES //
 	const ADDRESS_ID = 'address_id';
+
+	// USER_PREFERENCES //
+	const PREFERENCE_NAME = 'name';
+	const PREFERENCE_VALUE = 'value';
 
 	// ROLES //
 	const ROLE_LEVEL = 'role_level';
@@ -66,6 +71,11 @@ class ColumnNames
 	const GROUP_ADMIN_GROUP_ID = 'admin_group_id';
 	const GROUP_ADMIN_GROUP_NAME = 'admin_group_name';
 
+	// RESOURCE_GROUPS //
+	const RESOURCE_GROUP_ID = 'resource_group_id';
+	const RESOURCE_GROUP_NAME = 'resource_group_name';
+	const RESOURCE_GROUP_PARENT_ID = 'parent_id';
+
 	// TIME BLOCKS //
 	const BLOCK_DAY_OF_WEEK = 'day_of_week';
 	const BLOCK_LABEL = 'label';
@@ -76,6 +86,9 @@ class ColumnNames
 	// TIME BLOCK USES //
 	const BLOCK_START = 'start_time';
 	const BLOCK_END = 'end_time';
+
+	const CUSTOM_ATTRIBUTE_ID = 'custom_attribute_id';
+	const CUSTOM_ATTRIBUTE_VALUE = 'attribute_value';
 
 	// RESERVATION SERIES //
 	const RESERVATION_USER = 'user_id';
@@ -92,6 +105,7 @@ class ColumnNames
 	const RESERVATION_STATUS = 'status_id';
 	const SERIES_ID = 'series_id';
 	const RESERVATION_OWNER = 'owner_id';
+	const RESERVATION_ALLOW_PARTICIPATION = 'allow_participation';
 
 	// RESERVATION_INSTANCE //
 	const RESERVATION_INSTANCE_ID = 'reservation_instance_id';
@@ -120,9 +134,13 @@ class ColumnNames
 	const RESOURCE_MINNOTICE = 'min_notice_time';
 	const RESOURCE_MAXNOTICE = 'max_notice_time';
 	const RESOURCE_IMAGE_NAME = 'image_name';
-	const RESOURCE_ISACTIVE = 'isactive';
+	const RESOURCE_STATUS_ID = 'status_id';
+	const RESOURCE_STATUS_ID_ALIAS = 'resource_status_id';
+	const RESOURCE_STATUS_REASON_ID = 'resource_status_reason_id';
+	const RESOURCE_STATUS_DESCRIPTION = 'description';
 	const RESOURCE_ADMIN_GROUP_ID = 'admin_group_id';
 	const RESOURCE_SORT_ORDER = 'sort_order';
+	const RESOURCE_BUFFER_TIME = 'buffer_time';
 
 	// RESERVATION RESOURCES
 	const RESOURCE_LEVEL_ID = 'resource_level_id';
@@ -176,6 +194,7 @@ class ColumnNames
 	const ATTRIBUTE_POSSIBLE_VALUES = 'possible_values';
 	const ATTRIBUTE_VALUE = 'attribute_value';
 	const ATTRIBUTE_ENTITY_ID = 'entity_id';
+	const ATTRIBUTE_ENTITY_DESCRIPTION = 'entity_description';
 	const ATTRIBUTE_SORT_ORDER = 'sort_order';
 
 	// RESERVATION FILES //
@@ -206,6 +225,11 @@ class ColumnNames
 	const REMINDER_MINUTES_PRIOR = 'minutes_prior';
 	const REMINDER_TYPE = 'reminder_type';
 
+	// RESOURCE TYPE //
+	const RESOURCE_TYPE_ID = 'resource_type_id';
+	const RESOURCE_TYPE_NAME = 'resource_type_name';
+	const RESOURCE_TYPE_DESCRIPTION = 'resource_type_description';
+
 	// dynamic
 	const TOTAL = 'total';
 	const TOTAL_TIME = 'totalTime';
@@ -222,10 +246,11 @@ class ColumnNames
 	const PARTICIPANT_LIST = 'participant_list';
 	const INVITEE_LIST = 'invitee_list';
 	const ATTRIBUTE_LIST = 'attribute_list';
+	const GROUP_LIST = 'owner_group_list';
+	const START_REMINDER_MINUTES_PRIOR = 'start_reminder_minutes';
+	const END_REMINDER_MINUTES_PRIOR = 'end_reminder_minutes';
 
 	// shared
 	const ALLOW_CALENDAR_SUBSCRIPTION = 'allow_calendar_subscription';
 	const PUBLIC_ID = 'public_id';
 }
-
-?>

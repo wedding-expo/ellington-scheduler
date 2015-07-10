@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/namespace.php');
@@ -83,6 +79,11 @@ interface IReservationComponentInitializer
 	public function CurrentUser();
 
 	/**
+	 * @return ResourceDto
+	 */
+	public function PrimaryResource();
+
+	/**
 	 * @param $canChangeUser bool
 	 */
 	public function SetCanChangeUser($canChangeUser);
@@ -96,6 +97,11 @@ interface IReservationComponentInitializer
 	 * @param $showUserDetails bool
 	 */
 	public function ShowUserDetails($showUserDetails);
+
+	/**
+	 * @param $shouldShow bool
+	 */
+	public function SetShowParticipation($shouldShow);
 
 	/**
 	 * @abstract
@@ -112,6 +118,11 @@ interface IReservationComponentInitializer
 	 * @param $accessories array|AccessoryDto[]
 	 */
 	public function BindAvailableAccessories($accessories);
+
+	/**
+	 * @param $groups ResourceGroupTree
+	 */
+	public function BindResourceGroups($groups);
 
 	/**
 	 * @param $shouldShow bool
@@ -141,10 +152,20 @@ interface IReservationComponentInitializer
 	 * @param bool $isHidden
 	 */
 	public function HideRecurrence($isHidden);
+
+	/**
+	 * @return bool
+	 */
+	public function IsNew();
 }
 
 abstract class ReservationInitializerBase implements IReservationInitializer, IReservationComponentInitializer
 {
+	/**
+	 * @var ResourceDto
+	 */
+	protected $primaryResource;
+
 	/**
 	 * @var IReservationPage
 	 */
@@ -216,8 +237,8 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 		$requestedScheduleId = $this->GetScheduleId();
 		$this->basePage->SetScheduleId($requestedScheduleId);
 
-		$this->BindDates();
 		$this->BindResourceAndAccessories();
+		$this->BindDates();
 		$this->BindUser();
 		$this->BindAttributes();
 	}
@@ -246,9 +267,13 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 	protected function SetSelectedDates(Date $startDate, Date $endDate, $startPeriods, $endPeriods)
 	{
 		$startPeriod = $this->GetStartSlotClosestTo($startPeriods, $startDate);
+
+		if ($endDate->LessThanOrEqual($startDate))
+		{
+			$endDate = $endDate->SetTime($startPeriod->End());
+		}
 		$endPeriod = $this->GetEndSlotClosestTo($endPeriods, $endDate);
 
-		//die($startPeriod . $startDate);
 		$this->basePage->SetSelectedStart($startPeriod, $startDate);
 		$this->basePage->SetSelectedEnd($endPeriod, $endDate);
 	}
@@ -318,6 +343,14 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 	}
 
 	/**
+	 * @return ResourceDto
+	 */
+	public function PrimaryResource()
+	{
+		return $this->primaryResource;
+	}
+
+	/**
 	 * @param $canChangeUser bool
 	 */
 	public function SetCanChangeUser($canChangeUser)
@@ -339,6 +372,11 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 	public function ShowUserDetails($showUserDetails)
 	{
 		$this->basePage->ShowUserDetails($showUserDetails);
+	}
+
+	public function SetShowParticipation($shouldShow)
+	{
+		$this->basePage->SetShowParticipation($shouldShow);
 	}
 
 	/**
@@ -365,6 +403,11 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 		$this->basePage->BindAvailableAccessories($accessories);
 	}
 
+	public function BindResourceGroups($groups)
+	{
+		$this->basePage->BindResourceGroups($groups);
+	}
+
 	/**
 	 * @param $shouldShow bool
 	 */
@@ -378,6 +421,7 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 	 */
 	public function SetReservationResource($resource)
 	{
+		$this->primaryResource = $resource;
 		$this->basePage->SetReservationResource($resource);
 	}
 
@@ -399,6 +443,9 @@ abstract class ReservationInitializerBase implements IReservationInitializer, IR
 	{
 		$this->basePage->HideRecurrence($isHidden);
 	}
-}
 
-?>
+	public function IsNew()
+	{
+		return true;
+	}
+}

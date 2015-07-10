@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'config/timezones.php');
@@ -122,7 +122,7 @@ interface IManageUsersPage extends IPageable, IActionPage
 	public function GetLanguage();
 
 	/**
-	 * @param $attributeList IEntityAttributeList
+	 * @param $attributeList CustomAttribute[]
 	 */
 	public function BindAttributeList($attributeList);
 
@@ -145,6 +145,11 @@ interface IManageUsersPage extends IPageable, IActionPage
 	 * @param GroupItemView[] $groups
 	 */
 	public function BindGroups($groups);
+
+	/**
+	 * @return string
+	 */
+	public function GetReservationColor();
 }
 
 
@@ -183,16 +188,18 @@ class ManageUsersPage extends ActionPage implements IManageUsersPage
 	{
 		$this->_presenter->PageLoad();
 
+		$config = Configuration::Instance();
 		$resources = Resources::GetInstance();
 		$this->Set('statusDescriptions',
 				   array(AccountStatus::ALL => $resources->GetString('All'), AccountStatus::ACTIVE => $resources->GetString('Active'), AccountStatus::AWAITING_ACTIVATION => $resources->GetString('Pending'), AccountStatus::INACTIVE => $resources->GetString('Inactive')));
 
-		$this->Set('Timezone', Configuration::Instance()->GetKey(ConfigKeys::SERVER_TIMEZONE));
+		$this->Set('Timezone', $config->GetDefaultTimezone());
 		$this->Set('Timezones', $GLOBALS['APP_TIMEZONES']);
 		$this->Set('Languages', $GLOBALS['APP_TIMEZONES']);
 		$this->Set('ManageGroupsUrl', Pages::MANAGE_GROUPS);
 		$this->Set('ManageReservationsUrl', Pages::MANAGE_RESERVATIONS);
 		$this->Set('FilterStatusId', $this->GetFilterStatusId());
+		$this->Set('PerUserColors', $config->GetSectionKey(ConfigSection::SCHEDULE, ConfigKeys::SCHEDULE_PER_USER_COLORS, new BooleanConverter()));
 
 		$this->RenderTemplate();
 	}
@@ -241,7 +248,7 @@ class ManageUsersPage extends ActionPage implements IManageUsersPage
 	}
 
 	/**
-	 * @param BookableResources[] $resources
+	 * @param BookableResource[] $resources
 	 * @return void
 	 */
 	public function BindResources($resources)
@@ -327,12 +334,6 @@ class ManageUsersPage extends ActionPage implements IManageUsersPage
 
 	public function BindAttributeList($attributeList)
 	{
-		$defList = array();
-		foreach ($attributeList->GetDefinitions() as $def)
-		{
-			$defList[] = new Attribute($def);
-		}
-		$this->Set('Definitions', $defList);
 		$this->Set('AttributeList', $attributeList);
 	}
 
@@ -355,7 +356,7 @@ class ManageUsersPage extends ActionPage implements IManageUsersPage
 	 */
 	public function GetUserGroup()
 	{
-		return $this->server->GetForm(FormKeys::GROUP_ID);
+		return $this->GetForm(FormKeys::GROUP_ID);
 	}
 
 	/**
@@ -365,6 +366,12 @@ class ManageUsersPage extends ActionPage implements IManageUsersPage
 	{
 		$this->Set('Groups', $groups);
 	}
-}
 
-?>
+	/**
+	 * @return string
+	 */
+	public function GetReservationColor()
+	{
+		return $this->GetForm(FormKeys::RESERVATION_COLOR);
+	}
+}

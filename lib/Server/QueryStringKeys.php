@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 class QueryStringKeys
@@ -36,6 +32,7 @@ class QueryStringKeys
 	const AUTOCOMPLETE_TYPE = 'type';
 	const BLACKOUT_ID = 'bid';
 	const CALENDAR_TYPE = 'ct';
+	const CONFIG_FILE = 'cf';
 	const DATA_REQUEST = 'dr';
 	const DAY = 'd';
 	const END_DATE = 'ed';
@@ -46,9 +43,11 @@ class QueryStringKeys
 	const LAYOUT_DATE = 'ld';
 	const MESSAGE_ID = 'mid';
 	const MONTH = 'm';
+	const NODE_ID = 'nid';
     const PAGE = 'page';
 	const PAGE_SIZE = 'pageSize';
 	const PERIOD_ID = 'pid';
+	const PREVIOUS_ID = 'pid';
 	const QUOTA_ID = 'qid';
 	const REDIRECT = 'redirect';
 	const REFERENCE_NUMBER = 'rn';
@@ -56,12 +55,18 @@ class QueryStringKeys
 	const REPORT_ID = 'rid';
 	const RESERVATION_DATE = 'rd';
 	const RESERVATION_STATUS_ID = 'rsid';
+	const RESERVATION_STATUS_REASON_ID = 'rsrid';
 	const RESPONSE_TYPE = 'rs';
 	const RESOURCE_ID = 'rid';
+	const RESOURCE_GROUP_ID = 'rgid';
+	const RESOURCE_TYPE_ID = 'rtid';
+	const RESERVATION_RESOURCE_STATUS_ID = 'rrsid';
+	const RESERVATION_RESOURCE_REASON_ID = 'rrsrid';
 	const SCHEDULE_ID = 'sid';
 	const SHOW_FULL_WEEK = 'sfw';
 	const START_DATE = 'sd';
     const SUBSCRIPTION_KEY = 'icskey';
+    const TYPE = 'type';
 	const USER_ID = 'uid';
 	const USER_NAME = 'un';
     const WEB_SERVICE_ACTION = 'action';

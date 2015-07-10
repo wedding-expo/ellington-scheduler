@@ -1,24 +1,24 @@
 {*
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 {include file='globalheader.tpl' cssFiles='css/admin.css'}
 
-<h1>{translate key=ManageAccessories}</h1>
+<h1>{translate key=ManageAccessories} {html_image src="question-button.png" id="help-prompt" ref="help-accessories"}</h1>
 
 <table class="list">
 	<tr>
@@ -96,9 +96,10 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 
-<script type="text/javascript" src="{$Path}scripts/admin/edit.js"></script>
-<script type="text/javascript" src="{$Path}scripts/admin/accessory.js"></script>
-<script type="text/javascript" src="{$Path}scripts/js/jquery.form-3.09.min.js"></script>
+{jsfile src="admin/edit.js"}
+{jsfile src="admin/accessory.js"}
+{jsfile src="js/jquery.form-3.09.min.js"}
+{jsfile src="admin/help.js"}
 
 <script type="text/javascript">
 	$(document).ready(function() {
@@ -119,9 +120,9 @@ along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
 	accessoryManagement.init();
 
 	{foreach from=$accessories item=accessory}
-		accessoryManagement.addAccessory('{$accessory->Id}', '{$accessory->Name}', '{$accessory->QuantityAvailable}');
+		accessoryManagement.addAccessory('{$accessory->Id}', '{$accessory->Name|escape:javascript}', '{$accessory->QuantityAvailable}');
 	{/foreach}
-	
+
 	});
 </script>
 {include file='globalfooter.tpl'}

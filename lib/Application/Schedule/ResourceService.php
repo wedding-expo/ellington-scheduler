@@ -1,97 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
-*/
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
-class ResourceService implements IResourceService
-{
-	/**
-	 * @var \IResourceRepository
-	 */
-	private $_resourceRepository;
-
-	/**
-	 * @var \IPermissionService
-	 */
-	private $_permissionService;
-
-	public function __construct(IResourceRepository $resourceRepository, IPermissionService $permissionService)
-	{
-		$this->_resourceRepository = $resourceRepository;
-		$this->_permissionService = $permissionService;
-	}
-
-	/**
-	 * @param $scheduleId int
-	 * @param $includeInaccessibleResources bool
-	 * @param UserSession $user
-	 * @return array|ResourceDto[]
-	 */
-	public function GetScheduleResources($scheduleId, $includeInaccessibleResources, UserSession $user)
-	{
-		$resources = $this->_resourceRepository->GetScheduleResources($scheduleId);
-
-		return $this->Filter($resources, $user, $includeInaccessibleResources);
-	}
-
-	/**
-	 * @param $includeInaccessibleResources
-	 * @param UserSession $user
-	 * @return array|ResourceDto[]
-	 */
-	public function GetAllResources($includeInaccessibleResources, UserSession $user)
-	{
-		$resources = $this->_resourceRepository->GetResourceList();
-
-		return $this->Filter($resources, $user, $includeInaccessibleResources);
-	}
-
-	/**
-	 * @param $resources array|BookableResource[]
-	 * @param $user UserSession
-	 * @param $includeInaccessibleResources bool
-	 * @return array|ResourceDto[]
-	 */
-	private function Filter($resources, $user, $includeInaccessibleResources)
-	{
-		$resourceDtos = array();
-		foreach ($resources as $resource)
-		{
-			$canAccess = $this->_permissionService->CanAccessResource($resource, $user);
-
-			if (!$includeInaccessibleResources && !$canAccess)
-			{
-				continue;
-			}
-
-			$resourceDtos[] = new ResourceDto($resource->GetResourceId(), $resource->GetName(), $canAccess, $resource->GetScheduleId());
-		}
-		return $resourceDtos;
-	}
-
-	/**
-	 * @return array|AccessoryDto[]
-	 */
-	public function GetAccessories()
-	{
-		return $this->_resourceRepository->GetAccessoryList();
-	}
-}
+require_once(ROOT_DIR . 'lib/Application/Attributes/namespace.php');
+require_once(ROOT_DIR . 'lib/Application/Reservation/namespace.php');
 
 interface IResourceService
 {
@@ -100,9 +24,10 @@ interface IResourceService
 	 * @param int $scheduleId
 	 * @param bool $includeInaccessibleResources
 	 * @param UserSession $user
+	 * @param ScheduleResourceFilter|null $filter
 	 * @return array|ResourceDto[]
 	 */
-	public function GetScheduleResources($scheduleId, $includeInaccessibleResources, UserSession $user);
+	public function GetScheduleResources($scheduleId, $includeInaccessibleResources, UserSession $user, $filter = null);
 
 	/**
 	 * Gets resource list
@@ -117,69 +42,174 @@ interface IResourceService
 	 * @return array|AccessoryDto[]
 	 */
 	public function GetAccessories();
+
+	/**
+	 * @param int $scheduleId
+	 * @param UserSession $user
+	 * @return ResourceGroupTree
+	 */
+	public function GetResourceGroups($scheduleId, UserSession $user);
+
+	/**
+	 * @return ResourceType[]
+	 */
+	public function GetResourceTypes();
+
+	/**
+	 * @return Attribute[]
+	 */
+	public function GetResourceAttributes();
+
+	/**
+	 * @return Attribute[]
+	 */
+	public function GetResourceTypeAttributes();
 }
 
-class ResourceDto
+class ResourceService implements IResourceService
 {
-	public function __construct($id, $name, $canAccess = true, $scheduleId = null)
-	{
-		$this->Id = $id;
-		$this->Name = $name;
-		$this->CanAccess = $canAccess;
-		$this->ScheduleId = $scheduleId;
-	}
-	
 	/**
-	 * @var int
+	 * @var IResourceRepository
 	 */
-	public $Id;
-	
-	/**
-	 * @var string
-	 */
-	public $Name;
-	
-	/**
-	 * @var bool
-	 */
-	public $CanAccess;
+	private $_resourceRepository;
 
 	/**
-	 * @var int
+	 * @var IPermissionService
 	 */
-	public $ScheduleId;
+	private $_permissionService;
 
 	/**
-	 * alias of GetId()
-	 * @return int
+	 * @var IAttributeService
 	 */
-	public function GetResourceId()
+	private $_attributeService;
+
+	/**
+	 * @var IUserRepository
+	 */
+	private $_userRepository;
+
+	public function __construct(IResourceRepository $resourceRepository,
+								IPermissionService $permissionService,
+								IAttributeService $attributeService,
+								IUserRepository $userRepository)
 	{
-		return $this->Id;
+		$this->_resourceRepository = $resourceRepository;
+		$this->_permissionService = $permissionService;
+		$this->_attributeService = $attributeService;
+		$this->_userRepository = $userRepository;
 	}
 
-	/**
-	 * @return int
-	 */
-	public function GetId()
+	public function GetScheduleResources($scheduleId, $includeInaccessibleResources, UserSession $user, $filter = null)
 	{
-		return $this->Id;
+		if ($filter == null)
+		{
+			$filter = new ScheduleResourceFilter();
+		}
+
+		$resources = $this->_resourceRepository->GetScheduleResources($scheduleId);
+		$resourceIds = $filter->FilterResources($resources, $this->_resourceRepository, $this->_attributeService);
+
+		return $this->Filter($resources, $user, $includeInaccessibleResources, $resourceIds);
 	}
 
-	/**
-	 * @return string
-	 */
-	public function GetName()
+	public function GetAllResources($includeInaccessibleResources, UserSession $user)
 	{
-		return $this->Name;
+		$resources = $this->_resourceRepository->GetResourceList();
+
+		return $this->Filter($resources, $user, $includeInaccessibleResources);
 	}
 
 	/**
-	 * @return int|null
+	 * @param $resources array|BookableResource[]
+	 * @param $user UserSession
+	 * @param $includeInaccessibleResources bool
+	 * @param int[] $resourceIds
+	 * @return array|ResourceDto[]
 	 */
-	public function GetScheduleId()
+	private function Filter($resources, $user, $includeInaccessibleResources, $resourceIds = null)
 	{
-		return $this->ScheduleId;
+		$filter = new ResourcePermissionFilter($this->_permissionService, $user);
+		$statusFilter = new ResourceStatusFilter($this->_userRepository, $user);
+
+		$resourceDtos = array();
+		foreach ($resources as $resource)
+		{
+			if (is_array($resourceIds) && !in_array($resource->GetId(), $resourceIds))
+			{
+				continue;
+			}
+
+			$canAccess = $filter->ShouldInclude($resource);
+
+			if (!$includeInaccessibleResources && !$canAccess)
+			{
+				continue;
+			}
+
+			if ($canAccess)
+			{
+
+				$canAccess = $statusFilter->ShouldInclude($resource);
+				if (!$includeInaccessibleResources && !$canAccess)
+				{
+					continue;
+				}
+			}
+
+			$resourceDtos[] = new ResourceDto($resource->GetResourceId(), $resource->GetName(), $canAccess, $resource->GetScheduleId(), $resource->GetMinLength());
+		}
+
+		return $resourceDtos;
+	}
+
+	public function GetAccessories()
+	{
+		return $this->_resourceRepository->GetAccessoryList();
+	}
+
+	public function GetResourceGroups($scheduleId, UserSession $user)
+	{
+		$filter = new CompositeResourceFilter();
+		$filter->Add(new ResourcePermissionFilter($this->_permissionService, $user));
+		$filter->Add(new ResourceStatusFilter($this->_userRepository, $user));
+
+		$groups = $this->_resourceRepository->GetResourceGroups($scheduleId, $filter);
+
+		return $groups;
+	}
+
+	public function GetResourceTypes()
+	{
+		return $this->_resourceRepository->GetResourceTypes();
+	}
+
+	/**
+	 * @return Attribute[]
+	 */
+	public function GetResourceAttributes()
+	{
+		$attributes = array();
+		$customAttributes = $this->_attributeService->GetByCategory(CustomAttributeCategory::RESOURCE);
+		foreach ($customAttributes as $ca)
+		{
+			$attributes[] = new Attribute($ca);
+		}
+
+		return $attributes;
+	}
+
+	/**
+	 * @return Attribute[]
+	 */
+	public function GetResourceTypeAttributes()
+	{
+		$attributes = array();
+		$customAttributes = $this->_attributeService->GetByCategory(CustomAttributeCategory::RESOURCE_TYPE);
+		foreach ($customAttributes as $ca)
+		{
+			$attributes[] = new Attribute($ca);
+		}
+
+		return $attributes;
 	}
 }
-?>

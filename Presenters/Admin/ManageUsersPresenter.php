@@ -1,21 +1,21 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'Domain/Access/namespace.php');
@@ -33,6 +33,7 @@ class ManageUsersActions
 	const Password = 'password';
 	const Permissions = 'permissions';
 	const UpdateUser = 'updateUser';
+	const ChangeColor = 'changeColor';
 }
 
 interface IManageUsersPresenter
@@ -170,6 +171,7 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 		$this->AddAction(ManageUsersActions::Permissions, 'ChangePermissions');
 		$this->AddAction(ManageUsersActions::UpdateUser, 'UpdateUser');
 		$this->AddAction(ManageUsersActions::ChangeAttributes, 'ChangeAttributes');
+		$this->AddAction(ManageUsersActions::ChangeColor, 'ChangeColor');
 	}
 
 	public function PageLoad()
@@ -191,15 +193,12 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 		$groups = $this->groupViewRepository->GetList();
 		$this->page->BindGroups($groups->Results());
 
-		$this->page->BindResources($this->resourceRepository->GetResourceList());
+		$user = $this->userRepository->LoadById(ServiceLocator::GetServer()->GetUserSession()->UserId);
 
-		$userIds = array();
-		/** @var $user UserItemView */
-		foreach ($userList->Results() as $user)
-		{
-			$userIds[] = $user->Id;
-		}
-		$attributeList = $this->attributeService->GetAttributes(CustomAttributeCategory::USER, $userIds);
+		$resources = $this->GetResourcesThatCurrentUserCanAdminister($user);
+		$this->page->BindResources($resources);
+
+		$attributeList = $this->attributeService->GetByCategory(CustomAttributeCategory::USER);
 		$this->page->BindAttributeList($attributeList);
 	}
 
@@ -219,7 +218,8 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 
 	public function AddUser()
 	{
-		$userId = $this->manageUsersService->AddUser(
+		$defaultHomePageId = Configuration::Instance()->GetKey(ConfigKeys::DEFAULT_HOMEPAGE, new IntConverter());
+		$user = $this->manageUsersService->AddUser(
 			$this->page->GetUserName(),
 			$this->page->GetEmail(),
 			$this->page->GetFirstName(),
@@ -227,10 +227,11 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 			$this->page->GetPassword(),
 			$this->page->GetTimezone(),
 			Configuration::Instance()->GetKey(ConfigKeys::LANGUAGE),
-			Pages::DEFAULT_HOMEPAGE_ID,
+			empty($defaultHomePageId) ? Pages::DEFAULT_HOMEPAGE_ID : $defaultHomePageId,
 			array(),
 			$this->GetAttributeValues());
 
+		$userId = $user->Id();
 		$groupId = $this->page->GetUserGroup();
 
 		if (!empty($groupId))
@@ -269,6 +270,16 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 
 	public function ChangePermissions()
 	{
+		$user = $this->userRepository->LoadById(ServiceLocator::GetServer()->GetUserSession()->UserId);
+		$resources = $this->GetResourcesThatCurrentUserCanAdminister($user);
+
+		$acceptableResourceIds = array();
+
+		foreach ($resources as $resource)
+		{
+			$acceptableResourceIds[] = $resource->GetId();
+		}
+
 		$user = $this->userRepository->LoadById($this->page->GetUserId());
 		$allowedResources = array();
 
@@ -276,7 +287,11 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 		{
 			$allowedResources = $this->page->GetAllowedResourceIds();
 		}
-		$user->ChangePermissions($allowedResources);
+
+		$currentResources = $user->AllowedResourceIds();
+		$toRemainUnchanged = array_diff($currentResources, $acceptableResourceIds);
+
+		$user->ChangePermissions(array_merge($toRemainUnchanged, $allowedResources));
 		$this->userRepository->Update($user);
 	}
 
@@ -301,11 +316,14 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 		{
 			$this->page->SetJsonResponse($this->GetUserResourcePermissions());
 		}
-		else {
-			if ($dataRequest == 'groups')
-			{
-				$this->page->SetJsonResponse($this->GetUserGroups());
-			}
+		elseif ($dataRequest == 'groups')
+		{
+			$this->page->SetJsonResponse($this->GetUserGroups());
+		}
+		elseif ($dataRequest == 'all')
+		{
+			$users = $this->userRepository->GetAll();
+			$this->page->SetJsonResponse($users);
 		}
 	}
 
@@ -362,7 +380,7 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 			Log::Debug('Loading validators for %s', $action);
 
 			$this->page->RegisterValidator('attributeValidator',
-										   new AttributeValidator($this->attributeService, CustomAttributeCategory::USER, $this->GetAttributeValues()));
+										   new AttributeValidator($this->attributeService, CustomAttributeCategory::USER, $this->GetAttributeValues(), $this->page->GetUserId()));
 		}
 	}
 
@@ -383,6 +401,36 @@ class ManageUsersPresenter extends ActionPresenter implements IManageUsersPresen
 
 		return $groups;
 	}
-}
 
-?>
+	public function ChangeColor()
+	{
+		$userId = $this->page->GetUserId();
+		Log::Debug('Changing reservation color for userId: %s', $userId);
+
+		$color = $this->page->GetReservationColor();
+
+		$user = $this->userRepository->LoadById($userId);
+		$user->ChangePreference(UserPreferences::RESERVATION_COLOR, $color);
+
+		$this->userRepository->Update($user);
+
+	}
+
+	/**
+	 * @param User $user
+	 * @return BookableResource[]
+	 */
+	private function GetResourcesThatCurrentUserCanAdminister($user)
+	{
+		$resources = array();
+		$allResources = $this->resourceRepository->GetResourceList();
+		foreach ($allResources as $resource)
+		{
+			if ($user->IsResourceAdminFor($resource))
+			{
+				$resources[] = $resource;
+			}
+		}
+		return $resources;
+	}
+}

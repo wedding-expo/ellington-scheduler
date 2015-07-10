@@ -1,24 +1,24 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once(ROOT_DIR . 'Presenters/Reservation/ReservationHandler.php');
+require_once(ROOT_DIR . 'lib/Application/Reservation/namespace.php');
 
 interface IReservationUpdatePresenter
 {
@@ -115,20 +115,25 @@ class ReservationUpdatePresenter implements IReservationUpdatePresenter
 		$existingSeries->ChangeAccessories($this->GetAccessories());
 		$existingSeries->ChangeAttributes($this->GetAttributes());
 
-		$attachment = $this->page->GetAttachment();
-		if ($attachment != null)
+		$existingSeries->AllowParticipation($this->page->GetAllowParticipation());
+
+		$attachments = $this->page->GetAttachments();
+		foreach ($attachments as $attachment)
 		{
-			if ($attachment->IsError())
+			if ($attachment != null)
 			{
-				Log::Error('Error attaching file %s. %s', $attachment->OriginalName(), $attachment->Error());
-			}
-			else
-			{
-				Log::Debug('Attaching file %s to series %s', $attachment->OriginalName(), $existingSeries->SeriesId());
-				$att = ReservationAttachment::Create($attachment->OriginalName(), $attachment->MimeType(),
-													 $attachment->Size(), $attachment->Contents(),
-													 $attachment->Extension(), $existingSeries->SeriesId());
-				$existingSeries->AddAttachment($att);
+				if ($attachment->IsError())
+				{
+					Log::Error('Error attaching file %s. %s', $attachment->OriginalName(), $attachment->Error());
+				}
+				else
+				{
+					Log::Debug('Attaching file %s to series %s', $attachment->OriginalName(), $existingSeries->SeriesId());
+					$att = ReservationAttachment::Create($attachment->OriginalName(), $attachment->MimeType(),
+														 $attachment->Size(), $attachment->Contents(),
+														 $attachment->Extension(), $existingSeries->SeriesId());
+					$existingSeries->AddAttachment($att);
+				}
 			}
 		}
 
@@ -167,6 +172,7 @@ class ReservationUpdatePresenter implements IReservationUpdatePresenter
 
 		if ($successfullySaved)
 		{
+			$this->page->SetRequiresApproval($reservationSeries->RequiresApproval());
 			$this->page->SetReferenceNumber($reservationSeries->CurrentInstance()->ReferenceNumber());
 		}
 	}
@@ -210,5 +216,3 @@ class ReservationUpdatePresenter implements IReservationUpdatePresenter
 		return $attributes;
 	}
 }
-
-?>

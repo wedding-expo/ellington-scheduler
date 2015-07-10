@@ -1,25 +1,25 @@
 {*
-Copyright 2012 Nick Korbel
+Copyright 2012-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
+This file is part of Booked Scheduler.
 
-phpScheduleIt is free software: you can redistribute it and/or modify
+Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-phpScheduleIt is distributed in the hope that it will be useful,
+Booked Scheduler is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
-{include file='globalheader.tpl' Title='phpScheduleIt v2 Migration'}
+{include file='globalheader.tpl' Title='Booked Scheduler v2 Migration'}
 
-<h1>Migrate phpScheduleIt v1.2 to v2.x (MySQL only)</h1>
+<h1>Migrate phpScheduleIt v1.2 to Booked Scheduler v2.x (MySQL only)</h1>
 
 <div class="migratingElements hidden">Migrating <span
 			class="elementType"></span> {html_image src="admin-ajax-indicator.gif"}</div>
@@ -72,13 +72,14 @@ Done!
 					$.ajax({
 						url: "migrate.php?start=" + elementType,
 						type: "GET",
+						cache: false,
 						success: function (data)
 						{
 							migrated.find('.migratedCount').text(data.MigratedCount);
 							migrated.find('.legacyCount').text(data.LegacyCount);
 							migrated.find('.percentComplete').text(data.PercentComplete);
 							migrated.show();
-							console.log('Migrating data ' + elementType);
+							//console.log('Migrating data ' + elementType);
 							if (data.RemainingCount > 0)
 							{
 								migrateParams.current();
@@ -199,7 +200,7 @@ Done!
 				<li>Group admin designations will not be migrated, only the user accounts</li>
 				<li>Open reservation invitations will be removed</li>
 				<li>User timezones will all be set to the server's timezone</li>
-				<li>At the time of writing, phpScheduleIt 2 is not available in all of the same languages that 1.2 was.
+				<li>At the time of writing, Booked Scheduler 2 is not available in all of the same languages that 1.2 was.
 					User language preferences will be migrated but may have no immediate effect
 				</li>
 				<li>User email preferences will not be migrated</li>

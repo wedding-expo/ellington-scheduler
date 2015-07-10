@@ -1,21 +1,17 @@
 <?php
 /**
-Copyright 2011-2013 Nick Korbel
+Copyright 2011-2015 Nick Korbel
 
-This file is part of phpScheduleIt.
-
-phpScheduleIt is free software: you can redistribute it and/or modify
+This file is part of Booked Scheduler is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-phpScheduleIt is distributed in the hope that it will be useful,
+(at your option) any later version is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with phpScheduleIt.  If not, see <http://www.gnu.org/licenses/>.
+along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 class FormKeys
@@ -30,25 +26,34 @@ class FormKeys
 	const ACCESSORY_QUANTITY_AVAILABLE = 'accessoryQuantityAvailable';
 	const ADDITIONAL_RESOURCES = 'additionalResources';
 	const ADDRESS = 'address';
+	const ALLOW_CALENDAR_SUBSCRIPTIONS = 'ALLOW_CALENDAR_SUBSCRIPTIONS';
 	const ALLOW_MULTIDAY = 'allowMultiday';
+	const ALLOW_PARTICIPATION = 'ALLOW_PARTICIPATION';
 	const ANNOUNCEMENT_TEXT = 'announcementText';
 	const ANNOUNCEMENT_START = 'announcementStart';
 	const ANNOUNCEMENT_END = 'announcementEnd';
 	const ANNOUNCEMENT_PRIORITY = 'announcementPriority';
-	const ATTRIBUTE_LABEL = 'attributeLabel';
-	const ATTRIBUTE_TYPE = 'attributeType';
-	const ATTRIBUTE_CATEGORY = 'attributeScope';
-	const ATTRIBUTE_VALIDATION_EXPRESSION = 'attributeRegex';
-	const ATTRIBUTE_IS_REQUIRED = 'attributeRequired';
-	const ATTRIBUTE_POSSIBLE_VALUES = 'attributePossibleValues';
+	const ATTRIBUTE_ID = 'ATTRIBUTE_ID';
+	const ATTRIBUTE_VALUE = 'ATTRIBUTE_VALUE';
+	const ATTRIBUTE_LABEL = 'ATTRIBUTE_LABEL';
+	const ATTRIBUTE_TYPE = 'ATTRIBUTE_TYPE';
+	const ATTRIBUTE_CATEGORY = 'ATTRIBUTE_CATEGORY';
+	const ATTRIBUTE_VALIDATION_EXPRESSION = 'ATTRIBUTE_VALIDATION_EXPRESSION';
+	const ATTRIBUTE_IS_REQUIRED = 'ATTRIBUTE_IS_REQUIRED';
+	const ATTRIBUTE_IS_UNIQUE = 'ATTRIBUTE_IS_UNIQUE';
+	const ATTRIBUTE_POSSIBLE_VALUES = 'ATTRIBUTE_POSSIBLE_VALUES';
 	const ATTRIBUTE_PREFIX = 'psiattribute';
 	const ATTRIBUTE_SORT_ORDER = 'attributeOrder';
+	const ATTRIBUTE_ENTITY = 'ATTRIBUTE_ENTITY';
 	const AUTO_ASSIGN = 'autoAssign';
 
 	const BEGIN_DATE = 'beginDate';
 	const BEGIN_PERIOD = 'beginPeriod';
 	const BEGIN_TIME = 'beginTime';
 	const BLACKOUT_APPLY_TO_SCHEDULE = 'applyToSchedule';
+	const BLACKOUT_INSTANCE_ID = 'BLACKOUT_INSTANCE_ID';
+	const BUFFER_TIME = 'BUFFER_TIME';
+	const BUFFER_TIME_NONE = 'BUFFER_TIME_NONE';
 
 	const CAPTCHA = 'captcha';
 	const CONFLICT_ACTION = 'conflictAction';
@@ -90,17 +95,24 @@ class FormKeys
 	const LOGO_FILE = 'LOGO_FILE';
 
 	const MIN_DURATION = 'minDuration';
+	const MIN_DURATION_NONE = 'minDurationNone';
 	const MIN_INCREMENT = 'minIncrement';
+	const MIN_INCREMENT_NONE = 'minIncrementNone';
 	const MAX_DURATION = 'maxDuration';
+	const MAX_DURATION_NONE = 'maxDurationNone';
 	const MAX_PARTICIPANTS = 'maxParticipants';
 	const MIN_NOTICE = 'minNotice';
+	const MIN_NOTICE_NONE = 'minNoticeNone';
 	const MAX_NOTICE = 'maxNotice';
+	const MAX_NOTICE_NONE = 'maxNoticeNone';
 
 	const NOTES = 'notes';
 
 	const ORGANIZATION = 'organization';
 
+	const PARENT_ID = 'PARENT_ID';
 	const PARTICIPANT_LIST = 'participantList';
+	const PARTICIPANT_ID = 'PARTICIPANT_ID';
 	const PASSWORD = 'password';
 	const PASSWORD_CONFIRM = 'passwordConfirm';
 	const PERSIST_LOGIN = 'persistLogin';
@@ -128,6 +140,7 @@ class FormKeys
 	const REPORT_NAME = 'REPORT_NAME';
 	const REQUIRES_APPROVAL = 'requiresApproval';
 	const RESERVATION_ACTION = 'reservationAction';
+	const RESERVATION_COLOR = 'RESERVATION_COLOR';
 	const RESERVATION_FILE = 'reservationFile';
 	const RESERVATION_ID = 'reservationId';
 	const RESERVATION_TITLE = 'reservationTitle';
@@ -141,9 +154,16 @@ class FormKeys
 	const RESOURCE_NAME = 'resourceName';
 	const RESOURCE_NOTES = 'resourceNotes';
 	const RESOURCE_SORT_ORDER = 'RESOURCE_SORT_ORDER';
+	const RESOURCE_TYPE_ID = 'RESOURCE_TYPE_ID';
+	const RESOURCE_TYPE_DESCRIPTION = 'RESOURCE_TYPE_DESCRIPTION';
+	const RESOURCE_TYPE_NAME = 'RESOURCE_TYPE_NAME';
 	const RESUME = 'resume';
 	const RETURN_URL = 'returnUrl';
 	const ROLE_ID = 'roleId';
+	const RESOURCE_STATUS_ID = 'RESOURCE_STATUS_ID';
+	const RESOURCE_STATUS_REASON = 'RESOURCE_STATUS_REASON';
+	const RESOURCE_STATUS_REASON_ID = 'RESOURCE_STATUS_REASON_ID';
+	const RESOURCE_STATUS_UPDATE_SCOPE = 'RESOURCE_STATUS_UPDATE_SCOPE';
 
 	const SCHEDULE_ID = 'scheduleId';
 	const SCHEDULE_NAME = 'scheduleName';
@@ -155,6 +175,8 @@ class FormKeys
 	const START_REMINDER_INTERVAL = 'START_REMINDER_INTERVAL';
 	const SLOTS_BLOCKED = 'blockedSlots';
 	const SLOTS_RESERVABLE = 'reservableSlots';
+	const STATUS_ID = 'STATUS_ID';
+	const SUBMIT = 'SUBMIT';
 	const SUMMARY = 'summary';
 	const SCHEDULE_ADMIN_GROUP_ID = 'adminGroupId';
 
@@ -171,8 +193,6 @@ class FormKeys
 		$key = strtoupper($formKey);
 		return eval("return FormKeys::$key;");
 	}
-
-
 }
 
 ?>
