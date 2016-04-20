@@ -55,7 +55,34 @@ class CustomReport implements IReport
 
 					foreach ($attributes as $attribute)
 					{
-						$this->cols->AddAttribute($attribute->Id(), $attribute->Label());
+						$this->cols->AddAttribute(CustomAttributeCategory::RESERVATION, $attribute->Id(), $attribute->Label());
+					}
+				}
+				else if ($columnName == ColumnNames::USER_ATTRIBUTE_LIST)
+				{
+					$attributes = $attributeRepository->GetByCategory(CustomAttributeCategory::USER);
+
+					foreach ($attributes as $attribute)
+					{
+						$this->cols->AddAttribute(CustomAttributeCategory::USER, $attribute->Id(), $attribute->Label());
+					}
+				}
+				else if ($columnName == ColumnNames::RESOURCE_ATTRIBUTE_LIST)
+				{
+					$attributes = $attributeRepository->GetByCategory(CustomAttributeCategory::RESOURCE);
+
+					foreach ($attributes as $attribute)
+					{
+						$this->cols->AddAttribute(CustomAttributeCategory::RESOURCE, $attribute->Id(), $attribute->Label());
+					}
+				}
+				else if ($columnName == ColumnNames::RESOURCE_TYPE_ATTRIBUTE_LIST)
+				{
+					$attributes = $attributeRepository->GetByCategory(CustomAttributeCategory::RESOURCE_TYPE);
+
+					foreach ($attributes as $attribute)
+					{
+						$this->cols->AddAttribute(CustomAttributeCategory::RESOURCE_TYPE, $attribute->Id(), $attribute->Label());
 					}
 				}
 				else

@@ -34,5 +34,3 @@ class AttributeValueRequest
 		return new AttributeValueRequest(1, 'attribute value');
 	}
 }
-
-?>

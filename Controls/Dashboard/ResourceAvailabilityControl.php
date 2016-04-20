@@ -46,7 +46,7 @@ class AvailableDashboardItem
 {
 	/**
 	 * @param ResourceDto $resource
-	 * @param NextReservationView|null $nextItem
+	 * @param ReservationItemView|null $nextItem
 	 */
 	public function __construct(ResourceDto $resource, $nextItem = null)
 	{

@@ -1,6 +1,29 @@
 // Cookie functions from http://www.quirksmode.org/js/cookies.html //
-function createCookie(name, value, days) 
+
+function startsWith(haystack, needle) {
+	return haystack.slice(0, needle.length) == needle;
+}
+
+function createCookie(name, value, days, path)
 {
+	var getLocation = function(href) {
+	    var l = document.createElement("a");
+	    l.href = href;
+	    return l;
+	};
+
+	if (!path)
+	{
+		path = '/';
+	}
+	else {
+		var location = getLocation(path);
+		path = location.pathname;
+		if (!startsWith(path, '/'))
+		{
+			path = '/' + path;
+		}
+	}
 	if (days) 
 	{
 		var date = new Date();
@@ -11,7 +34,7 @@ function createCookie(name, value, days)
 	{
 		var expires = "";
 	}
-	document.cookie = name+"="+value+expires+"; path=/";
+	document.cookie = name+"="+value+expires+"; path=" + path;
 }
 
 function readCookie(name) 
@@ -33,9 +56,10 @@ function readCookie(name)
 	return null;
 }
 
-function eraseCookie(name) 
+function eraseCookie(name, path)
 {
-	document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+	createCookie(name, '', -30, path);
+	//document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
 
 function initMenu()

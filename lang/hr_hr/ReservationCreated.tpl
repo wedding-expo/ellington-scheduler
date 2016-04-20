@@ -42,7 +42,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 	{if count($RepeatDates) gt 0}
 		<br/>
-		Rezervacija vaï¿½i za navedeni datum:
+		Rezervacija važi za navedeni datum:
 		<br/>
 	{/if}
 
@@ -66,7 +66,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 	{if $RequiresApproval}
 		<br/>
-		Jedan ili viï¿½e terena zahtijevaju odobrenje prije upotrebe. Ova rezervacija ce biti zadrï¿½ana do dozvole.
+		Jedan ili više terena zahtijevaju odobrenje prije upotrebe. Ova rezervacija æe biti zadržana do odobrenja.
 	{/if}
 
 	<br/>

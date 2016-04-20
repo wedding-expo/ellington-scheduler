@@ -85,7 +85,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 			</li>
 			{foreach from=$AttributeFilters item=attribute}
 				<li class="customAttribute">
-					{control type="AttributeControl" attribute=$attribute searchmode=true}
+					{control type="AttributeControl" attribute=$attribute searchmode=true idPrefix="search"}
 				</li>
 			{/foreach}
 		</ul>
@@ -327,12 +327,12 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<ul>
 					{foreach from=$attributes item=attribute}
 						<li class="customAttribute" attributeId="{$attribute->Id()}">
-							<div class="attribute-readonly">{control type="AttributeControl" attribute=$attribute readonly=true}</div>
-							<div class="attribute-readwrite hidden">{control type="AttributeControl" attribute=$attribute}
+							<div class="attribute-readonly">{control type="AttributeControl" attribute=$attribute readonly=true idPrefix=$id}</div>
+							<div class="attribute-readwrite hidden">{control type="AttributeControl" attribute=$attribute idPrefix=$id}
 						</li>
 					{/foreach}
 				</ul>
-				<div class="attribute-readwrite hidden clear">
+				<div class="attribute-readwrite hidden">
 					<button type="button"
 							class="button save">{html_image src="tick-circle.png"} {translate key='Update'}</button>
 					<button type="button"
@@ -588,6 +588,11 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 							<option value="1">{translate key='Yes'}</option>
 							<option value="0">{translate key='No'}</option>
 						</select>
+						<div class="hidden" id="autoAssignRemoveAllPermissions">
+							<label>
+							<input type="checkbox" value="1" {formname key=AUTO_ASSIGN_CLEAR} /> {translate key=RemoveExistingPermissions}
+							</label>
+						</div>
 					</li>
 					<li>
 						<label>
@@ -958,6 +963,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 			class="button save">{html_image src="disk-black.png"} {translate key='Update'}</button>
 	<button type="button" class="button cancelColorbox">{html_image src="slash.png"} {translate key='Cancel'}</button>
 </div>
+	{csrf_token}
 </form>
 </div>
 
@@ -992,7 +998,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	<input type="hidden" id="addGroupId" {formname key=GROUP_ID} />
 </form>
 
-
+{csrf_token}
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 {jsfile src="js/jquery.watermark.min.js"}
 {jsfile src="js/jquery.colorbox-min.js"}

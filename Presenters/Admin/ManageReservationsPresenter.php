@@ -162,7 +162,7 @@ class ManageReservationsPresenter extends ActionPresenter
 		foreach ($reservationAttributes as $attribute)
 		{
 			$attributeValue = null;
-			if (array_key_exists($attribute->Id(), $filters))
+			if (is_array($filters) && array_key_exists($attribute->Id(), $filters))
 			{
 				$attributeValue = $filters[$attribute->Id()];
 			}
@@ -300,6 +300,15 @@ class ManageReservationsPresenter extends ActionPresenter
 
 			$rv = $this->manageReservationsService->LoadByReferenceNumber($referenceNumber, ServiceLocator::GetServer()->GetUserSession());
 			$this->page->SetReservationJson($rv);
+		}
+
+		if ($dataRequest == 'attribute')
+		{
+			$referenceNumber = $this->page->GetReferenceNumber();
+			$rv = $this->manageReservationsService->LoadByReferenceNumber($referenceNumber, ServiceLocator::GetServer()->GetUserSession());
+			$attributeId = $this->page->GetAttributeId();
+			$attribute = $this->attributeService->GetById($attributeId);
+			$this->page->ShowAttribute($attribute, $rv->GetAttributeValue($attributeId));
 		}
 	}
 

@@ -69,18 +69,6 @@ function GenerateReports(reportOptions) {
 			elements.saveDialog.dialog({modal:true});
 		});
 
-		$(document).on('click', '#btnChart', function(e) {
-			e.preventDefault();
-
-			var chart = new Chart();
-			chart.generate();
-			$('#report-results').hide();
-		});
-
-		$('.dialog .cancel').click(function (e) {
-			$(this).closest('.dialog').dialog("close");
-		});
-
 		$('#saveReportForm').submit(function (e) {
 			handleSave(e);
 		});

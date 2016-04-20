@@ -168,6 +168,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
+{csrf_token}
 
 {jsfile src="js/jquery.qtip.min.js"}
 {jsfile src="js/jquery.colorbox-min.js"}

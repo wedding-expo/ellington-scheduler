@@ -24,6 +24,7 @@ class CustomAttributeTypes
 	const MULTI_LINE_TEXTBOX = 2;
 	const SELECT_LIST = 3;
 	const CHECKBOX = 4;
+	const DATETIME = 5;
 }
 
 class CustomAttributeCategory
@@ -116,6 +117,10 @@ class CustomAttribute
 	 */
 	public function PossibleValueList()
 	{
+		if (empty($this->possibleValues))
+		{
+			return array();
+		}
 		return explode(',', $this->possibleValues);
 	}
 
@@ -201,7 +206,7 @@ class CustomAttribute
 		$this->label = $label;
 		$this->type = $type;
 		$this->category = $category;
-		$this->regex = $regex;
+		$this->SetRegex($regex);
 		$this->required = $required;
 		$this->entityId = $entityId;
 		$this->SetSortOrder($sortOrder);
@@ -301,7 +306,7 @@ class CustomAttribute
 	public function Update($label, $regex, $required, $possibleValues, $sortOrder, $entityId)
 	{
 		$this->label = $label;
-		$this->regex = $regex;
+		$this->SetRegex($regex);
 		$this->required = $required;
 		$this->entityId = $entityId;
 		$this->SetPossibleValues($possibleValues);
@@ -333,5 +338,26 @@ class CustomAttribute
 	public function WithEntityDescription($entityDescription)
 	{
 		$this->entityDescription = $entityDescription;
+	}
+
+	/**
+	 * @param $regex
+	 */
+	private function SetRegex($regex)
+	{
+		$this->regex = $regex;
+		if (empty($this->regex))
+		{
+			return;
+		}
+
+		if (!BookedStringHelper::StartsWith($this->regex, '/'))
+		{
+			$this->regex = '/' . $this->regex;
+		}
+		if (!BookedStringHelper::EndsWith($this->regex, '/'))
+		{
+			$this->regex = $this->regex . '/';
+		}
 	}
 }

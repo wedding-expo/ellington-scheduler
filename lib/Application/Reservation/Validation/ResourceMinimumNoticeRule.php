@@ -35,18 +35,35 @@ class ResourceMinimumNoticeRule implements IReservationValidationRule
 				$minStartDate = Date::Now()->ApplyDifference($resource->GetMinNotice()->Interval());
 
 				/* @var $instance Reservation */
-				foreach ($reservationSeries->Instances() as $instance)
+				foreach ($this->GetInstances($reservationSeries) as $instance)
 				{
 					if ($instance->StartDate()->LessThan($minStartDate))
 					{
 						return new ReservationRuleResult(false,
-							$r->GetString("MinNoticeError", $minStartDate->Format($r->GeneralDateTimeFormat())));
+							$r->GetString("MinNoticeError", $minStartDate->ToTimezone(ServiceLocator::GetServer()->GetUserSession()->Timezone)->Format($r->GeneralDateTimeFormat())));
 					}
 				}
 			}
 		}
 
 		return new ReservationRuleResult();
+	}
+
+	/**
+	 * @param ReservationSeries $reservationSeries
+	 * @return Reservation[]
+	 */
+	protected function GetInstances($reservationSeries)
+	{
+		return $reservationSeries->Instances();
+	}
+}
+
+class ResourceMinimumNoticeCurrentInstanceRule extends ResourceMinimumNoticeRule
+{
+	protected function GetInstances($reservationSeries)
+	{
+		return array($reservationSeries->CurrentInstance());
 	}
 }
 ?>

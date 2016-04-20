@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
-Vaï¿½a rezervacija uskoro pocinje.<br/>
+Vaša rezervacija uskoro poèinje.<br/>
 Detalji o rezervaciji:
 	<br/>
 	<br/>
-	Pocetak: {formatdate date=$StartDate key=reservation_email}<br/>
+	Poèetak: {formatdate date=$StartDate key=reservation_email}<br/>
 	Kraj: {formatdate date=$EndDate key=reservation_email}<br/>
-	Teren: {$ResourceName}<br/>
+	Resurs: {$ResourceName}<br/>
 	Naslov: {$Title}<br/>
 	Opis: {$Description|nl2br}<br/>
 <br/>

@@ -71,7 +71,7 @@ class CaptchaService implements ICaptchaService
 		$img = new securimage();
 		$isValid = $img->check($captchaValue);
 
-		Log::Debug('Checking captcha value. Value entered: %s. IsValid: %s', $captchaValue, (int)$isValid);
+		Log::Debug('Checking captcha value. Value entered: %s. IsValid: %s', $captchaValue, $isValid);
 
 		return $isValid;
 	}

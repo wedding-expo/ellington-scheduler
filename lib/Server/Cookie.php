@@ -15,6 +15,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 require_once(ROOT_DIR . 'lib/Common/Date.php');
+require_once(ROOT_DIR . 'lib/Common/Helpers/String.php');
 
 class Cookie
 {
@@ -25,6 +26,7 @@ class Cookie
 
 	public function __construct($name, $value, $expiration = null, $path = null)
 	{
+		$domain = null;
 		if (is_null($expiration))
 		{
 			$expiration = Date::Now()->AddDays(30)->TimeStamp();
@@ -32,7 +34,13 @@ class Cookie
 
 		if (is_null($path))
 		{
-			$path = '';
+			$path = Configuration::Instance()->GetScriptUrl();
+		}
+
+		if (BookedStringHelper::StartsWith($path,'http'))
+		{
+			$parts = parse_url($path);
+			$path = isset($parts['path']) ? $parts['path'] : '';
 		}
 
 		$this->Name = $name;
@@ -51,4 +59,3 @@ class Cookie
 		return sprintf('%s %s %s %s', $this->Name, $this->Value, $this->Expiration, $this->Path);
 	}
 }
-?>

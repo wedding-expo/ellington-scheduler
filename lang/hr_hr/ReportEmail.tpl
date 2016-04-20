@@ -18,7 +18,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
 
-Vaï¿½ izvjeï¿½taj iz Booked Schedulera je priloï¿½en.<br/><br/>
+Vaš izvještaj iz Booked Schedulera je priložen.<br/><br/>
 
 <a href="{$ScriptUrl}">Ulogiraj se</a>
 

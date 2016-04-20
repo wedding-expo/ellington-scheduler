@@ -212,6 +212,7 @@ class ManageResourcesPresenter extends ActionPresenter
 		$maxNotice = $this->page->GetEndNoticeMinutes();
 		$maxParticipants = $this->page->GetMaxParticipants();
 		$bufferTime = $this->page->GetBufferTime();
+		$clearAllPermissions = $this->page->GetAutoAssignClear();
 
 		Log::Debug('Updating resource id %s', $resourceId);
 
@@ -222,6 +223,7 @@ class ManageResourcesPresenter extends ActionPresenter
 		$resource->SetAllowMultiday($allowMultiDay);
 		$resource->SetRequiresApproval($requiresApproval);
 		$resource->SetAutoAssign($autoAssign);
+		$resource->SetClearAllPermissions($clearAllPermissions);
 		$resource->SetMinNotice($minNotice);
 		$resource->SetMaxNotice($maxNotice);
 		$resource->SetMaxParticipants($maxParticipants);
@@ -494,6 +496,8 @@ class ManageResourcesPresenter extends ActionPresenter
 
 		$resourceIds = $this->page->GetBulkUpdateResourceIds();
 
+		$emptyDuration = 'dhm';
+		
 		foreach ($resourceIds as $resourceId)
 		{
 			try
@@ -532,23 +536,43 @@ class ManageResourcesPresenter extends ActionPresenter
 				{
 					$resource->ChangeStatus($statusId, $reasonId);
 				}
-				if (!$minDurationNone)
+				if ($minDurationNone)
+				{
+					$resource->SetMinLength(0);
+				}
+				if (!$minDurationNone && $minDuration != $emptyDuration)
 				{
 					$resource->SetMinLength($minDuration);
 				}
-				if (!$maxDurationNone)
+				if ($maxDurationNone)
+				{
+					$resource->SetMaxLength(0);
+				}
+				if (!$maxDurationNone && $maxDuration != $emptyDuration)
 				{
 					$resource->SetMaxLength($maxDuration);
 				}
-				if (!$bufferTimeNone)
+				if ($bufferTimeNone)
+				{
+					$resource->SetBufferTime(0);
+				}
+				if (!$bufferTimeNone && $bufferTime != $emptyDuration)
 				{
 					$resource->SetBufferTime($bufferTime);
 				}
-				if (!$minNoticeNone)
+				if ($minNoticeNone)
+				{
+					$resource->SetMinNotice(0);
+				}
+				if (!$minNoticeNone && $minNotice != $emptyDuration)
 				{
 					$resource->SetMinNotice($minNotice);
 				}
-				if (!$maxNoticeNone)
+				if ($maxNoticeNone)
+				{
+					$resource->SetMaxNotice(0);
+				}
+				if (!$maxNoticeNone && $maxNotice != $emptyDuration)
 				{
 					$resource->SetMaxNotice($maxNotice);
 				}

@@ -32,16 +32,21 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<td rowspan="2">&nbsp;</td>
 				{foreach from=$BoundDates item=date}
 					{assign var=class value=""}
+					{assign var=ts value=$date->Timestamp()}
+					{$periods.$ts = $DailyLayout->GetPeriods($date)}
+					{if $periods[$ts]|count == 0}{continue}{*dont show if there are no slots*}{/if}
 					{if $date->DateEquals($TodaysDate)}
 						{assign var=class value="today-custom"}
 					{/if}
 					<td class="resdate-custom resdate {$class}"
-						colspan="{$DailyLayout->GetPeriods($date)|count}">{formatdate date=$date key="schedule_daily"}</td>
+						colspan="{$periods[$ts]|count}">{formatdate date=$date key="schedule_daily"}</td>
 				{/foreach}
 			</tr>
 			<tr>
 				{foreach from=$BoundDates item=date}
-					{foreach from=$DailyLayout->GetPeriods($date) item=period}
+					{assign var=ts value=$date->Timestamp()}
+					{assign var=datePeriods value=$periods[$ts]}
+					{foreach from=$datePeriods item=period}
 						<td class="reslabel" colspan="{$period->Span()}">{$period->Label($date)}</td>
 					{/foreach}
 				{/foreach}
@@ -56,7 +61,8 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 							<a href="{$href}" resourceId="{$resource->Id}"
 							   class="resourceNameSelector">{$resource->Name}</a>
 						{else}
-							{$resource->Name}
+							<span resourceId="{$resource->Id}" resourceId="{$resource->Id}"
+								  class="resourceNameSelector">{$resource->Name}</span>
 						{/if}
 					</td>
 					{foreach from=$BoundDates item=date}

@@ -219,6 +219,11 @@ class ResourceRepository implements IResourceRepository
 		{
 			$db->Execute(new AutoAssignResourcePermissionsCommand($resource->GetId()));
 		}
+
+		if ($resource->GetClearAllPermissions())
+		{
+			$db->Execute(new AutoAssignClearResourcePermissionsCommand($resource->GetId()));
+		}
 	}
 
 	public function Delete(BookableResource $resource)

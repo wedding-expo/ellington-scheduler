@@ -295,7 +295,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
         <div style="margin-top:2px;">
             <h5>
 			{capture name="layoutConfig" assign="layoutConfig"}
-                <input type='text' value='30' id='quickLayoutConfig' size=5' />
+                <input type='text' value='30' id='quickLayoutConfig' size='5' />
 			{/capture}
 			{capture name="layoutStart" assign="layoutStart"}
                 <input type='text' value='08:00' id='quickLayoutStart' size='10'/>
@@ -338,7 +338,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
     </form>
 </div>
 
-
+{csrf_token}
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 {jsfile src="admin/edit.js"}
 {jsfile src="admin/schedule.js"}

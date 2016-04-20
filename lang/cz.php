@@ -32,7 +32,7 @@ class cz extends en_us
 	 */
 	protected function _LoadDates()
 	{
-		$dates = array();
+		$dates = parent::_LoadDates();
 
 		$dates['general_date'] = 'd.m.Y';
 		$dates['general_datetime'] = 'd.m.Y H:i:s';

@@ -46,6 +46,7 @@ class FormKeys
 	const ATTRIBUTE_SORT_ORDER = 'attributeOrder';
 	const ATTRIBUTE_ENTITY = 'ATTRIBUTE_ENTITY';
 	const AUTO_ASSIGN = 'autoAssign';
+	const AUTO_ASSIGN_CLEAR = 'AUTO_ASSIGN_CLEAR';
 
 	const BEGIN_DATE = 'beginDate';
 	const BEGIN_PERIOD = 'beginPeriod';
@@ -59,6 +60,7 @@ class FormKeys
 	const CONFLICT_ACTION = 'conflictAction';
 	const CONTACT_INFO = 'contactInfo';
 	const CSS_FILE = 'CSS_FILE';
+	const CSRF_TOKEN = 'CSRF_TOKEN';
 	const CURRENT_PASSWORD = 'currentPassword';
 
 	const DEFAULT_HOMEPAGE = 'defaultHomepage';
@@ -186,6 +188,7 @@ class FormKeys
 	const UNIT_COST = 'unitCost';
 	const USER_ID = 'userId';
 	const USERNAME = 'username';
+	const USER_IMPORT_FILE = 'USER_IMPORT_FILE';
 	const USING_SINGLE_LAYOUT = 'USING_SINGLE_LAYOUT';
 
 	public static function Evaluate($formKey)

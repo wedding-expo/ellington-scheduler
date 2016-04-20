@@ -197,6 +197,11 @@ interface ISchedulePage extends IActionPage
 	 * @return string
 	 */
 	public function GetDisplayTimezone(UserSession $user, Schedule $schedule);
+
+	/**
+	 * @return int[]
+	 */
+	public function GetResourceIds();
 }
 
 class ScheduleStyle
@@ -224,6 +229,11 @@ class SchedulePage extends ActionPage implements ISchedulePage
 		ScheduleStyle::CondensedWeek => 'Schedule/schedule-week-condensed.tpl',
 	);
 
+	/**
+	 * @var bool
+	 */
+	private $_isFiltered = true;
+
 	public function __construct()
 	{
 		parent::__construct('Schedule');
@@ -243,14 +253,13 @@ class SchedulePage extends ActionPage implements ISchedulePage
 	{
 		$start = microtime(true);
 
-		$user = ServiceLocator::GetServer()
-				->GetUserSession();
+		$user = ServiceLocator::GetServer()->GetUserSession();
 
 		$this->_presenter->PageLoad($user);
 
 		$endLoad = microtime(true);
 
-		if ($user->IsAdmin && $this->resourceCount == 0)
+		if ($user->IsAdmin && $this->resourceCount == 0 && !$this->_isFiltered)
 		{
 			$this->Set('ShowResourceWarning', true);
 		}
@@ -458,6 +467,8 @@ class SchedulePage extends ActionPage implements ISchedulePage
 		$this->Set('ResourceIdFilter', $this->GetResourceId());
 		$this->Set('ResourceTypeIdFilter', $resourceFilter->ResourceTypeId);
 		$this->Set('MaxParticipantsFilter', $resourceFilter->MinCapacity);
+		$this->Set('ResourceIds', $resourceFilter->ResourceIds);
+		$this->_isFiltered = $resourceFilter->HasFilter();
 	}
 
 	public function SetSubscriptionUrl(CalendarSubscriptionUrl $subscriptionUrl)
@@ -473,6 +484,25 @@ class SchedulePage extends ActionPage implements ISchedulePage
 	public function GetDisplayTimezone(UserSession $user, Schedule $schedule)
 	{
 		return $user->Timezone;
+	}
+
+	/**
+	 * @return int[]
+	 */
+	public function GetResourceIds()
+	{
+		$resourceIds = $this->GetForm(FormKeys::RESOURCE_ID);
+		if (empty($resourceIds))
+		{
+			return array();
+		}
+
+		if (!is_array($resourceIds))
+		{
+			return array($resourceIds);
+		}
+
+		return $resourceIds;
 	}
 }
 

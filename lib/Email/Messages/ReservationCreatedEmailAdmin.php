@@ -43,6 +43,7 @@ class ReservationCreatedEmailAdmin extends EmailMessage
 	 * @var IAttributeRepository
 	 */
 	private $attributeRepository;
+	private $timezone;
 
 	/**
 	 * @param UserDto $adminDto
@@ -138,5 +139,11 @@ class ReservationCreatedEmailAdmin extends EmailMessage
 		}
 
 		$this->Set('Attributes', $attributeValues);
+
+		$bookedBy = $this->reservationSeries->BookedBy();
+		if ($bookedBy != null && ($bookedBy->UserId != $this->reservationOwner->Id()))
+		{
+			$this->Set('CreatedBy', new FullName($bookedBy->FirstName, $bookedBy->LastName));
+		}
 	}
 }

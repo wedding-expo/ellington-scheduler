@@ -16,19 +16,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-<label class="customAttribute" for="{$attributeName}">{$attribute->Label()|escape}:</label>
+<label class="customAttribute" for="{$attributeId}">{$attribute->Label()}:</label>
 {if $align=='vertical'}
 <br/>
 {/if}
 {if $readonly}
-<span class="attributeValue {$class}">{$attribute->Value()|escape}</span>
+<span class="attributeValue {$class}">{$attribute->Value()}</span>
 {else}
-<select id="{$attributeName}" name="{$attributeName}" class="customAttribute textbox {$class}">
+<select id="{$attributeId}" name="{$attributeName}" class="customAttribute textbox {$class}">
 	{if !$attribute->Required() || $searchmode}
 	<option value="">--</option>
 	{/if}
 	{foreach from=$attribute->PossibleValueList() item=value}
-	<option value="{$value|escape}" {if $attribute->Value() == $value}selected="selected"{/if}>{$value|escape}</option>
+	<option value="{$value}" {if $attribute->Value() == $value}selected="selected"{/if}>{$value}</option>
 	{/foreach}
 </select>
 {/if}

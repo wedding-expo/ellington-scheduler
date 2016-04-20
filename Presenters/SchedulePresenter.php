@@ -60,7 +60,12 @@ class SchedulePresenter extends ActionPresenter implements ISchedulePresenter {
      */
     private $_reservationService;
 
-    /**
+	/**
+	 * @var IDailyLayoutFactory
+	 */
+	private $_dailyLayoutFactory;
+
+	/**
      * @param ISchedulePage $page
      * @param IScheduleService $scheduleService
      * @param IResourceService $resourceService

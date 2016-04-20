@@ -78,7 +78,7 @@ class SmartyPage extends Smarty
 			$resources = Resources::GetInstance();
 		}
 
-		$this->Resources = & $resources;
+		$this->Resources = &$resources;
 		$this->RootPath = $rootPath;
 
 		$this->AddTemplateDirectory($base . 'lang/' . $this->Resources->CurrentLanguage);
@@ -169,6 +169,7 @@ class SmartyPage extends Smarty
 		$this->registerPlugin('function', 'jsfile', array($this, 'IncludeJavascriptFile'));
 		$this->registerPlugin('function', 'cssfile', array($this, 'IncludeCssFile'));
 		$this->registerPlugin('function', 'read_only_attribute', array($this, 'ReadOnlyAttribute'));
+		$this->registerPlugin('function', 'csrf_token', array($this, 'CSRFToken'));
 
 		/**
 		 * PageValidators
@@ -266,8 +267,10 @@ class SmartyPage extends Smarty
 			return '';
 		}
 
+		$date = is_string($params['date']) ? Date::Parse($params['date']) : $params['date'];
+
 		/** @var $date Date */
-		$date = isset($params['timezone']) ? $params['date']->ToTimezone($params['timezone']) : $params['date'];
+		$date = isset($params['timezone']) ? $date->ToTimezone($params['timezone']) : $date;
 
 		if (isset($params['format']))
 		{
@@ -726,5 +729,10 @@ class SmartyPage extends Smarty
 		{
 			echo $attrVal;
 		}
+	}
+
+	public function CSRFToken($params, &$smarty)
+	{
+		echo '<input type="hidden" id="csrf_token" name="' . FormKeys::CSRF_TOKEN . '" value="' . ServiceLocator::GetServer()->GetUserSession()->CSRFToken . '"/>';
 	}
 }

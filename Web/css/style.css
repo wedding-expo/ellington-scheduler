@@ -90,7 +90,7 @@ div.error, div.warning, div.success, #loginError {
 	background: #ffc3c8 url("../img/s_error.png") no-repeat scroll 5px 5px;
 
 	margin: 5px auto 5px auto;
-	padding: 6px 25px;
+	padding: 6px 25px !important;
 	font-size: 14px;
 	font-family: sans-serif;
 	text-align: center;
@@ -576,7 +576,7 @@ ul.indented li {
 	float: left;
 }
 
-#resourceDetailsDiv, #userDetailsDiv {
+#resourceDetailsDiv, #userDetailsDiv, #customize-columns {
 	display: none;
 	position: absolute;
 	border: solid 2px #212121;
@@ -614,3 +614,15 @@ ul.indented li {
 #reservationCreated .dates, #reservationUpdated .dates {
 	margin-top:10px;
 }
+
+.resourceNameSelector {
+	cursor:pointer;
+}
+
+/*#customize-columns {*/
+	/*display:none;*/
+	/*position: absolute;*/
+	/*background-color: #fff;*/
+	/*border:solid 1px #333;*/
+	/*padding:15px;*/
+/*}*/

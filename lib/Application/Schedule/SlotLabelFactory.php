@@ -21,12 +21,34 @@ class SlotLabelFactory
 	 */
 	private $user = null;
 
-	public function __construct($user = null)
+	/**
+	 * @var PrivacyFilter
+	 */
+	private $privacyFilter;
+
+	/**
+	 * @var IAttributeRepository
+	 */
+	private $attributeRepository;
+
+	public function __construct($user = null, $privacyFilter = null, $attributeRepository = null)
 	{
 		$this->user = $user;
 		if ($this->user == null)
 		{
 			$this->user = ServiceLocator::GetServer()->GetUserSession();
+		}
+
+		$this->privacyFilter = $privacyFilter;
+		if ($this->privacyFilter == null)
+		{
+			$this->privacyFilter = new PrivacyFilter(new ReservationAuthorization(PluginManager::Instance()->LoadAuthorization()));
+		}
+
+		$this->attributeRepository = $attributeRepository;
+		if ($this->attributeRepository == null)
+		{
+			$this->attributeRepository = new AttributeRepository();
 		}
 	}
 
@@ -48,11 +70,13 @@ class SlotLabelFactory
 	 */
 	public function Format(ReservationItemView $reservation, $format = null)
 	{
-		$shouldHide = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY,
+		$shouldHideUser = Configuration::Instance()->GetSectionKey(ConfigSection::PRIVACY,
 																	   ConfigKeys::PRIVACY_HIDE_USER_DETAILS,
 																	   new BooleanConverter());
 
-		if ($shouldHide && (is_null($this->user) || ($this->user->UserId != $reservation->UserId && !$this->user->IsAdminForGroup($reservation->OwnerGroupIds()))))
+		$shouldHideDetails = ReservationDetailsFilter::HideReservationDetails($reservation->StartDate, $reservation->EndDate);
+
+		if (($shouldHideUser || $shouldHideDetails) && (is_null($this->user) || ($this->user->UserId != $reservation->UserId && !$this->user->IsAdminForGroup($reservation->OwnerGroupIds()))))
 		{
 			return '';
 		}
@@ -102,6 +126,18 @@ class SlotLabelFactory
 
 				$label = str_replace($matches[$m], $value, $label);
 			}
+		}
+
+		if (BookedStringHelper::Contains($label, '{reservationAttributes}'))
+		{
+			$attributesLabel = new StringBuilder();
+			$attributes = $this->attributeRepository->GetByCategory(CustomAttributeCategory::RESERVATION);
+			foreach ($attributes as $attribute)
+			{
+				$attributesLabel->Append($attribute->Label() . ': ' . $reservation->GetAttributeValue($attribute->Id()) . ', ');
+			}
+
+			$label = str_replace('{reservationAttributes}', rtrim($attributesLabel->ToString(), ', '), $label);
 		}
 
 		return $label;

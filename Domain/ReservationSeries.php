@@ -335,6 +335,15 @@ class ReservationSeries
 	}
 
 	/**
+	 * @return bool
+	 */
+	public function BookedOnBehalf()
+	{
+		$bookedBy = $this->BookedBy();
+		return ($bookedBy != null) && ($this->UserId() != $bookedBy->UserId);
+	}
+
+	/**
 	 * @param DateRange $reservationDate
 	 * @return bool
 	 */

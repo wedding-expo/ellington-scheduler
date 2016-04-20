@@ -34,6 +34,11 @@ class NewReservationInitializer extends ReservationInitializerBase
 	 */
 	private $scheduleRepository;
 
+	/**
+	 * @var IResourceRepository
+	 */
+	private $resourceRepository;
+
 	public function __construct(
 		INewReservationPage $page,
 		IReservationComponentBinder $userBinder,
@@ -41,11 +46,13 @@ class NewReservationInitializer extends ReservationInitializerBase
 		IReservationComponentBinder $resourceBinder,
 		IReservationComponentBinder $attributeBinder,
 		UserSession $userSession,
-		IScheduleRepository $scheduleRepository
+		IScheduleRepository $scheduleRepository,
+		IResourceRepository $resourceRepository
 		)
 	{
 		$this->page = $page;
 		$this->scheduleRepository = $scheduleRepository;
+		$this->resourceRepository = $resourceRepository;
 
 		parent::__construct(
 						$page,
@@ -88,14 +95,23 @@ class NewReservationInitializer extends ReservationInitializerBase
 
 		if (empty($this->scheduleId))
 		{
-			$schedules = $this->scheduleRepository->GetAll();
-
-			foreach ($schedules as $s)
+			$requestedResourceId = $this->page->GetRequestedResourceId();
+			if (!empty($requestedResourceId))
 			{
-				if ($s->GetIsDefault())
+				$resource = $this->resourceRepository->LoadById($requestedResourceId);
+				$this->scheduleId = $resource->GetScheduleId();
+			}
+			else
+			{
+				$schedules = $this->scheduleRepository->GetAll();
+
+				foreach ($schedules as $s)
 				{
-					$this->scheduleId = $s->GetId();
-					break;
+					if ($s->GetIsDefault())
+					{
+						$this->scheduleId = $s->GetId();
+						break;
+					}
 				}
 			}
 		}

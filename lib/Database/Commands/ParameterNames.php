@@ -78,6 +78,8 @@ class ParameterNames
 	const GROUP_ADMIN_ID = '@admin_group_id';
 
 	const HOMEPAGE_ID = '@homepageid';
+	const INCLUDE_DELETED = '@includeDeleted';
+	const MODIFIED_DATE = '@modifiedSinceDate';
 
 	const LAST_LOGIN = '@lastlogin';
 	const LAST_NAME = '@lname';

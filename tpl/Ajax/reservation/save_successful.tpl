@@ -45,11 +45,4 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 	<input type="button" id="btnSaveSuccessful" value="{translate key='Close'}" class="button" />
 
-	{if $LoggedIn}
-		{if $UserName eq 'David'}
-			<a style="width:300px;font-size: 14px; display: block; padding: 10px; margin:10px auto;background-color:#a0d3e8;border:1px solid #74bfdd; color:#fff; text-align: center;" href="mailto:david@winecountrybride.com?subject=Reminder%20-%20Ellington%20Events%20-%20{foreach from=$Instances item=instance name=date_list}{format_date date=$instance->StartDate() timezone=$Timezone}%20-%20{/foreach}">Send yourself a reminder</a>
-			<a style="width:300px;font-size: 14px; display: block; padding: 10px; margin:10px auto;background-color:#43AC6A;border:1px solid #3a945b; color:#fff; text-align: center;" href="https://calendar.google.com">Create event in google calendar</a>
-		{/if}
-	{/if}
-
 </div>

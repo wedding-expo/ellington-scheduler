@@ -76,6 +76,7 @@ class BookableResource implements IResource
 	 */
 	protected $_maxLength;
 	protected $_autoAssign;
+	protected $_clearAllPermissions;
 	protected $_autoAssignToggledOn = false;
 	protected $_requiresApproval;
 	protected $_allowMultiday;
@@ -348,6 +349,14 @@ class BookableResource implements IResource
 	}
 
 	/**
+	 * @return bool
+	 */
+	public function GetClearAllPermissions()
+	{
+		return $this->_clearAllPermissions;
+	}
+
+	/**
 	 * @param bool $value
 	 * @return void
 	 */
@@ -364,6 +373,11 @@ class BookableResource implements IResource
 		}
 
 		$this->_autoAssign = $value;
+	}
+
+	public function SetClearAllPermissions($value)
+	{
+		$this->_clearAllPermissions = intval($value);
 	}
 
 	/**

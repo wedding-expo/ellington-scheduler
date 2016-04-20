@@ -635,6 +635,14 @@ class ReservationRequestResponseFacade implements IReservationSavePage
 	{
 		return $this->request->endReminder->interval;
 	}
+
+	/**
+	 * @return bool
+	 */
+	public function GetAllowParticipation()
+	{
+		return $this->request->allowParticipation;
+	}
 }
 
 class ReservationUpdateRequestResponseFacade extends ReservationRequestResponseFacade implements IReservationUpdatePage
@@ -675,11 +683,11 @@ class ReservationUpdateRequestResponseFacade extends ReservationRequestResponseF
 	 */
 	public function GetSeriesUpdateScope()
 	{
-		if (empty($this->updateScope))
+		if (($this->updateScope == SeriesUpdateScope::FullSeries || $this->updateScope == SeriesUpdateScope::FutureInstances || $this->updateScope == SeriesUpdateScope::ThisInstance))
 		{
-			return SeriesUpdateScope::FullSeries;
+			return $this->updateScope;
 		}
-		return $this->updateScope;
+		return SeriesUpdateScope::FullSeries;
 	}
 
 	public function GetRemovedAttachmentIds()

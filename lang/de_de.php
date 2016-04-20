@@ -33,7 +33,7 @@ class de_de extends en_us
      */
     protected function _LoadDates()
     {
-	$dates = parent::_LoadDates();
+	    $dates = parent::_LoadDates();
 
         $dates['general_date'] = 'd.m.Y';
         $dates['general_datetime'] = 'd.m.Y H:i:s';

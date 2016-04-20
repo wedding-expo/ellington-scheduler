@@ -29,6 +29,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<td>&nbsp;</td>
 				{foreach from=$BoundDates item=date}
 					{assign var=class value=""}
+					{assign var=ts value=$date->Timestamp()}
+					{$periods.$ts = $DailyLayout->GetPeriods($date)}
+					{if $periods[$ts]|count == 0}{continue}{*dont show if there are no slots*}{/if}
 					{if $date->DateEquals($TodaysDate)}
 						{assign var=class value="today-custom"}
 					{/if}
@@ -45,10 +48,12 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 							<a href="{$href}" resourceId="{$resourceId}"
 							   class="resourceNameSelector">{$resource->Name}</a>
 						{else}
-							{$resource->Name}
+							<span resourceId="{$resource->Id}" resourceId="{$resource->Id}" class="resourceNameSelector">{$resource->Name}</span>
 						{/if}
 					</td>
 					{foreach from=$BoundDates item=date}
+						{assign var=ts value=$date->Timestamp()}
+						{if $periods[$ts]|count == 0}{continue}{*dont show if there are no slots*}{/if}
 						{assign var=summary value=$DailyLayout->GetSummary($date, $resourceId)}
 						{if $summary->NumberOfReservations() > 0}
 							<td class="reserved clickres slot" date="{formatdate date=$date key=url}" resourceId="{$resourceId}" resid="{$summary->FirstReservation()->ReferenceNumber()}">

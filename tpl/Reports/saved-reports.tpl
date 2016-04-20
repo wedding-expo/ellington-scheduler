@@ -20,36 +20,37 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 <h1>{translate key=MySavedReports} (<span id="reportCount">{$ReportList|count}</span>)</h1>
 {if $ReportList|count == 0}
-<h2 class="no-data" style="text-align: center;">{translate key=NoSavedReports}</h2><a
-		href="{$Path}reports/{Pages::REPORTS_GENERATE}">{translate key=GenerateReport}</a>
-	{else}
-<div id="report-list">
-	<ul>
-		{foreach from=$ReportList item=report}
-			{cycle values=',alt' assign=rowCss}
-			<li reportId="{$report->Id()}" class="{$rowCss}"><span class="report-title">{$report->ReportName()|default:$untitled}</span>
+	<h2 class="no-data" style="text-align: center;">{translate key=NoSavedReports}</h2>
+	<a
+			href="{$Path}reports/{Pages::REPORTS_GENERATE}">{translate key=GenerateReport}</a>
+{else}
+	<div id="report-list">
+		<ul>
+			{foreach from=$ReportList item=report}
+				{cycle values=',alt' assign=rowCss}
+				<li reportId="{$report->Id()}" class="{$rowCss}"><span class="report-title">{$report->ReportName()|default:$untitled}</span>
 				<span class="right"><span class="report-created-date">{format_date date=$report->DateCreated()}</span>
 
 				<span class="report-action"><a href="#"
-													 class="runNow report">{html_image src="control.png"}{translate key=RunReport}</a></span>
+											   class="runNow report">{html_image src="control.png"}{translate key=RunReport}</a></span>
 				<span class="report-action"><a href="#"
-													 class="emailNow report">{html_image src="mail-send.png"}{translate key=EmailReport}</a></span>
+											   class="emailNow report">{html_image src="mail-send.png"}{translate key=EmailReport}</a></span>
 				<span class="report-action"><a href="#"
-													 class="delete report">{html_image src="cross-button.png"}{translate key=Delete}</a></span>
+											   class="delete report">{html_image src="cross-button.png"}{translate key=Delete}</a></span>
 				</span>
-			{*
-			   {if $report->IsScheduled()}
-				   Schedule: <a href="#" class="editSchedule report">{translate key=Edit}</a>
-				   {else}
-				   <a href="#" class="schedule report">Schedule</a>
-			   {/if}
-			   *}
+					{*
+					   {if $report->IsScheduled()}
+						   Schedule: <a href="#" class="editSchedule report">{translate key=Edit}</a>
+						   {else}
+						   <a href="#" class="schedule report">Schedule</a>
+					   {/if}
+					   *}
 
 
-			</li>
-		{/foreach}
-	</ul>
-</div>
+				</li>
+			{/foreach}
+		</ul>
+	</div>
 {/if}
 
 
@@ -57,7 +58,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 
 <div id="emailSent" style="display:none" class="success">
-{translate key=ReportSent}
+	{translate key=ReportSent}
 </div>
 
 <div id="emailDiv" class="dialog" title="{translate key=EmailReport}">
@@ -70,6 +71,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				class="button">{html_image src="mail-send.png"} {translate key=EmailReport}</button>
 		<button type="button" class="button cancel">{html_image src="slash.png"} {translate key=Cancel}</button>
 		<span id="sendEmailIndicator" style="display:none">{translate key=Working}</span>
+		{csrf_token}
 	</form>
 </div>
 
@@ -84,8 +86,10 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 <div id="indicator" style="display:none; text-align: center;">
 	<h3>{translate key=Working}</h3>
-{html_image src="admin-ajax-indicator.gif"}
+	{html_image src="admin-ajax-indicator.gif"}
 </div>
+
+
 
 {include file="Reports/chart.tpl"}
 
@@ -146,19 +150,28 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 {jsfile src="ajax-helpers.js"}
 {jsfile src="reports/saved-reports.js"}
 {jsfile src="reports/chart.js"}
+{jsfile src="reports/common.js"}
+
 
 <script type="text/javascript">
 	$(document).ready(function () {
 		var reportOptions = {
-			generateUrl:"{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Generate}&{QueryStringKeys::REPORT_ID}=",
-			emailUrl:"{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Email}&{QueryStringKeys::REPORT_ID}=",
-			deleteUrl:"{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Delete}&{QueryStringKeys::REPORT_ID}=",
-			printUrl:"{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::PrintReport}&{QueryStringKeys::REPORT_ID}=",
-			csvUrl:"{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Csv}&{QueryStringKeys::REPORT_ID}="
+			generateUrl: "{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Generate}&{QueryStringKeys::REPORT_ID}=",
+			emailUrl: "{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Email}&{QueryStringKeys::REPORT_ID}=",
+			deleteUrl: "{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Delete}&{QueryStringKeys::REPORT_ID}=",
+			printUrl: "{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::PrintReport}&{QueryStringKeys::REPORT_ID}=",
+			csvUrl: "{$smarty.server.SCRIPT_NAME}?{QueryStringKeys::ACTION}={ReportActions::Csv}&{QueryStringKeys::REPORT_ID}="
 		};
 
 		var reports = new SavedReports(reportOptions);
 		reports.init();
+
+		var common = new ReportsCommon(
+				{
+					scriptUrl: '{$ScriptUrl}'
+				}
+		);
+		common.init();
 	});
 </script>
 

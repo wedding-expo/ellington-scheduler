@@ -109,6 +109,8 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 </div>
 
+	{csrf_token}
+
 	{jsfile src="admin/edit.js"}
 	{jsfile src="js/jquery.form-3.09.min.js"}
 	{jsfile src="js/jquery.colorbox-min.js"}

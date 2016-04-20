@@ -19,7 +19,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once(ROOT_DIR . 'lib/WebService/namespace.php');
-require_once(ROOT_DIR . 'WebServices/Responses/CustomAttributeDefinitionResponse.php');
+require_once(ROOT_DIR . 'WebServices/Responses/CustomAttributes/CustomAttributeDefinitionResponse.php');
 
 class CustomAttributesResponse extends RestResponse
 {
@@ -53,4 +53,3 @@ class ExampleCustomAttributesResponse extends CustomAttributesResponse
 		$this->attributes = array(CustomAttributeDefinitionResponse::Example());
 	}
 }
-?>

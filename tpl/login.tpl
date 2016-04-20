@@ -67,7 +67,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	{if $ShowRegisterLink}
 		<h4 class="register">
 			{translate key='FirstTimeUser?'}
-				{html_link href="register.php" key="CreateAnAccount"}
+			<a href="{$RegisterUrl}" {$RegisterUrlNew}>{translate key='CreateAnAccount'}</a>
 		</h4>
 	{/if}
 	</form>
@@ -80,7 +80,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		{/if}
 		{if $ShowScheduleLink && $ShowForgotPasswordPrompt}|{/if}
 		{if $ShowForgotPasswordPrompt}
-		<a href="forgot.php">{translate key='ForgotMyPassword'}</a>
+			<a href="{$ForgotPasswordUrl}" {$ForgotPasswordUrlNew}>{translate key='ForgotMyPassword'}</a>
 		{/if}
 	</p>
 </div>

@@ -42,6 +42,8 @@ interface IReservationViewRepository
 	 * @param int|ReservationUserLevel|null $userLevel
 	 * @param int|null $scheduleId
 	 * @param int|null $resourceId
+	 * @param boolean $includeDeleted
+	 * @param Date $modifiedSinceDate
 	 * @return ReservationItemView[]
 	 */
 	public function GetReservationList(
@@ -50,7 +52,9 @@ interface IReservationViewRepository
 			$userId = ReservationViewRepository::ALL_USERS,
 			$userLevel = ReservationUserLevel::OWNER,
 			$scheduleId = ReservationViewRepository::ALL_SCHEDULES,
-			$resourceId = ReservationViewRepository::ALL_RESOURCES);
+			$resourceId = ReservationViewRepository::ALL_RESOURCES,
+			$includeDeleted = false,
+			$modifiedSinceDate = null);
 
 	/**
 	 * @abstract
@@ -97,13 +101,6 @@ interface IReservationViewRepository
 	 * @return array|AccessoryReservation[]
 	 */
 	public function GetAccessoriesWithin(DateRange $dateRange);
-
-	/**
-	 * @param Date $earliestDate
-	 * @param Date|null $lastDate
-	 * @return NextReservationView[]
-	 */
-	public function GetNextReservations(Date $earliestDate, $lastDate = null);
 }
 
 class ReservationViewRepository implements IReservationViewRepository
@@ -170,7 +167,9 @@ class ReservationViewRepository implements IReservationViewRepository
 			$userId = self::ALL_USERS,
 			$userLevel = ReservationUserLevel::OWNER,
 			$scheduleId = self::ALL_SCHEDULES,
-			$resourceId = self::ALL_RESOURCES)
+			$resourceId = self::ALL_RESOURCES,
+			$includeDeleted = false,
+			$modifiedSinceDate = null)
 	{
 		if (empty($userId))
 		{
@@ -188,8 +187,13 @@ class ReservationViewRepository implements IReservationViewRepository
 		{
 			$resourceId = self::ALL_RESOURCES;
 		}
+		if (empty($modifiedSinceDate))
+		{
+			$modifiedSinceDate = Date::Min();
+		}
 
-		$getReservations = new GetReservationListCommand($startDate, $endDate, $userId, $userLevel, $scheduleId, $resourceId);
+		$getReservations = new GetReservationListCommand($startDate, $endDate, $userId, $userLevel, $scheduleId,
+														 $resourceId, $includeDeleted, $modifiedSinceDate);
 
 		$result = ServiceLocator::GetDatabase()->Query($getReservations);
 
@@ -295,20 +299,24 @@ class ReservationViewRepository implements IReservationViewRepository
 
 		while ($row = $result->GetRow())
 		{
-			$reservationView->Accessories[] = new ReservationAccessoryView($row[ColumnNames::ACCESSORY_ID], $row[ColumnNames::QUANTITY],
-																		   $row[ColumnNames::ACCESSORY_NAME], $row[ColumnNames::ACCESSORY_QUANTITY]);
+			$reservationView->Accessories[] = new ReservationAccessoryView($row[ColumnNames::ACCESSORY_ID],
+																		   $row[ColumnNames::QUANTITY],
+																		   $row[ColumnNames::ACCESSORY_NAME],
+																		   $row[ColumnNames::ACCESSORY_QUANTITY]);
 		}
 	}
 
 	private function SetAttributes(ReservationView $reservationView)
 	{
-		$getAttributes = new GetAttributeValuesCommand($reservationView->SeriesId, CustomAttributeCategory::RESERVATION);
+		$getAttributes = new GetAttributeValuesCommand($reservationView->SeriesId,
+													   CustomAttributeCategory::RESERVATION);
 
 		$result = ServiceLocator::GetDatabase()->Query($getAttributes);
 
 		while ($row = $result->GetRow())
 		{
-			$reservationView->AddAttribute(new AttributeValue($row[ColumnNames::ATTRIBUTE_ID], $row[ColumnNames::ATTRIBUTE_VALUE],
+			$reservationView->AddAttribute(new AttributeValue($row[ColumnNames::ATTRIBUTE_ID],
+															  $row[ColumnNames::ATTRIBUTE_VALUE],
 															  $row[ColumnNames::ATTRIBUTE_LABEL]));
 		}
 	}
@@ -321,7 +329,8 @@ class ReservationViewRepository implements IReservationViewRepository
 
 		while ($row = $result->GetRow())
 		{
-			$reservationView->AddAttachment(new ReservationAttachmentView($row[ColumnNames::FILE_ID], $row[ColumnNames::SERIES_ID],
+			$reservationView->AddAttachment(new ReservationAttachmentView($row[ColumnNames::FILE_ID],
+																		  $row[ColumnNames::SERIES_ID],
 																		  $row[ColumnNames::FILE_NAME]));
 		}
 	}
@@ -394,31 +403,6 @@ class ReservationViewRepository implements IReservationViewRepository
 		$builder = array('BlackoutItemView', 'Populate');
 		return PageableDataStore::GetList($command, $builder, $pageNumber, $pageSize);
 	}
-
-	/**
-	 * @param Date $earliestDate
-	 * @param null $lastDate
-	 * @return NextReservationView[]
-	 */
-	public function GetNextReservations(Date $earliestDate, $lastDate = null)
-	{
-		if ($lastDate == null)
-		{
-			$lastDate = new NullDate();
-		}
-		$command = new GetNextReservationsCommand($earliestDate, $lastDate);
-		$result = ServiceLocator::GetDatabase()->Query($command);
-
-		$reservations = array();
-		while ($row = $result->GetRow())
-		{
-			$reservations[$row[ColumnNames::RESOURCE_ID]] = NextReservationView::Populate($row);
-		}
-
-		$result->Free();
-
-		return $reservations;
-	}
 }
 
 class ReservationResourceView implements IResource
@@ -430,7 +414,8 @@ class ReservationResourceView implements IResource
 	private $_scheduleAdminGroupId;
 	private $_statusId;
 
-	public function __construct($resourceId, $resourceName, $adminGroupId, $scheduleId, $scheduleAdminGroupId, $statusId = ResourceStatus::AVAILABLE)
+	public function __construct($resourceId, $resourceName, $adminGroupId, $scheduleId, $scheduleAdminGroupId,
+								$statusId = ResourceStatus::AVAILABLE)
 	{
 		$this->_id = $resourceId;
 		$this->_resourceName = $resourceName;
@@ -1011,6 +996,11 @@ class ReservationItemView implements IReservedItemView
 	private $ownerGroupIds = array();
 
 	/**
+	 * @var int
+	 */
+	public $StatusId;
+
+	/**
 	 * @param $referenceNumber string
 	 * @param $startDate Date
 	 * @param $endDate Date
@@ -1052,7 +1042,8 @@ class ReservationItemView implements IReservedItemView
 			$participant_list = null,
 			$invitee_list = null,
 			$attribute_list = null,
-			$preferences = null
+			$preferences = null,
+			$statusId = null
 	)
 	{
 		$this->ReferenceNumber = $referenceNumber;
@@ -1073,6 +1064,7 @@ class ReservationItemView implements IReservedItemView
 		$this->OwnerPosition = $userPosition;
 		$this->UserId = $userId;
 		$this->UserLevelId = $userLevelId;
+		$this->StatusId = $statusId;
 
 		if (!empty($startDate) && !empty($endDate))
 		{
@@ -1142,7 +1134,8 @@ class ReservationItemView implements IReservedItemView
 				$row[ColumnNames::PARTICIPANT_LIST],
 				$row[ColumnNames::INVITEE_LIST],
 				$row[ColumnNames::ATTRIBUTE_LIST],
-				$row[ColumnNames::USER_PREFERENCES]
+				$row[ColumnNames::USER_PREFERENCES],
+				$row[ColumnNames::RESERVATION_STATUS]
 		);
 
 		if (isset($row[ColumnNames::RESERVATION_CREATED]))
@@ -1406,7 +1399,8 @@ class ReservationItemView implements IReservedItemView
 		}
 
 		$buffer = $this->GetBufferTime();
-		return new DateRange($this->GetStartDate()->SubtractInterval($buffer), $this->GetEndDate()->AddInterval($buffer));
+		return new DateRange($this->GetStartDate()->SubtractInterval($buffer),
+							 $this->GetEndDate()->AddInterval($buffer));
 	}
 
 	/**
@@ -1820,101 +1814,5 @@ class ReservationReminderView
 	public function MinutesPrior()
 	{
 		return $this->minutes;
-	}
-}
-
-class NextReservationView
-{
-	/**
-	 * @var Date
-	 */
-	public $StartDate;
-
-	/**
-	 * @var Date
-	 */
-	public $EndDate;
-
-	/**
-	 * @var string
-	 */
-	public $ReferenceNumber;
-
-	/**
-	 * @var int
-	 */
-	public $SeriesId;
-
-	/**
-	 * @var int
-	 */
-	public $OwnerId;
-
-	/**
-	 * @var int
-	 */
-	public $ResourceId;
-
-	/**
-	 * @var string
-	 */
-	public $OwnerFirstName;
-
-	/**
-	 * @var string
-	 */
-	public $OwnerLastName;
-
-	/**
-	 * @var string
-	 */
-	public $Title;
-
-	/**
-	 * @var string
-	 */
-	public $Description;
-
-	public function __construct($referenceNumber, $seriesId, $resourceId, $startDate, $endDate, $ownerId)
-	{
-		$this->ReferenceNumber = $referenceNumber;
-		$this->SeriesId = $seriesId;
-		$this->ResourceId = $resourceId;
-		$this->OwnerId = $ownerId;
-
-		$this->StartDate = $startDate;
-		if (is_string($startDate))
-		{
-			$this->StartDate = Date::FromDatabase($startDate);
-		}
-
-		$this->EndDate = $endDate;
-		if (is_string($endDate))
-		{
-			$this->EndDate = Date::FromDatabase($endDate);
-		}
-	}
-
-	/**
-	 * @param array $row
-	 * @return NextReservationView
-	 */
-	public static function Populate($row)
-	{
-		$item = new NextReservationView(
-				$row[ColumnNames::REFERENCE_NUMBER],
-				$row[ColumnNames::SERIES_ID],
-				$row[ColumnNames::RESOURCE_ID],
-				Date::FromDatabase($row[ColumnNames::RESERVATION_START]),
-				Date::FromDatabase($row[ColumnNames::RESERVATION_END]),
-				$row[ColumnNames::USER_ID]
-		);
-
-		$item->OwnerFirstName = $row[ColumnNames::FIRST_NAME];
-		$item->OwnerLastName = $row[ColumnNames::LAST_NAME];
-		$item->Title = $row[ColumnNames::RESERVATION_TITLE];
-		$item->Description = $row[ColumnNames::RESERVATION_DESCRIPTION];
-
-		return $item;
 	}
 }

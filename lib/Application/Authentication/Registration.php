@@ -49,6 +49,7 @@ class Registration implements IRegistration
 	public function Register($username, $email, $firstName, $lastName, $password, $timezone, $language,
 							 $homepageId, $additionalFields = array(), $attributeValues = array(), $groups = null)
 	{
+		$homepageId = empty($homepageId) ? Pages::DEFAULT_HOMEPAGE_ID : $homepageId;
 		$encryptedPassword = $this->_passwordEncryption->EncryptPassword($password);
 
 		$attributes = new UserAttribute($additionalFields);
@@ -79,6 +80,11 @@ class Registration implements IRegistration
 
 		$userId = $this->_userRepository->Add($user);
 		$this->AutoAssignPermissions($userId);
+
+		if (Configuration::Instance()->GetKey(ConfigKeys::REGISTRATION_NOTIFY, new BooleanConverter()))
+		{
+			ServiceLocator::GetEmailService()->Send(new AccountCreationEmail($user, ServiceLocator::GetServer()->GetUserSession()));
+		}
 
 		return $user;
 	}

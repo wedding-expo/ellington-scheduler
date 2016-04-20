@@ -16,13 +16,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-
-
 	Reservation Details:
 	<br/>
 	<br/>
 
 	ユーザー: {$UserName}
+	{if !empty($CreatedBy)}
+		作成者: {$CreatedBy}
+		<br/>
+	{/if}
 	開始: {formatdate date=$StartDate key=reservation_email}<br/>
 	終了: {formatdate date=$EndDate key=reservation_email}<br/>
 	{if $ResourceNames|count > 1}
