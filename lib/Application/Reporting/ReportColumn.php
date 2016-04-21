@@ -221,6 +221,7 @@ class ReportTimeColumn extends ReportColumn
 
 	public function GetData($data)
 	{
-		return new TimeInterval($data);
+		$interval = new TimeInterval($data);
+		return $interval->ToString(true);
 	}
 }

@@ -14,13 +14,11 @@ You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 require_once(ROOT_DIR . 'lang/AvailableLanguages.php');
 
 interface IResourceLocalization
 {
 	/**
-	 * @abstract
 	 * @param $key
 	 * @param array|string $args
 	 * @return void
@@ -85,12 +83,15 @@ class Resources implements IResourceLocalization
 	 */
 	private $_lang;
 
+	private $overrides = array();
 
 	public function __construct()
 	{
 		$this->LanguageDirectory = dirname(__FILE__) . '/../../lang/';
 
 		$this->systemDateKeys['js_general_date'] = 'yy-mm-dd';
+		$this->systemDateKeys['js_general_datetime'] = 'yy-mm-dd HH:mm';
+		$this->systemDateKeys['js_general_time'] = 'HH:mm';
 		$this->systemDateKeys['system_datetime'] = 'Y-m-d H:i:s';
 		$this->systemDateKeys['url'] = 'Y-m-d';
 		$this->systemDateKeys['url_full'] = 'Y-m-d H:i:s';
@@ -105,6 +106,7 @@ class Resources implements IResourceLocalization
 	{
 		$resources = new Resources();
 		$resources->SetCurrentLanguage($resources->GetLanguageCode());
+		$resources->LoadOverrides();
 		return $resources;
 	}
 
@@ -153,9 +155,7 @@ class Resources implements IResourceLocalization
 			$args = array($args);
 		}
 
-		$strings = $this->_lang->Strings;
-
-		$return = '';
+		$strings = array_merge($this->_lang->Strings, $this->overrides);
 
 		if (!isset($strings[$key]) || empty($strings[$key]))
 		{
@@ -287,5 +287,19 @@ class Resources implements IResourceLocalization
 	private function LoadAvailableLanguages()
 	{
 		$this->AvailableLanguages = AvailableLanguages::GetAvailableLanguages();
+	}
+
+	private function LoadOverrides()
+	{
+		$overrideFile = ROOT_DIR . 'config/lang-overrides.php';
+		if (file_exists($overrideFile))
+		{
+			global $langOverrides;
+			include_once($overrideFile);
+			$this->overrides = $langOverrides;
+		}
+		else {
+			$this->overrides = array();
+		}
 	}
 }

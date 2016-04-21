@@ -33,7 +33,8 @@ $(document).ready(function() {
 
 	var dashboardOpts = {
 		reservationUrl: "{Pages::RESERVATION}?{QueryStringKeys::REFERENCE_NUMBER}=",
-		summaryPopupUrl: "ajax/respopup.php"
+		summaryPopupUrl: "ajax/respopup.php",
+		scriptUrl: '{$ScriptUrl}'
 	};
 
 	var dashboard = new Dashboard(dashboardOpts);

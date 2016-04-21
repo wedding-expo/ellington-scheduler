@@ -121,6 +121,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<option value='{QuotaDuration::Day}'>{translate key=day}</option>
 				<option value='{QuotaDuration::Week}'>{translate key=week}</option>
 				<option value='{QuotaDuration::Month}'>{translate key=month}</option>
+				<option value='{QuotaDuration::Year}'>{translate key=year}</option>
 			</select>
 		{/capture}
 
@@ -143,6 +144,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	</form>
 </div>
 
+{csrf_token}
 {jsfile src="admin/edit.js"}
 {jsfile src="admin/quota.js"}
 {jsfile src="js/jquery.form-3.09.min.js"}

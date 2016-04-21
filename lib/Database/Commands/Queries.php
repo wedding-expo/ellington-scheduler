@@ -153,6 +153,8 @@ class Queries
                           WHERE u.user_id = p.user_id AND p.resource_id = @resourceid)
             )';
 
+	const AUTO_ASSIGN_CLEAR_RESOURCE_PERMISSIONS = 'DELETE FROM user_resource_permissions WHERE resource_id = @resourceid';
+
 	const CHECK_EMAIL =
 			'SELECT user_id
 		FROM users
@@ -370,7 +372,7 @@ class Queries
 			CASE
 			WHEN a.attribute_category = 2 THEN CONCAT(u.fname, " ", u.lname)
 			WHEN a.attribute_category = 4 THEN r.name
-			WHEN a.attribute_category = 4 THEN rt.resource_type_name
+			WHEN a.attribute_category = 5 THEN rt.resource_type_name
 			ELSE null
 			END as entity_description
 			FROM custom_attributes a
@@ -379,7 +381,18 @@ class Queries
 			LEFT JOIN resource_types rt ON rt.resource_type_id = a.entity_id AND a.attribute_category = 5
 		WHERE a.attribute_category = @attribute_category ORDER BY a.sort_order, a.display_label';
 
-	const GET_ATTRIBUTE_BY_ID = 'SELECT * FROM custom_attributes WHERE custom_attribute_id = @custom_attribute_id';
+	const GET_ATTRIBUTE_BY_ID = 'SELECT a.*,
+			CASE
+			WHEN a.attribute_category = 2 THEN CONCAT(u.fname, " ", u.lname)
+			WHEN a.attribute_category = 4 THEN r.name
+			WHEN a.attribute_category = 5 THEN rt.resource_type_name
+			ELSE null
+			END as entity_description
+			FROM custom_attributes a
+			LEFT JOIN users u ON u.user_id = a.entity_id AND a.attribute_category = 2
+			LEFT JOIN resources r ON r.resource_id = a.entity_id AND a.attribute_category = 4
+			LEFT JOIN resource_types rt ON rt.resource_type_id = a.entity_id AND a.attribute_category = 5
+			WHERE a.custom_attribute_id = @custom_attribute_id';
 
 	const GET_ATTRIBUTE_ALL_VALUES = 'SELECT * FROM custom_attribute_values WHERE attribute_category = @attribute_category';
 
@@ -461,18 +474,10 @@ class Queries
 		INNER JOIN group_roles gr ON r.role_id = gr.role_id
 		WHERE gr.group_id = @groupid';
 
-	const GET_NEXT_RESERVATIONS = 'SELECT  ri.*, rs.title, rs.description, rr.resource_id, ru.user_id, MIN(ri.start_date)
-		FROM reservation_resources rr
-		INNER JOIN reservation_series rs ON rr.series_id = rs.series_id
-		INNER JOIN reservation_instances ri ON ri.series_id = rs.series_id
-		INNER JOIN reservation_users ru ON ru.user_id = rs.owner_id
-		WHERE rs.status_id <> 2 AND ri.start_date > @startDate AND ri.end_date < @endDate
-		GROUP BY resource_id';
-
 	const GET_REMINDER_NOTICES = 'SELECT DISTINCT
 		rs.*,
 		ri.*,
-		u.fname, u.lname, u.language, u.timezone,
+		u.fname, u.lname, u.language, u.timezone, u.email,
 		r.name as resource_name
 		FROM reservation_instances ri
 		INNER JOIN reservation_series rs ON ri.series_id = rs.series_id
@@ -696,12 +701,12 @@ const GET_RESERVATION_LIST_TEMPLATE =
 	const GET_USER_ADMIN_GROUP_RESOURCE_PERMISSIONS =
 			'SELECT r.resource_id, r.name FROM resources r
 		WHERE r.schedule_id IN (SELECT s.schedule_id FROM schedules s
-			INNER JOIN groups g ON s.admin_group_id
-			INNER JOIN user_groups ug on g.group_id
+			INNER JOIN groups g ON g.group_id = s.admin_group_id
+			INNER JOIN user_groups ug on ug.group_id = g.group_id
 			WHERE ug.user_id = @userid)
 		OR r.resource_id IN (SELECT r2.resource_id FROM resources r2
-			INNER JOIN groups g ON r2.admin_group_id
-			INNER JOIN user_groups ug on g.group_id
+			INNER JOIN groups g ON g.group_id = r2.admin_group_id
+			INNER JOIN user_groups ug on ug.group_id = g.group_id
 			WHERE ug.user_id = @userid)';
 
 	const GET_USER_PREFERENCE = 'SELECT value FROM user_preferences WHERE user_id = @userid AND name = @name';
@@ -1038,7 +1043,7 @@ class QueryBuilder
 					(@userid = -1 OR ru.user_id = @userid) AND
 					(@levelid = 0 OR ru.reservation_user_level = @levelid) AND
 					(@scheduleid = -1 OR resources.schedule_id = @scheduleid) AND
-					(@resourceid = -1 OR rr.resource_id = @resourceid)');
+					(@resourceid = -1 OR rr.resource_id = @resourceid) ');
 	}
 
 	public static function GET_RESERVATION_LIST_FULL()

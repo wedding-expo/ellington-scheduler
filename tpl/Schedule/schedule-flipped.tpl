@@ -35,8 +35,8 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 						{if $resource->CanAccess}
                             <a href="{$href}" resourceId="{$resource->Id}"
                                class="resourceNameSelector">{$resource->Name}</a>
-							{else}
-							{$resource->Name}
+						{else}
+							<span resourceId="{$resource->Id}" resourceId="{$resource->Id}" class="resourceNameSelector">{$resource->Name}</span>
 						{/if}
                     </td>
 				{/foreach}
@@ -44,6 +44,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		{/capture}
 
 		{foreach from=$BoundDates item=date}
+			{assign var=ts value=$date->Timestamp()}
+			{$periods.$ts = $DailyLayout->GetPeriods($date)}
+			{if $periods[$ts]|count == 0}{continue}{*dont show if there are no slots*}{/if}
 			{$smarty.capture.resources}
 			{if $date->DateEquals($TodaysDate)}
                 <tr class="today">
@@ -51,7 +54,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
             	<tr>
 			{/if}
 			<td class="resdate" colspan="{$Resources|@count+1}">{formatdate date=$date key="schedule_daily"}</td></tr>
-			{foreach from=$DailyLayout->GetPeriods($date) item=period name=period_loop}
+			{foreach from=$periods.$ts item=period name=period_loop}
                 <tr class="slots" id="{$period->Id()}">
                     <td class="reslabel">{$period->Label($date)}</td>
                 </tr>

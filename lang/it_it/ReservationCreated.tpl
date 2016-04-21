@@ -71,9 +71,14 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		Una o più risorse in cui è stata inserita la prenotazione richiedono un'approvazione prima dell'utilizzo. Questa prenotazione rimarrà in sospeso fino all'approvazione.
 	{/if}
 
-        {if !empty($ApprovedBy)}
+	{if !empty($ApprovedBy)}
 		<br/>
 		Approvato da: {$ApprovedBy}
+	{/if}
+
+	{if !empty($CreatedBy)}
+		<br/>
+		Creato da: {$CreatedBy}
 	{/if}
 
 	<br/>

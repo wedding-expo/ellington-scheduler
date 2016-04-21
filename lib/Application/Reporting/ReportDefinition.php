@@ -81,6 +81,7 @@ class ReportDefinition implements IReportDefinition
 				ColumnNames::RESERVATION_DESCRIPTION => new ReportStringColumn('Description', ChartColumnDefinition::Null()),
 				ColumnNames::REFERENCE_NUMBER => new ReportStringColumn('ReferenceNumber', ChartColumnDefinition::Null()),
 				ColumnNames::OWNER_FULL_NAME_ALIAS => new ReportStringColumn('User', ChartColumnDefinition::Label(ColumnNames::OWNER_USER_ID)),
+				ColumnNames::PARTICIPANT_LIST => new ReportStringColumn('Participants', ChartColumnDefinition::Null()),
 				ColumnNames::GROUP_NAME_ALIAS => new ReportStringColumn('Group', ChartColumnDefinition::Label(ColumnNames::GROUP_ID)),
 				ColumnNames::SCHEDULE_NAME_ALIAS => new ReportStringColumn('Schedule', ChartColumnDefinition::Label(ColumnNames::SCHEDULE_ID)),
 				ColumnNames::RESERVATION_CREATED => new ReportDateColumn('Created', $timezone, $dateFormat, ChartColumnDefinition::Null()),
@@ -112,10 +113,26 @@ class ReportDefinition implements IReportDefinition
 
 	public function GetRow($row)
 	{
-		$attributes = null;
+		$reservationAttributes = null;
+		$userAttributes = null;
+		$resourceAttributes = null;
+		$resourceTypeAttributes = null;
+
 		if (array_key_exists(ColumnNames::ATTRIBUTE_LIST, $row))
 		{
-			$attributes = CustomAttributes::Parse($row[ColumnNames::ATTRIBUTE_LIST]);
+			$reservationAttributes = CustomAttributes::Parse($row[ColumnNames::ATTRIBUTE_LIST]);
+		}
+		if (array_key_exists(ColumnNames::USER_ATTRIBUTE_LIST, $row))
+		{
+			$userAttributes = CustomAttributes::Parse($row[ColumnNames::USER_ATTRIBUTE_LIST]);
+		}
+		if (array_key_exists(ColumnNames::RESOURCE_ATTRIBUTE_LIST, $row))
+		{
+			$resourceAttributes = CustomAttributes::Parse($row[ColumnNames::RESOURCE_ATTRIBUTE_LIST]);
+		}
+		if (array_key_exists(ColumnNames::RESOURCE_TYPE_ATTRIBUTE_LIST, $row))
+		{
+			$resourceTypeAttributes = CustomAttributes::Parse($row[ColumnNames::RESOURCE_TYPE_ATTRIBUTE_LIST]);
 		}
 
 		$formattedRow = array();
@@ -126,12 +143,13 @@ class ReportDefinition implements IReportDefinition
 				$this->sum += $row[$key];
 				$this->sumColumn = $column;
 			}
-			
-			if ($attributes != null && BookedStringHelper::StartsWith($key, 'attribute'))
+
+			if (BookedStringHelper::Contains($key, 'attribute'))
 			{
-				$id = intval(str_replace('attribute', '', $key));
-				$attribute = $attributes->Get($id);
-				$formattedRow[] = new ReportAttributeCell($column->GetData($attribute));
+				$this->AddCustomAttributes(CustomAttributeCategory::RESERVATION, $reservationAttributes, $formattedRow, $key, $column);
+				$this->AddCustomAttributes(CustomAttributeCategory::USER, $userAttributes, $formattedRow, $key, $column);
+				$this->AddCustomAttributes(CustomAttributeCategory::RESOURCE, $resourceAttributes, $formattedRow, $key, $column);
+				$this->AddCustomAttributes(CustomAttributeCategory::RESOURCE_TYPE, $resourceTypeAttributes, $formattedRow, $key, $column);
 			}
 			else
 			{
@@ -143,6 +161,17 @@ class ReportDefinition implements IReportDefinition
 		}
 
 		return $formattedRow;
+	}
+
+	private function AddCustomAttributes($category, CustomAttributes $attributes, &$formattedRow, $key, ReportColumn $column)
+	{
+		$prefix = $category . 'attribute';
+		if ($attributes != null && BookedStringHelper::StartsWith($key, $prefix))
+		{
+			$id = intval(str_replace($prefix, '', $key));
+			$attribute = $attributes->Get($id);
+			$formattedRow[] = new ReportAttributeCell($column->GetData($attribute));
+		}
 	}
 
 	public function GetTotal()

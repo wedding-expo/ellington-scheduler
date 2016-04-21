@@ -16,6 +16,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 require_once(ROOT_DIR . 'Domain/Access/namespace.php');
 require_once(ROOT_DIR . 'lib/Application/Authentication/namespace.php');
+require_once(ROOT_DIR . 'lib/Email/Messages/AccountDeletedEmail.php');
 
 interface IManageUsersService
 {
@@ -91,11 +92,17 @@ class ManageUsersService implements IManageUsersService
 	 */
 	private $groupRepository;
 
-	public function __construct(IRegistration $registration, IUserRepository $userRepository, IGroupRepository $groupRepository)
+	/**
+	 * @var IUserViewRepository
+	 */
+	private $userViewRepository;
+
+	public function __construct(IRegistration $registration, IUserRepository $userRepository, IGroupRepository $groupRepository, IUserViewRepository $userViewRepository)
 	{
 		$this->registration = $registration;
 		$this->userRepository = $userRepository;
 		$this->groupRepository = $groupRepository;
+		$this->userViewRepository = $userViewRepository;
 	}
 
 	public function AddUser(
@@ -133,7 +140,25 @@ class ManageUsersService implements IManageUsersService
 
 	public function DeleteUser($userId)
 	{
+		$user = $this->userRepository->LoadById($userId);
 		$this->userRepository->DeleteById($userId);
+
+		if (Configuration::Instance()->GetKey(ConfigKeys::REGISTRATION_NOTIFY, new BooleanConverter()))
+		{
+			$currentUser = ServiceLocator::GetServer()->GetUserSession();
+			$applicationAdmins = $this->userViewRepository->GetApplicationAdmins();
+			$groupAdmins = $this->userViewRepository->GetGroupAdmins($userId);
+
+			foreach ($applicationAdmins as $applicationAdmin)
+			{
+				ServiceLocator::GetEmailService()->Send(new AccountDeletedEmail($user, $applicationAdmin, $currentUser));
+			}
+
+			foreach ($groupAdmins as $groupAdmin)
+			{
+				ServiceLocator::GetEmailService()->Send(new AccountDeletedEmail($user, $groupAdmin, $currentUser));
+			}
+		}
 	}
 
 	public function UpdateUser($userId, $username, $email, $firstName, $lastName, $timezone, $extraAttributes)

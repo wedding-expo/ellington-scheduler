@@ -42,7 +42,8 @@ class ja_jp extends en_us
         $dates['dashboard'] = 'l, Y/m/d g:i A';
         $dates['period_time'] = "g:i A";
         $dates['general_date_js'] = "yy/mm/dd";
-        $dates['calendar_time'] = 'h:mmt';
+		$dates['general_time_js'] = 'h:mm tt';
+		$dates['calendar_time'] = 'h:mmt';
         $dates['calendar_dates'] = 'M/d';
 
         $this->Dates = $dates;
@@ -171,8 +172,8 @@ class ja_jp extends en_us
         $strings['ResourceMinNoticeNone'] = '現在時刻まで予約ができます';
         $strings['ResourceMaxNotice'] = '終了時刻が現在時刻より %s 先の予約はできません';
         $strings['ResourceMaxNoticeNone'] = '予約終了時刻は(未来の)いつでもかまいません';
-		$strings['ResourceBufferTime'] = 'There must be %s between reservations';
-		$strings['ResourceBufferTimeNone'] = 'There is no buffer between reservations';
+		$strings['ResourceBufferTime'] = '予約と予約の間に %s の空きが必要です';
+		$strings['ResourceBufferTimeNone'] = '予約と予約の間に空きがありません';
         $strings['ResourceAllowMultiDay'] = '日をまたいで予約できます';
         $strings['ResourceNotAllowMultiDay'] = '日をまたいでの予約はできません';
         $strings['ResourceCapacity'] = 'このリソースは %s 人まで使えます';
@@ -193,6 +194,7 @@ class ja_jp extends en_us
         $strings['ResourcePermissions'] = 'リソース利用権限';
         $strings['Reservations'] = '予約';
         $strings['Groups'] = 'グループ';
+		$strings['Users'] = 'ユーザー';
         $strings['ResetPassword'] = 'パスワードをリセット';
         $strings['AllUsers'] = '全ユーザー';
         $strings['AllGroups'] = '全グループ';
@@ -308,7 +310,7 @@ class ja_jp extends en_us
         $strings['BlackoutCreated'] = '利用不能時間を設定しました';
         $strings['BlackoutNotCreated'] = '利用不能時間を設定できませんでした';
 		$strings['BlackoutUpdated'] = '利用不能時間が更新されました';
-		$strings['BlackoutNotUpdated'] = 'Blackout could not be updated';
+		$strings['BlackoutNotUpdated'] = '利用不能時間を更新できませんでした。';
         $strings['BlackoutConflicts'] = '利用不能時間が重なっています';
         $strings['ReservationConflicts'] = '予約が重なっています';
         $strings['UsersInGroup'] = 'このグループのユーザー';
@@ -478,7 +480,7 @@ class ja_jp extends en_us
 		$strings['ResourceGroupHelp3'] = 'ドラッグ＆ドロップでリソースをグループに追加。';
 		$strings['ResourceGroupWarning'] = 'リソースグループを使用する場合、それぞれのリソースは少なくとも一つのグループに割り当てられていなくてはなりません。割り当てられていないリソースは予約することが出来ません。';
 		$strings['ResourceType'] = 'リソースタイプ';
-		$strings['AppliesTo'] = '右記へ適用';
+		$strings['AppliesTo'] = '適用対象';
 		$strings['UniquePerInstance'] = 'Unique Per Instance';
 		$strings['AddResourceType'] = 'リソースタイプを追加';
 		$strings['NoResourceTypeLabel'] = '(リソースタイプ無し)';
@@ -496,10 +498,23 @@ class ja_jp extends en_us
 		$strings['Unchanged'] = '無変更';
 		$strings['Common'] = '共通';
 		$strings['AdvancedFilter'] = 'アドバンスドフィルター';
+		$strings['AllParticipants'] = '全出席者';
+		$strings['ResourceAvailability'] = 'リソースの空き状況';
+		$strings['UnavailableAllDay'] = '終日空き無し';
+		$strings['AvailableUntil'] = '右の時間まで空き有り';
+		$strings['AvailableBeginningAt'] = '右の時間以後空き有り';
+		$strings['AllowParticipantsToJoin'] = '参加を許可';
+		$strings['JoinThisReservation'] = '予約に参加';
+		$strings['Import'] = 'インポート';
+		$strings['GetTemplate'] = 'テンプレート取得';
+		$strings['UserImportInstructions'] = 'ファイルは CVS フォーマットであること。 ユーザー名(Username)とメール(email)は必須。 他の空白の項目はデフォルト値が設定される。パスワードは \'password\'。 予め用意されているテンプレートはサンプルとして使用してください。';
+		$strings['RowsImported'] = 'インポートされた行';
+		$strings['RowsSkipped'] = 'スキップされた行';
+		$strings['DateTime'] = '日時';
         // End Strings
 
 		// Install
-		$strings['InstallApplication'] = 'Install Booked Scheduler (MySQL only)';
+		$strings['InstallApplication'] = 'Booked Scheduler のインストール(MySQL のみ)';
 		$strings['IncorrectInstallPassword'] = '申し訳ありませんが、パスワードが違っています。';
 		$strings['SetInstallPassword'] = 'インストールを実行する前に、インストールパスワードを設定しておかなくてはなりません。';
 		$strings['InstallPasswordInstructions'] = '%s 内の %s にランダムで推測できないようなパスワードを設定して、再度このページに戻って来てください。<br/> %s を使ってもいいでしょう。';
@@ -568,6 +583,11 @@ class ja_jp extends en_us
 		$strings['PasswordError'] = 'パスワードには %s 個以上の文字で、%s 個以上の数字が必要です。';
 		$strings['PasswordErrorRequirements'] = 'パスワードには %s 個以上の大文字と小文字の組み合わせと、%s 個以上の数字が必要です。';
 		$strings['NoReservationAccess'] = 'この予約の変更は許可されていません。';
+		$strings['PasswordControlledExternallyError'] = 'あなたのパスワードは外部システムで管理されているため、変更できません。';
+		$strings['NoResources'] = 'リソースの追加は出来ません。';
+		$strings['ParticipationNotAllowed'] = 'この予約に参加が許可されていません。';
+		$strings['InsecureRequestError'] = 'セキュリティ上の問題あり。 このエラーが繰り返されるときはログインし直してください。';
+		$strings['RemoveExistingPermissions'] = '現在の許可を取り消しますか?';
         // End Errors
 
         // Page Titles
@@ -654,6 +674,7 @@ class ja_jp extends en_us
         $strings['ReservationCreatedAdminSubject'] = 'Notification: 予約作成';
         $strings['ReservationUpdatedAdminSubject'] = 'Notification: 予約変更';
         $strings['ReservationDeleteAdminSubject'] = 'Notification: 予約削除';
+		$strings['ReservationApprovalAdminSubject'] = 'Notification: 予約を承認してください';
         $strings['ParticipantAddedSubject'] = '出席登録のお知らせ';
         $strings['ParticipantDeletedSubject'] = '予約は取り消されました';
         $strings['InviteeAddedSubject'] = '参加のお願い';
@@ -663,6 +684,7 @@ class ja_jp extends en_us
 		$strings['ReservationStartingSoonSubject'] = '予約 %s は間もなく始まります';
 		$strings['ReservationEndingSoonSubject'] = '予約 %s は間もなく終了します';
 		$strings['UserAdded'] = 'ユーザーが追加されました。';
+		$strings['UserDeleted'] = 'ユーザーアカウント %s は %s によって削除されました';
         // End Email Subjects
 
         $this->Strings = $strings;

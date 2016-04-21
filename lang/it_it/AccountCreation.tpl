@@ -29,3 +29,7 @@ Telefono: {$Phone}<br/>
 Area: {$Organization}<br/>
 Posizione: {$Position}</p>
 
+{if !empty($CreatedBy)}
+	Creato da: {$CreatedBy}
+{/if}
+

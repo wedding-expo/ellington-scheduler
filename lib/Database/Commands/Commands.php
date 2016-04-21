@@ -457,6 +457,15 @@ class AutoAssignResourcePermissionsCommand extends SqlCommand
 	}
 }
 
+class AutoAssignClearResourcePermissionsCommand extends SqlCommand
+{
+	public function __construct($resourceId)
+	{
+		parent::__construct(Queries::AUTO_ASSIGN_CLEAR_RESOURCE_PERMISSIONS);
+		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+	}
+}
+
 class CheckEmailCommand extends SqlCommand
 {
 	public function __construct($emailAddress)
@@ -1009,6 +1018,11 @@ class GetAllUsersByStatusCommand extends SqlCommand
 		parent::__construct(Queries::GET_ALL_USERS_BY_STATUS);
 		$this->AddParameter(new Parameter(ParameterNames::USER_STATUS_ID, $userStatusId));
 	}
+
+	public function ContainsGroupConcat()
+	{
+		return true;
+	}
 }
 
 class GetBlackoutListCommand extends SqlCommand
@@ -1093,16 +1107,6 @@ class GetLayoutCommand extends SqlCommand
 	}
 }
 
-class GetNextReservationsCommand extends SqlCommand
-{
-	public function __construct(Date $earliestDate, Date $lastDate)
-	{
-		parent::__construct(Queries::GET_NEXT_RESERVATIONS);
-		$this->AddParameter(new Parameter(ParameterNames::START_DATE, $earliestDate->ToDatabase()));
-		$this->AddParameter(new Parameter(ParameterNames::END_DATE, $lastDate->ToDatabase()));
-	}
-}
-
 class GetReminderByUserCommand extends SqlCommand
 {
 	public function __construct($user_id)
@@ -1177,7 +1181,7 @@ class GetFullGroupReservationListCommand extends GetFullReservationListCommand
 
 class GetReservationListCommand extends SqlCommand
 {
-	public function __construct(Date $startDate, Date $endDate, $userId, $userLevelId, $scheduleId, $resourceId)
+	public function __construct(Date $startDate, Date $endDate, $userId, $userLevelId, $scheduleId, $resourceId, $includeDeleted = false, $modifiedSinceDate = null)
 	{
 		parent::__construct(QueryBuilder::GET_RESERVATION_LIST());
 		$this->AddParameter(new Parameter(ParameterNames::START_DATE, $startDate->ToDatabase()));
@@ -1186,6 +1190,12 @@ class GetReservationListCommand extends SqlCommand
 		$this->AddParameter(new Parameter(ParameterNames::RESERVATION_USER_LEVEL_ID, $userLevelId));
 		$this->AddParameter(new Parameter(ParameterNames::SCHEDULE_ID, $scheduleId));
 		$this->AddParameter(new Parameter(ParameterNames::RESOURCE_ID, $resourceId));
+		$this->AddParameter(new Parameter(ParameterNames::INCLUDE_DELETED, (int)$includeDeleted));
+	}
+
+	public function ContainsGroupConcat()
+	{
+		return true;
 	}
 }
 

@@ -244,6 +244,8 @@ interface IManageReservationsPage extends IPageable, IActionPage
 	 * @param string[] $errors
 	 */
 	public function BindAttributeUpdateErrors($errors);
+
+	public function ShowAttribute(CustomAttribute $attribute, $attributeValue);
 }
 
 class ManageReservationsPage extends ActionPage implements IManageReservationsPage
@@ -639,6 +641,11 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 
 	public function GetAttributeId()
 	{
+		$queryStringValue = $this->GetQuerystring(QueryStringKeys::ATTRIBUTE_ID);
+		if (!empty($queryStringValue))
+		{
+			return $queryStringValue;
+		}
 		return $this->GetForm(FormKeys::ATTRIBUTE_ID);
 	}
 
@@ -658,5 +665,10 @@ class ManageReservationsPage extends ActionPage implements IManageReservationsPa
 	protected function SetPageId($pageId)
 	{
 		$this->Set('PageId', $pageId);
+	}
+
+	public function ShowAttribute(CustomAttribute $attribute, $attributeValue)
+	{
+		$this->smarty->DisplayControl(array('type'=>'AttributeControl', 'attribute' => new Attribute($attribute, $attributeValue)), $this->smarty);
 	}
 }

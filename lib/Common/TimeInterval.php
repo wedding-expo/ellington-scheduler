@@ -167,4 +167,14 @@ class TimeInterval
 
 		return '';
 	}
+
+	public function ToString($includeTotalHours)
+	{
+		if ($includeTotalHours)
+		{
+			return $this->__toString().' (' . $this->TotalSeconds()/3600 . 'h)';
+		}
+
+		return $this->__toString();
+	}
 }

@@ -19,8 +19,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 require_once('Language.php');
+require_once('en_us.php');
 
-class pt_br extends Language
+class pt_br extends en_us
 {
   public function __construct()
   {
@@ -32,7 +33,7 @@ class pt_br extends Language
    */
   protected function _LoadDates()
   {
-    $dates = array();
+    $dates = parent::_LoadDates();
 
     $dates['general_date'] = 'd/m/Y';
     $dates['general_datetime'] = 'd/m/Y H:i:s';
@@ -55,7 +56,7 @@ class pt_br extends Language
   */
   protected function _LoadStrings()
   {
-    $strings = array();
+    $strings = parent::_LoadStrings();
 
     $strings['FirstName'] = 'Nome';
     $strings['LastName'] = 'Sobrenome';
@@ -685,7 +686,7 @@ class pt_br extends Language
    */
   protected function _LoadDays()
   {
-    $days = array();
+    $days = parent::_LoadDays();
 
     /***
     DAY NAMES
@@ -711,7 +712,7 @@ class pt_br extends Language
    */
   protected function _LoadMonths()
   {
-    $months = array();
+    $months = parent::_LoadMonths();
 
     /***
     MONTH NAMES
@@ -743,5 +744,3 @@ class pt_br extends Language
     return 'pt_br';
   }
 }
-
-?>

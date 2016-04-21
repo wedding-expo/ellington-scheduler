@@ -672,6 +672,7 @@ class it_it extends en_us
 		$strings['ReservationStartingSoonSubject'] = 'La prenotazione di %s sta per iniziare';
 		$strings['ReservationEndingSoonSubject'] = 'La prenotazione di %s sta per terminare';
 		$strings['UserAdded'] = 'Aggiunto nuovo utente';
+		$strings['UserDeleted'] = 'Cancellato utente %s da %s';
 		// End Email Subjects
 
 		$this->Strings = $strings;

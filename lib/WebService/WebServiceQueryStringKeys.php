@@ -35,4 +35,6 @@ class WebServiceQueryStringKeys
 	const ORGANIZATION = 'organization';
 	const POSITION = 'position';
 	const ATTRIBUTE_PREFIX = 'att';
+	const INCLUDE_DELETED = 'includeDeleted';
+	const MODIFIED_DATE = 'modifiedSinceDate';
 }

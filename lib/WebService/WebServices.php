@@ -29,9 +29,11 @@ class WebServices
 	const AllSchedules = 'all_schedules';
 	const AllUsers = 'all_users';
 	const ApproveReservation = 'approve_reservation';
+	const CreateCustomAttribute = 'create_custom_attribute';
 	const CreateReservation = 'create_reservation';
 	const CreateResource = 'create_resource';
 	const CreateUser = 'create_user';
+	const DeleteCustomAttribute = 'delete_custom_attribute';
 	const DeleteReservation = 'delete_reservation';
 	const DeleteResource = 'delete_resource';
 	const DeleteUser = 'delete_user';
@@ -46,9 +48,11 @@ class WebServices
 	const GetSchedule = 'get_schedule';
 	const GetScheduleSlots = 'get_schedule_reservations';
 	const GetUser = 'get_user';
+	const UpdateCustomAttribute = 'update_custom_attribute';
 	const UpdateReservation = 'update_reservation';
 	const UpdateResource = 'update_resource';
 	const UpdateUser = 'update_user';
 	const GetStatuses = 'get_resource_statuses';
+	const GetAllResourceTypes = 'get_all_resource_types';
 	const GetStatusReasons = 'get_resource_status_reasons';
 }

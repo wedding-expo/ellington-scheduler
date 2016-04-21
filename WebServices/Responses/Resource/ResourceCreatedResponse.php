@@ -46,5 +46,3 @@ class ExampleResourceCreatedResponse extends ResourceCreatedResponse
 		$this->AddLink('http://url/to/update/resource', WebServices::UpdateResource);
 	}
 }
-
-?>

@@ -25,6 +25,10 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	<br/>
 
 	Utente: {$UserName}<br/>
+	{if !empty($CreatedBy)}
+		Creato da: {$CreatedBy}
+		<br/>
+	{/if}
 	Inizio: {formatdate date=$StartDate key=reservation_email}<br/>
 	Fine: {formatdate date=$EndDate key=reservation_email}<br/>
 	{if $ResourceNames|count > 1}

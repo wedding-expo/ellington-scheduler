@@ -167,7 +167,7 @@ class ScheduleWebServicePageBuilder extends SchedulePageBuilder
 		// no op
 	}
 
-	public function GetResourceId($scheduleId, ISchedulePage $page)
+	public function GetResourceIds($scheduleId, ISchedulePage $page)
 	{
 		return $this->resourceId;
 	}
@@ -316,6 +316,14 @@ class ScheduleWebServiceView implements ISchedulePage
 	public function GetResourceId()
 	{
 		return null;
+	}
+
+	/**
+	 * @return int[]
+	 */
+	public function GetResourceIds()
+	{
+		return array();
 	}
 
 	public function SetResourceGroupTree(ResourceGroupTree $resourceGroupTree)
@@ -469,4 +477,11 @@ class ScheduleWebServiceView implements ISchedulePage
 	{
 		return $this->resources;
 	}
+
+	public function EnforceCSRFCheck()
+	{
+		// no-op
+	}
+
+
 }

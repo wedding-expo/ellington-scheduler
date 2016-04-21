@@ -70,7 +70,9 @@ class ManageAttributesPresenter extends ActionPresenter
         Log::Debug('Adding new attribute named: %s', $attributeName);
 
         $attribute = CustomAttribute::Create($attributeName, $type, $scope, $regex, $required, $possibleValues, $sortOrder, $entityId);
-		$this->attributeRepository->Add($attribute);
+		$attributeId = $this->attributeRepository->Add($attribute);
+
+		return $attributeId;
     }
 
 	public function DeleteAttribute()

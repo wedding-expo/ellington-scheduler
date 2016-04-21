@@ -72,6 +72,11 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		Approved by: {$ApprovedBy}
 	{/if}
 
+	{if !empty($CreatedBy)}
+		<br/>
+		Created by: {$CreatedBy}
+	{/if}
+
 	<br/>
 	<br/>
 	<a href="{$ScriptUrl}/{$ReservationUrl}">View this reservation</a> |

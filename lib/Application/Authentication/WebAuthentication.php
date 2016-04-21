@@ -19,7 +19,6 @@ require_once(ROOT_DIR . 'lib/Application/Authentication/namespace.php');
 interface IWebAuthentication extends IAuthenticationPromptOptions
 {
 	/**
-	 * @abstract
 	 * @param string $username
 	 * @param string $password
 	 * @return bool If user is valid
@@ -27,7 +26,6 @@ interface IWebAuthentication extends IAuthenticationPromptOptions
 	public function Validate($username, $password);
 
 	/**
-	 * @abstract
 	 * @param string $username
 	 * @param ILoginContext $loginContext
 	 * @return void
@@ -59,9 +57,19 @@ interface IWebAuthentication extends IAuthenticationPromptOptions
 	public function AreCredentialsKnown();
 
 	/**
-	 * @return mixed
+	 * @return bool
 	 */
 	public function IsLoggedIn();
+
+	/**
+	 * @return string
+	 */
+	public function GetRegistrationUrl();
+
+	/**
+	 * @return string
+	 */
+	public function GetPasswordResetUrl();
 }
 
 class WebAuthentication implements IWebAuthentication
@@ -199,12 +207,31 @@ class WebAuthentication implements IWebAuthentication
 		return $this->authentication->ShowForgotPasswordPrompt();
 	}
 
-	/**
-	 * @return mixed
-	 */
 	public function IsLoggedIn()
 	{
 		return $this->server->GetUserSession()->IsLoggedIn();
+	}
+
+	public function GetRegistrationUrl()
+	{
+		$url = '';
+		if (method_exists($this->authentication, 'GetRegistrationUrl'))
+		{
+			$url = $this->authentication->GetRegistrationUrl();
+		}
+
+		return $url;
+	}
+
+	public function GetPasswordResetUrl()
+	{
+		$url = '';
+		if (method_exists($this->authentication, 'GetPasswordResetUrl'))
+		{
+			$url = $this->authentication->GetPasswordResetUrl();
+		}
+
+		return $url;
 	}
 }
 

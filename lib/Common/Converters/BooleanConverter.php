@@ -21,4 +21,3 @@ class BooleanConverter implements IConvert
 		return $value === true || $value === 1 || strtolower($value) == 'true';
 	}
 }
-?>

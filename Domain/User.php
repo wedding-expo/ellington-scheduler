@@ -869,6 +869,9 @@ class User
 		return $this->preferences->Get($preferenceName);
 	}
 
+	/**
+	 * @param $groups UserGroup[]
+	 */
 	public function ChangeGroups($groups)
 	{
 		$diff = new ArrayDiff($this->groups, $groups);

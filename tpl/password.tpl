@@ -21,7 +21,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 {validation_group class="error"}
 {validator id="currentpassword" key="InvalidPassword"}
 {validator id="passwordmatch" key="PwMustMatch"}
-{validator id="passwordcomplexity" key="PwComplexity"}
+{validator id="passwordcomplexity"}
 {/validation_group}
 
 {if !$AllowPasswordChange}
@@ -59,6 +59,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<button type="submit" name="{Actions::CHANGE_PASSWORD}" value="{translate key='ChangePassword'}"
 						class="button">{html_image src="tick-circle.png"} {translate key='ChangePassword'}</button>
 			</p>
+			{csrf_token}
 		</form>
 	</div>
 	{setfocus key='CURRENT_PASSWORD'}

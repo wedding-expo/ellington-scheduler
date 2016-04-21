@@ -18,13 +18,13 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
 
-Vaï¿½a privremena lozinka je: {$TemporaryPassword}
+Vaša privremena lozinka je: {$TemporaryPassword}
 
 <br/>
 
-Vaï¿½a stara lozinka viï¿½e ne vrijedi.
+Vaša stara lozinka više ne vrijedi.
 <br/>
 <br/>
 
-Molimo <a href="{$ScriptUrl}">ulogirajte se </a> i promjenite vaï¿½u lozinku ï¿½to prije.
+Molimo <a href="{$ScriptUrl}">ulogirajte se </a> i promjenite vašu lozinku što prije.
 

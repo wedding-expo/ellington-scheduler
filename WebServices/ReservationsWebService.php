@@ -59,7 +59,7 @@ class ReservationsWebService
 	/**
 	 * @name GetReservations
 	 * @description Gets a list of reservations for the specified parameters.
-	 * Optional query string parameters: userId, resourceId, scheduleId, startDateTime, endDateTime.
+	 * Optional query string parameters: userId, resourceId, scheduleId, startDateTime, endDateTime, includeDeleted, modifiedSinceDate.
 	 * If no dates are provided, reservations for the next two weeks will be returned.
 	 * If dates do not include the timezone offset, the timezone of the authenticated user will be assumed.
 	 * @response ReservationsResponse
@@ -72,11 +72,13 @@ class ReservationsWebService
 		$userId = $this->GetUserId();
 		$resourceId = $this->GetResourceId();
 		$scheduleId = $this->GetScheduleId();
+		$includeDeleted = $this->GetIncludeDeleted();
+		$modifiedSinceDate = $this->GetModifiedSinceDate();
 
 		Log::Debug('GetReservations called. userId=%s, startDate=%s, endDate=%s', $userId, $startDate, $endDate);
 
 		$reservations = $this->reservationViewRepository->GetReservationList($startDate, $endDate, $userId, null,
-																			 $scheduleId, $resourceId);
+																			 $scheduleId, $resourceId, $includeDeleted, $modifiedSinceDate);
 
 		$response = new ReservationsResponse($this->server, $reservations, $this->privacyFilter, $startDate, $endDate);
 		$this->server->WriteResponse($response);
@@ -177,5 +179,35 @@ class ReservationsWebService
 	private function GetScheduleId()
 	{
 		return $this->server->GetQueryString(WebServiceQueryStringKeys::SCHEDULE_ID);
+	}
+	
+	/**
+	 * @return bool|null
+	 */
+	private function GetIncludeDeleted()
+	{
+		$includeDeletedQueryString = $this->server->GetQueryString(WebServiceQueryStringKeys::INCLUDE_DELETED);			
+		if($includeDeletedQueryString == "true")
+		{
+				return true;	
+		}
+
+		return false;
+	}
+	
+	/**
+	 * @return Date
+	 */
+	private function GetModifiedSinceDate()
+	{
+		$dateQueryString = $this->server->GetQueryString(WebServiceQueryStringKeys::MODIFIED_DATE);
+		
+		if (empty($dateQueryString))
+		{
+			return Date::Min();
+		}
+		else {
+			return WebServiceDate::GetDate($dateQueryString, $this->server->GetSession());
+		}
 	}
 }

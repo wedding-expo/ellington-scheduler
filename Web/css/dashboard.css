@@ -81,9 +81,9 @@
 }
 
 #availabilityDashboard .resourceName {
-	min-width:150px;
-	max-width:250px;
+	width:350px;
 	display:inline-block;
+	text-overflow-ellipsis: '...';
 }
 
 #availabilityDashboard .availability {

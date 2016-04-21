@@ -23,7 +23,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 <div id="reservationbox">
 
 <form id="reservationForm" method="post" enctype="multipart/form-data">
-
+    {csrf_token}
 <div class="reservationSubmitButtons buttonsTop">
 	{block name="submitButtons"}
 		<button type="button" class="button save create">
@@ -144,10 +144,12 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
         </li>
 	{if $HideRecurrence}
         <li style="display:none">
-			{else}
-    <li>
+	{else}
+		<li>
+		{control type="RecurrenceControl" RepeatTerminationDate=$RepeatTerminationDate}
 	{/if}
-	{control type="RecurrenceControl" RepeatTerminationDate=$RepeatTerminationDate}
+	</li>
+
     </li>
         <li class="rsv-box-l">
             <label>{translate key="ReservationTitle"}<br/>

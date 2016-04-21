@@ -27,3 +27,6 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 所属: {$Organization}<br/>
 肩書き: {$Position}</p>
 
+{if !empty($CreatedBy)}
+	作成者: {$CreatedBy}
+{/if}

@@ -246,6 +246,9 @@ class ColumnNames
 	const PARTICIPANT_LIST = 'participant_list';
 	const INVITEE_LIST = 'invitee_list';
 	const ATTRIBUTE_LIST = 'attribute_list';
+	const RESOURCE_ATTRIBUTE_LIST = 'resource_attribute_list';
+	const RESOURCE_TYPE_ATTRIBUTE_LIST = 'resource_type_attribute_list';
+	const USER_ATTRIBUTE_LIST = 'user_attribute_list';
 	const GROUP_LIST = 'owner_group_list';
 	const START_REMINDER_MINUTES_PRIOR = 'start_reminder_minutes';
 	const END_REMINDER_MINUTES_PRIOR = 'end_reminder_minutes';

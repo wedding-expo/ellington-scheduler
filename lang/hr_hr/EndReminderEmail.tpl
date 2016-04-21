@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
-Vaï¿½a rezervacija uskoro istice.<br/>
+Vasa rezervacija uskoro istjeèe.<br/>
 Detalji o rezervaciji:
 	<br/>
 	<br/>

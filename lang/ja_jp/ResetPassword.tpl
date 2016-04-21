@@ -18,7 +18,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
 
 
-Booked Scheduler の仮パスワードです:: {$TemporaryPassword}
+Booked Scheduler の仮パスワードです: {$TemporaryPassword}
 
 <br/>
 

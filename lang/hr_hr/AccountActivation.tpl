@@ -19,5 +19,5 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 
 {$FirstName},<br/>
-Hvala na registraciji. Molimo <a href="{$ActivationUrl}">aktivirajte vaï¿½ racun</a>.
+Hvala na registraciji. Molimo <a href="{$ActivationUrl}">aktivirajte vaš racun</a>.
 

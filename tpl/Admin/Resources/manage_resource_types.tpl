@@ -66,7 +66,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 							</ul>
 						</div>
 
-						<div class="attribute-readwrite hidden clear" style="height:auto;">
+						<div class="attribute-readwrite hidden" style="height:auto;">
 							<button type="button"
 									class="button save">{html_image src="tick-circle.png"} {translate key='Update'}</button>
 							<button type="button"
@@ -137,6 +137,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	</form>
 </div>
 
+{csrf_token}
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 {jsfile src="admin/edit.js"}
 {jsfile src="admin/resource-types.js"}

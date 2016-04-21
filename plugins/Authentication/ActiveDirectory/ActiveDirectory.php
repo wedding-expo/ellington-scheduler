@@ -118,6 +118,16 @@ class ActiveDirectory extends Authentication implements IAuthentication
 
 	public function Validate($username, $password)
 	{
+		if ($this->AreCredentialsKnown())
+		{
+			$username = ServiceLocator::GetServer()->GetHeader('AUTH_USER');
+			$username = $this->CleanUsername($username);
+			Log::Debug('ActiveDirectory Validate trying to load details for authenticated user: %s', $username);
+			$this->ldap->Connect();
+			$this->user = $this->ldap->GetLdapUser($username);
+			return $this->LdapUserExists();
+		}
+
 		$this->password = $password;
 
 		$username = $this->CleanUsername($username);
@@ -155,6 +165,12 @@ class ActiveDirectory extends Authentication implements IAuthentication
 
 	public function Login($username, $loginContext)
 	{
+		if ($this->AreCredentialsKnown())
+		{
+			$username = ServiceLocator::GetServer()->GetHeader('AUTH_USER');
+			Log::Debug('ActiveDirectory Login trying to load details for authenticated user: %s', $username);
+		}
+
 		$username = $this->CleanUsername($username);
 		Log::Debug('ActiveDirectory - Login() in with username: %s', $username);
 		if ($this->LdapUserExists())
@@ -177,7 +193,16 @@ class ActiveDirectory extends Authentication implements IAuthentication
 
 	public function AreCredentialsKnown()
 	{
-		return false;
+		$user = ServiceLocator::GetServer()->GetHeader('AUTH_USER');
+
+		$known = !(empty($user));
+
+		if ($known)
+		{
+			Log::Debug('ActiveDirectory authenticated user found: %s', $user);
+		}
+
+		return $known;
 	}
 
 	private function LdapUserExists()

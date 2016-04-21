@@ -16,12 +16,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-<label class="customAttribute" for="{$attributeName}">{$attribute->Label()|escape}:</label>
+<label class="customAttribute" for="{$attributeId}">{$attribute->Label()}:</label>
 {if $align=='vertical'}
 <br/>
 {/if}
 {if $readonly}
-<span class="attributeValue {$class}">{$attribute->Value()|escape|nl2br}</span>
+<span class="attributeValue {$class}">{$attribute->Value()|nl2br}</span>
 {else}
-<textarea id="{$attributeName}" name="{$attributeName}" class="customAttribute textbox {$class}">{$attribute->Value()|escape}</textarea>
+<textarea id="{$attributeId}" name="{$attributeName}" class="customAttribute textbox {$class}">{$attribute->Value()}</textarea>
 {/if}

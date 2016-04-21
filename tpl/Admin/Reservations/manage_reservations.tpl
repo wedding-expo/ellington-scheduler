@@ -83,7 +83,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 			</li>
 			{foreach from=$AttributeFilters item=attribute}
 				<li class="customAttribute filter-customAttribute{$attribute->Id()}">
-					{control type="AttributeControl" attribute=$attribute searchmode=true}
+					{control type="AttributeControl" attribute=$attribute searchmode=true idPrefix="search"}
 				</li>
 			{/foreach}
 		</ul>
@@ -175,6 +175,8 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 						{else}
 							{translate key=No}
 						{/if}
+					{elseif $attribute->Type() == CustomAttributeTypes::DATETIME}
+						{formatdate date=$attrVal key=general_datetime}
 					{else}
 						{$attrVal}
 					{/if}
@@ -288,6 +290,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	</div>
 </div>
 
+{csrf_token}
 {html_image src="admin-ajax-indicator.gif" class="indicator" style="display:none;"}
 
 {jsfile src="js/jquery.qtip.min.js"}

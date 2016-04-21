@@ -454,7 +454,21 @@ function ResourceManagement(opts) {
 
 		$('#allowMultiday').val(resource.allowMultiday);
 		$('#requiresApproval').val(resource.requiresApproval);
-		$('#autoAssign').val(resource.autoAssign);
+
+		var autoAssign = $('#autoAssign');
+		autoAssign.val(resource.autoAssign);
+		autoAssign.change(function() {
+			var removeAll = $('#autoAssignRemoveAllPermissions');
+			removeAll.find('input').prop('checked', false);
+			if (autoAssign.val() == "0")
+			{
+				removeAll.show();
+			}
+			else
+			{
+				removeAll.hide();
+			}
+		});
 
 		elements.configurationDialog.dialog("open");
 	};

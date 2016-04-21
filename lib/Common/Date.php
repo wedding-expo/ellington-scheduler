@@ -95,7 +95,14 @@ class Date
 		{
 			return NullDate::Instance();
 		}
-		return new Date($dateString, $timezone);
+		try
+		{
+			return new Date($dateString, $timezone);
+		}
+		catch(Exception $ex)
+		{
+			return new NullDate();
+		}
 	}
 
 	/**
@@ -128,7 +135,35 @@ class Date
 
 		$parsed = date_parse($dateString);
 
-		$d = Date::Create($parsed['year'], $parsed['month'], $parsed['day'], $parsed['hour'] + $hourAdjustment, $parsed['minute'] + $minuteAdjustment, $parsed['second'], 'UTC');
+		$adjustedHour =  $parsed['hour'] + $hourAdjustment;
+		$adjustedMinute = $parsed['minute'] + $minuteAdjustment;
+
+		$dateOverflow = 0;
+		$hourOverflow = 0;
+
+		if ($adjustedHour >= 24)
+		{
+			$dateOverflow = 1;
+			$adjustedHour = $adjustedHour - 24;
+		}
+		if ($adjustedHour < 0)
+		{
+			$dateOverflow = -1;
+			$adjustedHour = $adjustedHour + 24;
+		}
+
+		if ($adjustedMinute >= 60)
+		{
+			$hourOverflow = 1;
+			$adjustedMinute = $adjustedMinute - 60;
+		}
+		if ($adjustedMinute < 0)
+		{
+			$hourOverflow = -1;
+			$adjustedMinute = $adjustedMinute + 60;
+		}
+
+		$d = Date::Create($parsed['year'], $parsed['month'], $parsed['day'] + $dateOverflow, $adjustedHour + $hourOverflow, $adjustedMinute, $parsed['second'], 'UTC');
 		return $d;
 	}
 

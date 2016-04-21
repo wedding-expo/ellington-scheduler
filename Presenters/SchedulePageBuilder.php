@@ -83,7 +83,7 @@ interface ISchedulePageBuilder
 	 * @param ISchedulePage $page
 	 * @return int
 	 */
-	public function GetResourceId($scheduleId, ISchedulePage $page);
+	public function GetResourceIds($scheduleId, ISchedulePage $page);
 
 	/**
 	 * @param int $scheduleId
@@ -308,15 +308,16 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		return null;
 	}
 
-	public function GetResourceId($scheduleId, ISchedulePage $page)
+	public function GetResourceIds($scheduleId, ISchedulePage $page)
 	{
-		$resourceId = $page->GetResourceId();
+		$resourceId = $page->GetResourceIds();
 
 		if (!empty($resourceId))
 		{
 			return $resourceId;
 		}
 
+		return array();
 		$cookie = $this->getTreeCookie($scheduleId);
 
 		if (!empty($cookie))
@@ -363,7 +364,9 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 												 $page->GetResourceTypeId(),
 												 $page->GetMaxParticipants(),
 												 $this->AsAttributeValues($page->GetResourceAttributes()),
-												 $this->AsAttributeValues($page->GetResourceTypeAttributes()));
+												 $this->AsAttributeValues($page->GetResourceTypeAttributes()),
+												 $this->GetResourceIds($scheduleId, $page)
+												 );
 		}
 		else
 		{
@@ -377,7 +380,6 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 		}
 
 		$filter->ScheduleId = $scheduleId;
-		$filter->ResourceId = $this->GetResourceId($scheduleId, $page);
 		$filter->GroupId = $this->GetGroupId($scheduleId, $page);
 
 		return $filter;
@@ -407,6 +409,7 @@ class SchedulePageBuilder implements ISchedulePageBuilder
 
 		ServiceLocator::GetServer()
 		->SetCookie(new Cookie('resource_filter' . $filter->ScheduleId, json_encode($filter)));
+
 		$page->SetFilter($filter);
 	}
 

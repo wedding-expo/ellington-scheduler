@@ -35,7 +35,16 @@ class ReportCommandBuilder
 	const RESERVATION_LIST_FRAGMENT = 'rs.date_created as date_created, rs.last_modified as last_modified, rs.repeat_type,
 		rs.description as description, rs.title as title, rs.status_id as status_id, ri.reference_number, ri.start_date, ri.end_date,
 							(SELECT GROUP_CONCAT(CONCAT(cav.custom_attribute_id,\'=\', cav.attribute_value) SEPARATOR "!sep!")
-								FROM custom_attribute_values cav WHERE cav.entity_id = ri.series_id AND cav.attribute_category = 1) as attribute_list';
+								FROM custom_attribute_values cav WHERE cav.entity_id = ri.series_id AND cav.attribute_category = 1) as attribute_list,
+							(SELECT GROUP_CONCAT(CONCAT(participant_users.fname, " ", participant_users.lname) SEPARATOR "!sep!")
+								FROM reservation_users participants INNER JOIN users participant_users ON participant_users.user_id = participants.user_id WHERE participants.reservation_instance_id = ri.reservation_instance_id AND participants.reservation_user_level = 2) as participant_list,
+							(SELECT GROUP_CONCAT(CONCAT(cav.custom_attribute_id,\'=\', cav.attribute_value) SEPARATOR "!sep!")
+								FROM custom_attribute_values cav WHERE cav.entity_id = rs.owner_id AND cav.attribute_category = 2) as user_attribute_list,
+							(SELECT GROUP_CONCAT(CONCAT(cav.custom_attribute_id,\'=\', cav.attribute_value) SEPARATOR "!sep!")
+								FROM custom_attribute_values cav WHERE cav.entity_id = resources.resource_id AND cav.attribute_category = 4) as resource_attribute_list,
+							(SELECT GROUP_CONCAT(CONCAT(cav.custom_attribute_id,\'=\', cav.attribute_value) SEPARATOR "!sep!")
+								FROM custom_attribute_values cav WHERE cav.entity_id = resources.resource_type_id AND cav.attribute_category = 5) as resource_type_attribute_list
+								';
 
 	const COUNT_FRAGMENT = 'COUNT(1) as total';
 
@@ -394,7 +403,7 @@ class ReportCommandBuilder
 		$sql = str_replace('[ORDER_TOKEN]', $this->GetOrderBy(), $sql);
 		$sql = str_replace('[LIMIT_TOKEN]', $this->GetLimit(), $sql);
 
-		$query = new AdHocCommand($sql);
+		$query = new AdHocCommand($sql, true);
 		foreach ($this->parameters as $parameter)
 		{
 			$query->AddParameter($parameter);
@@ -460,7 +469,7 @@ class ReportCommandBuilder
 	{
 		$join = new ReportQueryFragment();
 
-		if ($this->joinResources)
+		if ($this->joinResources || $this->joinAccessories)
 		{
 			$join->Append(self::RESOURCE_JOIN_FRAGMENT);
 		}

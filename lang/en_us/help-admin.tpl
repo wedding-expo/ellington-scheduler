@@ -115,9 +115,12 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 		<div id="help-resource-statuses">
 			<h3>Resource Statuses</h3>
-			<p>Setting a resource to the Available status will allow users with permission to book the reservation. The Unavailable status will show the resource on
-			the schedule but will not allow it to be booked by anyone other than administrators. The Hidden status will remove the resource from the schedule
-			and prevent bookings from all users.</p>
+
+			<p>Setting a resource to the Available status will allow users with permission to book the reservation. The Unavailable status will show the
+				resource on
+				the schedule but will not allow it to be booked by anyone other than administrators. The Hidden status will remove the resource from the
+				schedule
+				and prevent bookings from all users.</p>
 		</div>
 	</div>
 
@@ -425,6 +428,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		<p class="setting"><span>$conf['settings']['privacy']['hide.user.details']</span>If non-adminstrators can view personal
 			information about other users. Default is false.</p>
 
+		<p class="setting"><span>$conf['settings']['privacy']['hide.reservation.details']</span>If non-adminstrators can view reservation details.
+			Options are true, false, past, future. Default is false.</p>
+
 		<p class="setting"><span>$conf['settings']['reservation']['start.time.constraint']</span>When reservations can be
 			created or edited.
 			Options are future, current, none. Future means reservations cannot be created or modified if the starting time of
@@ -581,6 +587,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				Default is all information.</p>
 		{/literal}
 
+		<p class="setting"><span>$conf['settings']['google.analytics']['tracking.id']</span>Your Google Analytics Tracking ID. If this is set then Google
+			Analytics tracking code will be added to every page in Booked.</p>
+
 	</div>
 
 	<h2>Plugins</h2>
@@ -613,7 +622,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	<h2>Available Label Tokens</h2>
 
 	<p>Available tokens for reservation labels
-		are {literal}{name}, {title}, {description}, {email}, {phone}, {organization}, {position}, {startdate}, {enddate} {resourcename} {participants} {invitees}{/literal}
+		are {literal}{name}, {title}, {description}, {email}, {phone}, {organization}, {position}, {startdate}, {enddate} {resourcename} {participants} {invitees} {reservationAttributes}{/literal}
 		. Custom attributes can be added using att with the attribute id. For example {literal}{att1}{/literal}
 		Leave it blank for no label. Any combination of tokens can be used.</p>
 

@@ -38,7 +38,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 					{/if}
 				</div>
 				<div class="inline">
-					<a href="{$Path}{Pages::RESERVATION}?{QueryStringKeys::RESOURCE_ID}={$i->ResourceId()}">{translate key=CreateReservation}</a>
+					<a href="{$Path}{Pages::RESERVATION}?{QueryStringKeys::RESOURCE_ID}={$i->ResourceId()}&{QueryStringKeys::SCHEDULE_ID}={$i->resource->ScheduleId}">{translate key=CreateReservation}</a>
 				</div>
 			</div>
 			{foreachelse}

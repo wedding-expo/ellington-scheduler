@@ -16,8 +16,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 *}
-
-
 	予約の詳細:
 	<br/>
 	<br/>
@@ -71,7 +69,12 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 
 	{if !empty($ApprovedBy)}
 		<br/>
-		Approved by: {$ApprovedBy}
+		承認者: {$ApprovedBy}
+	{/if}
+
+	{if !empty($CreatedBy)}
+		<br/>
+		作成者: {$CreatedBy}
 	{/if}
 
 	<br/>

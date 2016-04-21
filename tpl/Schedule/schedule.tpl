@@ -68,7 +68,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 {* End slot display formatting *}
 
 {block name="header"}
-	{include file='globalheader.tpl' cssFiles='css/jquery.qtip.min.css,scripts/css/jqtree.css,css/schedule.css'}
+	{include file='globalheader.tpl' cssFiles='css/jquery.qtip.min.css,scripts/css/jqtree.css,css/schedule.css' printCssFiles='css/schedule-print.css'}
 {/block}
 
 {if $ShowResourceWarning}
@@ -112,7 +112,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 					</ul>
 				</ul>
 			{/if}
-			<a href="#" id="calendar_toggle">{html_image src="calendar.png" altKey="ShowHideNavigation"}</a>
+			<a href="#" id="calendar_toggle">{html_image src="calendar.png" altKey="ShowHideNavigation" id="calendar_toggle_img"}</a>
 		</div>
 
 		{capture name="date_navigation"}
@@ -166,16 +166,17 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		</select>
 		</div>
 
-		<div>
-		<div id="resourceGroups"></div>
-		</div>
 
-		<form method="POST">
+		<form method="POST" id="advancedFilter">
 
 			<div class="advancedFilterTitle">{translate key=AdvancedFilter}</div>
 			<hr/>
 
-			<div id="advancedFilter">
+			<div>
+					<div id="resourceGroups"></div>
+					</div>
+
+			<div>
 				<div>
 				{translate key=MinimumCapacity}
 				<input type='text' id='maxCapactiy' class="textbox" size='5' maxlength='5' {formname key=MAX_PARTICIPANTS} value="{$MaxParticipantsFilter}" />
@@ -212,6 +213,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 	{assign var=TodaysDate value=Date::Now()}
 	<div id="reservations">
 		{foreach from=$BoundDates item=date}
+			{assign var=ts value=$date->Timestamp()}
+			{$periods.$ts = $DailyLayout->GetPeriods($date, true)}
+			{if $periods[$ts]|count == 0}{continue}{*dont show if there are no slots*}{/if}
 			<div style="position:relative;">
 			<table class="reservations" border="1" cellpadding="0" width="100%">
 				{if $date->DateEquals($TodaysDate)}
@@ -220,7 +224,7 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<tr>
 					{/if}
 					<td class="resdate">{formatdate date=$date key="schedule_daily"}</td>
-					{foreach from=$DailyLayout->GetPeriods($date, true) item=period}
+					{foreach from=$periods.$ts item=period}
 						<td class="reslabel" colspan="{$period->Span()}">{$period->Label($date)}</td>
 					{/foreach}
 				</tr>
@@ -234,7 +238,8 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 								<a href="{$href}" resourceId="{$resource->Id}"
 								   class="resourceNameSelector">{$resource->Name}</a>
 							{else}
-								{$resource->Name}
+								<span resourceId="{$resource->Id}" resourceId="{$resource->Id}"
+																   class="resourceNameSelector">{$resource->Name}</span>
 							{/if}
 						</td>
 						{foreach from=$slots item=slot}
@@ -279,7 +284,9 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				summaryPopupUrl: "{$Path}ajax/respopup.php",
 				setDefaultScheduleUrl: "{$Path}{Pages::PROFILE}?action=changeDefaultSchedule&{QueryStringKeys::SCHEDULE_ID}=[scheduleId]",
 				cookieName: "{$CookieName}",
-				scheduleId:"{$ScheduleId}"
+				scheduleId:"{$ScheduleId}",
+				scriptUrl: '{$ScriptUrl}',
+				selectedResources: [{','|implode:$ResourceIds}]
 			};
 
 			var schedule = new Schedule(scheduleOpts, {$ResourceGroupsAsJson});

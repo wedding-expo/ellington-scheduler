@@ -35,13 +35,14 @@ class en_us extends Language
 		$dates = array();
 
 		$dates['general_date'] = 'm/d/Y';
-		$dates['general_datetime'] = 'm/d/Y H:i:s';
+		$dates['general_datetime'] = 'm/d/Y g:i A';
 		$dates['schedule_daily'] = 'l, m/d/Y';
 		$dates['reservation_email'] = 'm/d/Y @ g:i A (e)';
 		$dates['res_popup'] = 'm/d/Y g:i A';
 		$dates['dashboard'] = 'l, m/d/Y g:i A';
 		$dates['period_time'] = 'g:i A';
 		$dates['general_date_js'] = 'mm/dd/yy';
+		$dates['general_time_js'] = 'h:mm tt';
 		$dates['calendar_time'] = 'h:mmt';
 		$dates['calendar_dates'] = 'M/d';
 
@@ -504,6 +505,12 @@ class en_us extends Language
 		$strings['AvailableBeginningAt'] = 'Available Beginning At';
 		$strings['AllowParticipantsToJoin'] = 'Allow Participants To Join';
 		$strings['JoinThisReservation'] = 'Join This Reservation';
+		$strings['Import'] = 'Import';
+		$strings['GetTemplate'] = 'Get Template';
+		$strings['UserImportInstructions'] = 'File must be in CSV format. Username and email are required fields. Leaving other fields blank will set default values and \'password\' as the user\'s password. Use the supplied template as an example.';
+		$strings['RowsImported'] = 'Rows Imported';
+		$strings['RowsSkipped'] = 'Rows Skipped';
+		$strings['DateTime'] = 'Date Time';
 		// End Strings
 
 		// Install
@@ -579,6 +586,8 @@ class en_us extends Language
 		$strings['PasswordControlledExternallyError'] = 'Your password is controlled by an external system and cannot be updated here.';
 		$strings['NoResources'] = 'You have not added any resources.';
 		$strings['ParticipationNotAllowed'] = 'You are not allowed to join this reservation.';
+		$strings['InsecureRequestError'] = 'Insecure request. If you continue to see this error please log in again and retry your request.';
+		$strings['RemoveExistingPermissions'] = 'Remove existing permissions?';
 		// End Errors
 
 		// Page Titles
@@ -675,6 +684,7 @@ class en_us extends Language
 		$strings['ReservationStartingSoonSubject'] = 'Reservation for %s is starting soon';
 		$strings['ReservationEndingSoonSubject'] = 'Reservation for %s is ending soon';
 		$strings['UserAdded'] = 'A new user has been added';
+		$strings['UserDeleted'] = 'User account for %s was deleted by %s';
 		// End Email Subjects
 
 		$this->Strings = $strings;

@@ -23,6 +23,79 @@ Booked application help is available from the Help menu item.
 
 <h2>Release Notes</h2>
 
+<h4>2.5.19</h4>
+<ul>
+    <li>Fixed some packaging issues from 2.5.18</li>
+    <li>Added ability to filter multiple resources on the schedule</li>
+    <li>Updated Japanese language files</li>
+</ul>
+
+<h4>2.5.18</h4>
+<ul>
+    <li>Fixed bugs with CSRF checks</li>
+    <li>Changed the manage reservation search filter to be inclusive of reservations spanning filtered time</li>
+    <li>Fixed issue that didn't maintain selected date in schedule calendar popup</li>
+    <li>Fixed double html encode issue for custom attributes</li>
+    <li>Fixed issue filtering on custom attributes on manage reservations page</li>
+    <li>Added fix to allow larger datasets returned when using group_concat</li>
+    <li>Fixed the 'deleted by' name in the account deletion email</li>
+</ul>
+
+<h4>2.5.17</h4>
+<ul>
+    <li>Fixed bug preventing schedule view switching on Chrome and IE</li>
+    <li>Fixed bug with reports showing no results when searching on accessories</li>
+    <li>Fixed issue displaying schedule dates even when no slots are defined</li>
+    <li>If register or forgot password urls open in external site, open in new window</li>
+    <li>Include total hours in reports</li>
+    <li>Changed reservation email message to come from whoever made the reservation</li>
+    <li>Added ability to override language strings</li>
+    <li>Fixed missing homepageid upon registration</li>
+    <li>Fixed missing email address in reservation reminders</li>
+    <li>Properly custom attribute regex format if user supplied version is incorrect</li>
+    <li>Added ability to remove all assigned permissions for resource</li>
+    <li>Added ability to include all reservation attributes in display labels</li>
+    <li>Save calendar expand/collapse on schedule page</li>
+    <li>Fixed bug determining when to send notification emails</li>
+    <li>Fixed bug with PR language</li>
+    <li>Changed resource availability web service to use same logic as dashboard</li>
+    <li>Fixed issue displaying reservations when date had no slots</li>
+    <li>Fixed bug that prevented cookies from being written properly in IE</li>
+    <li>Fixed warning when path property is not found in the url</li>
+    <li>Removed CSRF check on registration page</li>
+    <li>Ensure session is started when rendering captcha</li>
+    <li>Fixed syntax issue on PHP 5.3 and lower</li>
+</ul>
+
+<h4>2.5.16</h4>
+<ul>
+    <li>Added datetime custom attribute type</li>
+    <li>Added ability to import a list of users</li>
+    <li>Added ability to manage custom attributes through the API</li>
+    <li>Added ability to customize report columns</li>
+    <li>Added a yearly quota</li>
+    <li>Added API for getting resource types and ability to set resource type in add/update</li>
+    <li>Added ability to restrict showing user details to simply on/off or past/future reservations</li>
+    <li>Added user deleted email notification</li>
+    <li>When a reservation is created on behalf of another user, the user taking action is included in the email notifications</li>
+    <li>When a user is created on behalf of another user, the user taking action is included in the email notification</li>
+    <li>Improved rendering of schedule when being printed</li>
+    <li>Resource details are now shown even if user does not have permission</li>
+    <li>Added ability to include Google Analytics</li>
+    <li>Fixed bug which prevented joining or canceling a recurring reservation instance if it violated a notice rule</li>
+    <li>Fixed resource availability dashboard timeout issues</li>
+    <li>Fixed bug with creating and updating reservations through the API</li>
+    <li>Fixed bug which over-counted accessories when reservation contained multiple resources</li>
+    <li>Fixed bug loading resource type attributes when managing custom attributes</li>
+    <li>Fixed bug requiring user to uncheck removed resources from all groups</li>
+    <li>Fixed bug for resource groups when they are returned from the db sorted incorrectly</li>
+    <li>Fixed bug with upcoming reservations dashboard</li>
+    <li>Changed cookies to be scoped to Booked root path</li>
+    <li>Implemented CSRF checks (thank you Netsparker)</li>
+    <li>Updated French language pack</li>
+    <li>Updated Croatian language pack</li>
+</ul>
+
 <h4>2.5.15</h4>
 <ul>
     <li>Added ability for users to join reservations without being invited</li>
