@@ -156,12 +156,6 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 			{textbox name="RESERVATION_TITLE" class="input" tabindex="100" value="ReservationTitle"}
             </label>
         </li>
-        <li class="rsv-box-l">
-            <label>{translate key="ReservationDescription"}<br/>
-                <textarea id="description" name="{FormKeys::DESCRIPTION}" class="input" rows="2" cols="52"
-                          tabindex="110">{$Description}</textarea>
-            </label>
-        </li>
     </ul>
 </div>
 
@@ -430,7 +424,6 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 		$(this).ajaxSubmit(ajaxOptions);
 		return false;
 	});
-	$('#description').TextAreaExpander();
 
 	$('#userName').bindUserDetails();
 });
