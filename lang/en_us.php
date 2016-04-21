@@ -306,6 +306,7 @@ class en_us extends Language
 		$strings['BlackoutDeleteConflicts'] = 'Delete conflicting reservations';
 		$strings['Filter'] = 'Filter';
 		$strings['Between'] = 'Between';
+		$strings['From'] = 'From';
 		$strings['CreatedBy'] = 'Created By';
 		$strings['BlackoutCreated'] = 'Blackout Created';
 		$strings['BlackoutNotCreated'] = 'Blackout could not be created';
@@ -413,6 +414,7 @@ class en_us extends Language
 		$strings['NoSavedReports'] = 'You have no saved reports.';
 		$strings['CurrentWeek'] = 'Current Week';
 		$strings['CurrentMonth'] = 'Current Month';
+		$strings['PreviousMonth'] = 'Previous Month';
 		$strings['AllTime'] = 'All Time';
 		$strings['FilterBy'] = 'Filter By';
 		$strings['Select'] = 'Select';
@@ -422,6 +424,7 @@ class en_us extends Language
 		$strings['Usage'] = 'Usage';
 		$strings['AggregateBy'] = 'Aggregate By';
 		$strings['Range'] = 'Range';
+		$strings['DATE_RANGE'] = 'Date Range';
 		$strings['Choose'] = 'Choose';
 		$strings['All'] = 'All';
 		$strings['ViewAsChart'] = 'View As Chart';
@@ -757,3 +760,4 @@ class en_us extends Language
 }
 
 ?>
+

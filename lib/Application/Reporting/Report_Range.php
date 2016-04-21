@@ -19,6 +19,7 @@ class Report_Range
 	const DATE_RANGE = 'DATE_RANGE';
 	const ALL_TIME = 'ALL_TIME';
 	const CURRENT_MONTH = 'CURRENT_MONTH';
+	const PREVIOUS_MONTH = 'PREVIOUS_MONTH';
 	const CURRENT_WEEK = 'CURRENT_WEEK';
 	const TODAY = 'TODAY';
 
@@ -47,12 +48,17 @@ class Report_Range
 	{
 		$this->range = $range;
 		$this->start = empty($startString) ? Date::Min() : Date::Parse($startString, $timezone);
-		$this->end = empty($endString) ? Date::Max() : Date::Parse($endString, $timezone);
+		$this->end = empty($endString) ? Date::Max() : Date::Parse($endString, $timezone)->AddDays(1);
 
 		$now = Date::Now()->ToTimezone($timezone);
 		if ($this->range == self::CURRENT_MONTH)
 		{
 			$this->start = Date::Create($now->Year(), $now->Month(), 1, 0, 0, 0, $timezone);
+			$this->end = $this->start->AddMonths(1);
+		}
+		if ($this->range == self::PREVIOUS_MONTH)
+		{
+			$this->start = Date::Create($now->Year(), $now->Month() - 1, 1, 0, 0, 0, $timezone);
 			$this->end = $this->start->AddMonths(1);
 		}
 		if ($this->range == self::CURRENT_WEEK)
