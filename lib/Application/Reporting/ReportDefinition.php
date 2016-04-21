@@ -70,17 +70,14 @@ class ReportDefinition implements IReportDefinition
 	{
 		$dateFormat = Resources::GetInstance()->GeneralDateTimeFormat();
 		$orderedColumns = array(
-				ColumnNames::ACCESSORY_NAME => new ReportStringColumn('Accessory',
-																	  ChartColumnDefinition::Label(ColumnNames::ACCESSORY_ID, ChartGroup::Accessory)),
-				ColumnNames::RESOURCE_NAME_ALIAS => new ReportStringColumn('Resource',
-																		   ChartColumnDefinition::Label(ColumnNames::RESOURCE_ID, ChartGroup::Resource)),
-// 				ColumnNames::QUANTITY => new ReportStringColumn('QuantityReserved', ChartColumnDefinition::Total()),
-				ColumnNames::RESERVATION_START => new ReportDateColumn('BeginDate', $timezone, $dateFormat, ChartColumnDefinition::Date()),
-				ColumnNames::RESERVATION_END => new ReportDateColumn('EndDate', $timezone, $dateFormat, ChartColumnDefinition::Null()),
+				ColumnNames::OWNER_FULL_NAME_ALIAS => new ReportStringColumn('User', ChartColumnDefinition::Label(ColumnNames::OWNER_USER_ID)),
 				ColumnNames::RESERVATION_TITLE => new ReportStringColumn('Title', ChartColumnDefinition::Null()),
+				ColumnNames::RESOURCE_NAME_ALIAS => new ReportStringColumn('Resource', ChartColumnDefinition::Label(ColumnNames::RESOURCE_ID, ChartGroup::Resource)),
+// 				ColumnNames::QUANTITY => new ReportStringColumn('QuantityReserved', ChartColumnDefinition::Total()),
 // 				ColumnNames::RESERVATION_DESCRIPTION => new ReportStringColumn('Description', ChartColumnDefinition::Null()),
 // 				ColumnNames::REFERENCE_NUMBER => new ReportStringColumn('ReferenceNumber', ChartColumnDefinition::Null()),
-				ColumnNames::OWNER_FULL_NAME_ALIAS => new ReportStringColumn('User', ChartColumnDefinition::Label(ColumnNames::OWNER_USER_ID)),
+				ColumnNames::RESERVATION_START => new ReportDateColumn('BeginDate', $timezone, $dateFormat, ChartColumnDefinition::Date()),
+				ColumnNames::RESERVATION_END => new ReportDateColumn('EndDate', $timezone, $dateFormat, ChartColumnDefinition::Null()),
 // 				ColumnNames::PARTICIPANT_LIST => new ReportStringColumn('Participants', ChartColumnDefinition::Null()),
 // 				ColumnNames::GROUP_NAME_ALIAS => new ReportStringColumn('Group', ChartColumnDefinition::Label(ColumnNames::GROUP_ID)),
 // 				ColumnNames::SCHEDULE_NAME_ALIAS => new ReportStringColumn('Schedule', ChartColumnDefinition::Label(ColumnNames::SCHEDULE_ID)),
@@ -100,10 +97,12 @@ class ReportDefinition implements IReportDefinition
 			}
 		}
 
+		$type = array('1attribute5' => new ReportStringColumn('Type', ChartColumnDefinition::Null()));
+		$this->columns = array_slice($this->columns, 0, 3, true) + $type + array_slice($this->columns, 3, 2, true);
 /*
 		foreach ($reportColumns->GetCustomAttributes() as $column)
 		{
-			$this->columns[$column->Id] = new ReportStringColumn($column->Label, ChartColumnDefinition::Null());
+			$this->columns[$column->Id] = new ReportStringColumn($column->Id, ChartColumnDefinition::Null());
 		}
 */
 	}
