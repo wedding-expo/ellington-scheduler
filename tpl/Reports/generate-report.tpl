@@ -65,19 +65,17 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 				<label for="groupby_group">{translate key=Group}</label>
 			</div>
 			<div class="input-set">
-				<span class="label">{translate key=Range}</span>
-				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::ALL_TIME}" id="range_all"
+				<span class="label">{translate key=DATE_RANGE}</span>
+				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::PREVIOUS_MONTH}" id="previous_month"
 					   checked="checked"/>
-				<label for="range_all">{translate key=AllTime}</label>
+				<label for="previous_month">{translate key=PreviousMonth}</label>
 				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::CURRENT_MONTH}" id="current_month"/>
 				<label for="current_month">{translate key=CurrentMonth}</label>
-				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::CURRENT_WEEK}" id="current_week"/>
-				<label for="current_week">{translate key=CurrentWeek}</label>
 				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::TODAY}" id="today"/>
 				<label for="today" style="width:auto;">{translate key=Today}</label>
 				<input type="radio" {formname key=REPORT_RANGE} value="{Report_Range::DATE_RANGE}" id="range_within"/>
-				<label for="range_within" style="width:auto;">{translate key=Between}</label>
-				<input type="input" class="textbox dateinput" id="startDate"/> -
+				<label for="range_within" style="width:auto;">{translate key=From}</label>
+				<input type="input" class="textbox dateinput" id="startDate"/> &nbsp; through
 				<input type="hidden" id="formattedBeginDate" {formname key=REPORT_START}/>
 				<input type="input" class="textbox dateinput" id="endDate"/>
 				<input type="hidden" id="formattedEndDate" {formname key=REPORT_END} />
@@ -199,3 +197,4 @@ along with Booked Scheduler.  If not, see <http://www.gnu.org/licenses/>.
 {control type="DatePickerSetupControl" ControlId="endDate" AltId="formattedEndDate"}
 
 {include file='globalfooter.tpl'}
+
