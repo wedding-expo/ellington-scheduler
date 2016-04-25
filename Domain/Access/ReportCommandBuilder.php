@@ -73,7 +73,7 @@ class ReportCommandBuilder
 	const GROUP_JOIN_FRAGMENT = 'INNER JOIN user_groups ug ON ug.user_id = owner.user_id
 				INNER JOIN groups ON groups.group_id = ug.group_id';
 
-	const ORDER_BY_FRAGMENT = 'ORDER BY ri.start_date ASC';
+	const ORDER_BY_FRAGMENT = 'ORDER BY rs.owner_id, resources.resource_id, attribute_list, ri.start_date';
 
 	const TOTAL_ORDER_BY_FRAGMENT = 'ORDER BY total DESC';
 
