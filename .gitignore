@@ -3,3 +3,4 @@ tpl_c/*
 tpl_c
 *.log
 .DS_Store
+config.php
